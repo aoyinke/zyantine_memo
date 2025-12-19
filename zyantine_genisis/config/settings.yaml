@@ -1,0 +1,22 @@
+system:
+  name: "Zyantine Genesis V2.0"
+  version: "2.0.0"
+  architect_signature: "ZxG-778-FC-ALL_IN"
+
+core:
+  survival_threshold: 0.8
+  expansion_threshold: 0.7
+  emergency_cooldown: 300
+
+vectors:
+  initial_TR: 0.6
+  initial_CS: 0.7
+  initial_SA: 0.3
+
+dialectical:
+  validation_threshold: 0.7
+  assimilation_rate: 0.1
+
+memory:
+  max_fragments: 1000
+  cache_expiry: 1800  
