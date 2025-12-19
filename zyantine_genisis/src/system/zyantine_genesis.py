@@ -123,7 +123,6 @@ class ZyantineGenesisV2:
         try:
             # === 阶段1：预处理与本能检查 ===
             print(f"[阶段1] 预处理与本能检查")
-
             # 解析上下文
             context_analysis = self.context_parser.parse(user_input, self.conversation_history)
 
