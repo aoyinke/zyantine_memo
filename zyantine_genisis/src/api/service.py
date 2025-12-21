@@ -1,8 +1,11 @@
-from typing import Dict, List, Optional,Tuple
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from openai import OpenAI
 from ..cognition.cognitive_flow import CoreIdentity
 import random
+import traceback
+
+
 # ============ API服务模块 ============
 class OpenAIService:
     """OpenAI API服务封装"""
@@ -12,18 +15,20 @@ class OpenAIService:
         self.base_url = base_url
         self.model = model
         self.client = None
+        self.request_count = 0
+        self.error_count = 0
         self._initialize_client()
 
     def _initialize_client(self):
         """初始化OpenAI客户端"""
         try:
-
             self.client = OpenAI(
                 api_key=self.api_key,
                 base_url=self.base_url
             )
             print(f"[API服务] OpenAI客户端初始化成功，使用模型: {self.model}")
-        except ImportError:
+        except ImportError as e:
+            print(f"[API服务] 导入失败: {str(e)}")
             print("[API服务] 警告：未安装openai库，请运行: pip install openai")
             self.client = None
         except Exception as e:
@@ -33,7 +38,7 @@ class OpenAIService:
     def generate_reply(self, system_prompt: str, user_input: str,
                        conversation_history: List[Dict] = None,
                        max_tokens: int = 500,
-                       temperature: float = 0.7) -> Optional[str]:
+                       temperature: float = 0.7) -> Optional[Tuple[str, Optional[str]]]:
         """
         调用API生成回复
 
@@ -45,11 +50,15 @@ class OpenAIService:
             temperature: 温度参数
 
         Returns:
-            生成的回复文本，失败时返回None
+            Tuple[生成的回复文本或None, 错误信息或None]
         """
+        self.request_count += 1
+
         if not self.client:
-            print("[API服务] 客户端未初始化，无法生成回复")
-            return None
+            error_msg = "客户端未初始化"
+            print(f"[API服务] {error_msg}")
+            self.error_count += 1
+            return None, error_msg
 
         try:
             # 构建消息列表
@@ -69,6 +78,9 @@ class OpenAIService:
             # 当前用户输入
             messages.append({"role": "user", "content": user_input})
 
+            print(
+                f"[API服务] 开始调用API，模型: {self.model}, 消息数量: {len(messages)}, max_tokens: {max_tokens}, temperature: {temperature}")
+
             # 调用API
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -78,15 +90,67 @@ class OpenAIService:
                 stream=False
             )
 
-            return response.choices[0].message.content
+            if response and response.choices and len(response.choices) > 0:
+                reply = response.choices[0].message.content
+                print(f"[API服务] API调用成功，生成回复长度: {len(reply)}")
+                return reply, None
+            else:
+                error_msg = "API响应为空或无效"
+                print(f"[API服务] {error_msg}")
+                self.error_count += 1
+                return None, error_msg
 
         except Exception as e:
-            print(f"[API服务] 生成回复失败: {str(e)}")
-            return None
+            error_msg = f"生成回复失败: {str(e)}"
+            print(f"[API服务] {error_msg}")
+            self.error_count += 1
+
+            # 记录更详细的错误信息
+            print(f"[API服务] 详细错误堆栈:\n{traceback.format_exc()}")
+
+            return None, error_msg
 
     def is_available(self) -> bool:
         """检查API服务是否可用"""
         return self.client is not None
+
+    def test_connection(self) -> Tuple[bool, Optional[str]]:
+        """测试API连接"""
+        if not self.client:
+            return False, "客户端未初始化"
+
+        try:
+            print(f"[API服务] 测试连接，使用模型: {self.model}")
+            test_response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": "测试连接，请回复'连接成功'"}],
+                max_tokens=10,
+                temperature=0.5
+            )
+
+            if test_response and test_response.choices:
+                print(f"[API服务] 连接测试成功")
+                return True, None
+            else:
+                error_msg = "测试响应为空"
+                print(f"[API服务] {error_msg}")
+                return False, error_msg
+
+        except Exception as e:
+            error_msg = f"连接测试失败: {str(e)}"
+            print(f"[API服务] {error_msg}")
+            return False, error_msg
+
+    def get_statistics(self) -> Dict:
+        """获取API服务统计信息"""
+        return {
+            "model": self.model,
+            "base_url": self.base_url,
+            "total_requests": self.request_count,
+            "total_errors": self.error_count,
+            "success_rate": ((self.request_count - self.error_count) / max(self.request_count, 1)) * 100,
+            "is_available": self.is_available()
+        }
 
 
 # ============ 改进的回复生成模块 ============
@@ -97,12 +161,13 @@ class APIBasedReplyGenerator:
         self.api = api_service
         self.template_engine = TemplateReplyGenerator()  # 保留模板生成器作为备用
         self.generation_log = []
+        self.error_log = []  # 新增错误日志
 
     def generate_reply(self, action_plan: Dict, growth_result: Dict,
                        user_input: str, context_analysis: Dict,
                        conversation_history: List[Dict],
                        core_identity: CoreIdentity,
-                       current_vectors: Dict) -> str:
+                       current_vectors: Dict) -> Tuple[str, Optional[str]]:
         """
         使用API生成智能回复
 
@@ -116,12 +181,17 @@ class APIBasedReplyGenerator:
             current_vectors: 当前向量状态
 
         Returns:
-            生成的回复文本
+            Tuple[生成的回复文本, 错误信息或None]
         """
+        # 记录生成请求信息
+        print(f"[回复生成] 开始生成回复，用户输入长度: {len(user_input)}")
+
         # 如果API不可用，使用备用模板
         if not self.api.is_available():
-            print("[回复生成] API不可用，使用模板生成器")
-            return self._generate_with_template(action_plan, growth_result)
+            error_msg = "API服务不可用，使用模板生成器"
+            print(f"[回复生成] {error_msg}")
+            template_reply = self._generate_with_template(action_plan, growth_result)
+            return template_reply, error_msg
 
         # 构建系统提示词
         system_prompt = self._build_system_prompt(
@@ -130,9 +200,10 @@ class APIBasedReplyGenerator:
         )
 
         print(f"[回复生成] 调用API生成回复，提示词长度: {len(system_prompt)}")
+        print(f"[回复生成] 历史对话条数: {len(conversation_history) if conversation_history else 0}")
 
         # 调用API生成回复
-        reply = self.api.generate_reply(
+        api_result = self.api.generate_reply(
             system_prompt=system_prompt,
             user_input=user_input,
             conversation_history=conversation_history,
@@ -140,15 +211,36 @@ class APIBasedReplyGenerator:
             temperature=self._determine_temperature(current_vectors)
         )
 
+        reply, api_error = api_result
+        print(f"测试，打印一下reply={reply}")
         # 如果API调用失败，使用备用模板
         if not reply:
-            print("[回复生成] API调用失败，使用模板生成器")
-            return self._generate_with_template(action_plan, growth_result)
+            error_msg = f"API调用失败: {api_error if api_error else '未知错误'}"
+            print(f"[回复生成] {error_msg}")
+
+            # 记录错误详情
+            error_details = {
+                "timestamp": datetime.now().isoformat(),
+                "user_input": user_input,
+                "api_error": api_error,
+                "action_plan": str(action_plan)[:200],
+                "vectors": current_vectors,
+                "system_prompt_preview": system_prompt[:200] + "..." if len(system_prompt) > 200 else system_prompt
+            }
+            self.error_log.append(error_details)
+
+            # 限制错误日志大小
+            if len(self.error_log) > 50:
+                self.error_log = self.error_log[-50:]
+
+            template_reply = self._generate_with_template(action_plan, growth_result)
+            return template_reply, error_msg
 
         # 记录生成日志
         self._log_generation(system_prompt, user_input, reply)
 
-        return reply
+        print(f"[回复生成] 回复生成成功，长度: {len(reply)}")
+        return reply, None
 
     def _build_system_prompt(self, action_plan: Dict, growth_result: Dict,
                              context_analysis: Dict, core_identity: CoreIdentity,
@@ -288,6 +380,26 @@ class APIBasedReplyGenerator:
         if len(self.generation_log) > 100:
             self.generation_log = self.generation_log[-100:]
 
+    def get_error_log(self, limit: int = 10) -> List[Dict]:
+        """获取错误日志"""
+        return self.error_log[-limit:] if self.error_log else []
+
+    def clear_error_log(self):
+        """清空错误日志"""
+        self.error_log = []
+
+    def get_statistics(self) -> Dict:
+        """获取生成器统计信息"""
+        api_stats = self.api.get_statistics() if self.api else {}
+
+        return {
+            "api_service": api_stats,
+            "generation_log_count": len(self.generation_log),
+            "error_log_count": len(self.error_log),
+            "last_generation": self.generation_log[-1] if self.generation_log else None,
+            "last_error": self.error_log[-1] if self.error_log else None
+        }
+
 
 # ============ 模板回复生成器（备用） ============
 class TemplateReplyGenerator:
@@ -339,3 +451,48 @@ class TemplateReplyGenerator:
                 reply += f" （这让我想起了{new_principle['abstracted_from']}）"
 
         return reply
+
+
+# ============ 辅助函数 ============
+def test_api_connection(api_key: str, base_url: str = "https://openkey.cloud/v1",
+                        model: str = "gpt-5-nano-2025-08-07") -> Tuple[bool, str]:
+    """
+    测试API连接
+
+    Args:
+        api_key: API密钥
+        base_url: API基础URL
+        model: 模型名称
+
+    Returns:
+        Tuple[连接是否成功, 状态消息]
+    """
+    try:
+        service = OpenAIService(api_key, base_url, model)
+        if not service.is_available():
+            return False, "API服务不可用"
+
+        success, error = service.test_connection()
+        if success:
+            return True, "API连接测试成功"
+        else:
+            return False, f"API连接测试失败: {error}"
+    except Exception as e:
+        return False, f"测试过程中发生异常: {str(e)}"
+
+
+def create_reply_generator(api_key: str, base_url: str = "https://openkey.cloud/v1",
+                           model: str = "gpt-5-nano-2025-08-07") -> APIBasedReplyGenerator:
+    """
+    创建回复生成器
+
+    Args:
+        api_key: API密钥
+        base_url: API基础URL
+        model: 模型名称
+
+    Returns:
+        APIBasedReplyGenerator实例
+    """
+    api_service = OpenAIService(api_key, base_url, model)
+    return APIBasedReplyGenerator(api_service)
