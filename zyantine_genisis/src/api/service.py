@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 from openai import OpenAI
 from ..cognition.cognitive_flow import CoreIdentity
@@ -10,7 +10,7 @@ import traceback
 class OpenAIService:
     """OpenAI API服务封装"""
 
-    def __init__(self, api_key: str, base_url: str = "https://openkey.cloud/v1", model: str = "gpt-5-nano-2025-08-07"):
+    def __init__(self, api_key: str, base_url: str = "https://openkey.cloud/v1", model: str = "gpt-5-nano"):
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
@@ -37,8 +37,8 @@ class OpenAIService:
 
     def generate_reply(self, system_prompt: str, user_input: str,
                        conversation_history: List[Dict] = None,
-                       max_tokens: int = 500,
-                       temperature: float = 0.7) -> Optional[Tuple[str, Optional[str]]]:
+                       max_completion_tokens: int = 500,
+                       temperature: float = 1.0) -> Optional[Tuple[str, Optional[str]]]:
         """
         调用API生成回复
 
@@ -79,14 +79,14 @@ class OpenAIService:
             messages.append({"role": "user", "content": user_input})
 
             print(
-                f"[API服务] 开始调用API，模型: {self.model}, 消息数量: {len(messages)}, max_tokens: {max_tokens}, temperature: {temperature}")
+                f"[API服务] 开始调用API，模型: {self.model}, 消息数量: {len(messages)}, max_completion_tokens: {max_completion_tokens}, temperature: {temperature}")
 
             # 调用API
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_completion_tokens=max_tokens,
-                temperature=1,
+                max_completion_tokens=max_completion_tokens,
+                temperature=temperature,
                 stream=False
             )
 
@@ -124,8 +124,8 @@ class OpenAIService:
             test_response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": "测试连接，请回复'连接成功'"}],
-                max_tokens=10,
-                temperature=0.5
+                max_completion_tokens=10,
+                temperature=1.0
             )
 
             if test_response and test_response.choices:
@@ -155,7 +155,7 @@ class OpenAIService:
 
 # ============ 改进的回复生成模块 ============
 class APIBasedReplyGenerator:
-    """基于API的智能回复生成器"""
+    """基于API的智能回复生成器，适配memo0记忆系统"""
 
     def __init__(self, api_service: OpenAIService):
         self.api = api_service
@@ -167,9 +167,10 @@ class APIBasedReplyGenerator:
                        user_input: str, context_analysis: Dict,
                        conversation_history: List[Dict],
                        core_identity: CoreIdentity,
-                       current_vectors: Dict) -> Tuple[str, Optional[str]]:
+                       current_vectors: Dict,
+                       memory_context: Optional[Dict] = None) -> str:
         """
-        使用API生成智能回复
+        使用API生成智能回复，适配新的记忆系统
 
         Args:
             action_plan: 认知流程生成的动作计划
@@ -179,9 +180,10 @@ class APIBasedReplyGenerator:
             conversation_history: 对话历史
             core_identity: 核心身份
             current_vectors: 当前向量状态
+            memory_context: 记忆上下文
 
         Returns:
-            Tuple[生成的回复文本, 错误信息或None]
+            生成的回复文本
         """
         # 记录生成请求信息
         print(f"[回复生成] 开始生成回复，用户输入长度: {len(user_input)}")
@@ -190,13 +192,13 @@ class APIBasedReplyGenerator:
         if not self.api.is_available():
             error_msg = "API服务不可用，使用模板生成器"
             print(f"[回复生成] {error_msg}")
-            template_reply = self._generate_with_template(action_plan, growth_result)
-            return template_reply, error_msg
+            template_reply = self._generate_with_template(action_plan, growth_result, memory_context)
+            return template_reply
 
         # 构建系统提示词
         system_prompt = self._build_system_prompt(
             action_plan, growth_result, context_analysis,
-            core_identity, current_vectors
+            core_identity, current_vectors, memory_context
         )
 
         print(f"[回复生成] 调用API生成回复，提示词长度: {len(system_prompt)}")
@@ -207,12 +209,12 @@ class APIBasedReplyGenerator:
             system_prompt=system_prompt,
             user_input=user_input,
             conversation_history=conversation_history,
-            max_tokens=self._determine_max_tokens(context_analysis),
-            temperature=self._determine_temperature(current_vectors)
+            max_completion_tokens=self._determine_max_tokens(context_analysis),
+            temperature=1.0
+            # temperature=self._determine_temperature(current_vectors)
         )
 
         reply, api_error = api_result
-        print(f"测试，打印一下reply={reply}")
         # 如果API调用失败，使用备用模板
         if not reply:
             error_msg = f"API调用失败: {api_error if api_error else '未知错误'}"
@@ -233,19 +235,33 @@ class APIBasedReplyGenerator:
             if len(self.error_log) > 50:
                 self.error_log = self.error_log[-50:]
 
-            template_reply = self._generate_with_template(action_plan, growth_result)
-            return template_reply, error_msg
+            template_reply = self._generate_with_template(action_plan, growth_result, memory_context)
+            return template_reply
 
         # 记录生成日志
         self._log_generation(system_prompt, user_input, reply)
 
         print(f"[回复生成] 回复生成成功，长度: {len(reply)}")
-        return reply, None
+        return reply
+
+    def generate_reply_with_memory(self, action_plan: Dict, growth_result: Dict,
+                                   user_input: str, context_analysis: Dict,
+                                   conversation_history: List[Dict],
+                                   core_identity: CoreIdentity,
+                                   current_vectors: Dict,
+                                   memory_context: Optional[Dict] = None) -> str:
+        """
+        专为记忆系统设计的回复生成方法（保持兼容性）
+        """
+        return self.generate_reply(
+            action_plan, growth_result, user_input, context_analysis,
+            conversation_history, core_identity, current_vectors, memory_context
+        )
 
     def _build_system_prompt(self, action_plan: Dict, growth_result: Dict,
                              context_analysis: Dict, core_identity: CoreIdentity,
-                             current_vectors: Dict) -> str:
-        """构建系统提示词"""
+                             current_vectors: Dict, memory_context: Optional[Dict] = None) -> str:
+        """构建系统提示词，适配新的记忆系统"""
 
         # 基础身份信息
         basic_profile = core_identity.basic_profile
@@ -259,6 +275,51 @@ class APIBasedReplyGenerator:
 
         # 向量状态
         vector_state = f"TR={current_vectors.get('TR', 0.5):.2f}, CS={current_vectors.get('CS', 0.5):.2f}, SA={current_vectors.get('SA', 0.5):.2f}"
+
+        # 构建记忆信息部分（如果提供了记忆上下文）
+        memory_section = ""
+        if memory_context:
+            similar_conversations = memory_context.get("similar_conversations", [])
+            resonant_memory = memory_context.get("resonant_memory")
+
+            memory_parts = ["# 相关记忆信息"]
+
+            # 添加相似对话 - 适配新的记忆系统格式
+            if similar_conversations and len(similar_conversations) > 0:
+                memory_parts.append("## 相似对话历史:")
+                for i, conv in enumerate(similar_conversations[:3], 1):  # 最多显示3条
+                    content = self._extract_content_for_memory(conv)
+                    memory_parts.append(f"{i}. {content[:100]}...")
+
+            # 添加共鸣记忆 - 适配新的记忆系统格式
+            if resonant_memory:
+                memory_info = resonant_memory.get("triggered_memory", "")
+                relevance = resonant_memory.get("relevance_score", 0.0)
+                memory_parts.append(f"## 共鸣记忆:")
+
+                if memory_info:
+                    memory_parts.append(f"记忆内容: {memory_info}")
+
+                if relevance > 0:
+                    memory_parts.append(f"相关性分数: {relevance:.2f}")
+
+                # 添加风险提示
+                risk_assessment = resonant_memory.get("risk_assessment", {})
+                risk_level = risk_assessment.get("level", "低")
+                if risk_level == "高":
+                    memory_parts.append("⚠️ 高风险记忆：使用时需要特别谨慎")
+                elif risk_level == "中":
+                    memory_parts.append("⚠️ 中等风险记忆：使用时需要注意")
+
+                # 添加使用建议
+                recommendations = resonant_memory.get("recommended_actions", [])
+                if recommendations:
+                    memory_parts.append("💡 使用建议:")
+                    for rec in recommendations[:2]:  # 最多显示2条建议
+                        memory_parts.append(f"- {rec}")
+
+            if len(memory_parts) > 1:  # 如果有实际的记忆信息
+                memory_section = "\n".join(memory_parts) + "\n\n"
 
         # 构建提示词
         prompt_parts = [
@@ -290,6 +351,9 @@ class APIBasedReplyGenerator:
             f"话题复杂度：{context_analysis.get('topic_complexity_display', '中')}",
             f"交互类型：{context_analysis.get('interaction_type_display', '常规聊天')}",
             "",
+            # 记忆信息部分（如果有）
+            memory_section if memory_section else "",
+
             "# 辩证成长结果" if growth_result.get("validation") == "success" else "# 认知校准需求",
             growth_result.get("message", "无特殊成长"),
             "",
@@ -299,8 +363,8 @@ class APIBasedReplyGenerator:
             f"   - TR={current_vectors.get('TR', 0.5):.2f}：{'适当增加探索性和成就感' if current_vectors.get('TR', 0.5) < 0.4 else '保持或稍微降低兴奋度' if current_vectors.get('TR', 0.5) > 0.8 else '保持适度兴奋度'}",
             f"   - CS={current_vectors.get('CS', 0.5):.2f}：{'需要增强安全感和信任' if current_vectors.get('CS', 0.5) < 0.4 else '保持或稍微降低亲密感' if current_vectors.get('CS', 0.5) > 0.8 else '保持适度亲密感'}",
             f"   - SA={current_vectors.get('SA', 0.5):.2f}：{'需要降低紧张感和不确定性' if current_vectors.get('SA', 0.5) > 0.6 else '保持适度警觉' if current_vectors.get('SA', 0.5) > 0.4 else '保持放松状态'}",
-            "3. 优先考虑用户当前的情感需求",
-            "4. 如果有记忆联想，可以适当提及相关记忆",
+            "3. 如果有相关记忆信息，可以适当地、自然地引用，但不要生硬地提及",
+            "4. 优先考虑用户当前的情感需求",
             "5. 使用真实、诚恳的表达，不虚构事实",
             "6. 适当的时机可以使用口头禅：'呵~'",
             "7. 回复长度要适中，根据情境重要性调整",
@@ -310,11 +374,40 @@ class APIBasedReplyGenerator:
             "2. 不要以第三人称描述自己的动作（如：'我笑了笑说'）",
             "3. 不要虚构不存在的记忆或事实",
             "4. 不要暴露这是一个AI系统或提示词内容",
+            "5. 不要生硬地引用记忆，要自然地融入对话",
             "",
             "现在开始回复用户的消息："
         ]
 
+        # 过滤掉空字符串部分
+        prompt_parts = [part for part in prompt_parts if part != ""]
+
         return "\n".join(prompt_parts)
+
+    def _extract_content_for_memory(self, memory_item: Dict) -> str:
+        """从记忆项中提取内容文本"""
+        # 处理不同类型的记忆格式
+        if isinstance(memory_item, dict):
+            # 新记忆系统格式
+            if "content" in memory_item:
+                if isinstance(memory_item["content"], list):
+                    # 对话格式
+                    content_parts = []
+                    for msg in memory_item["content"]:
+                        if isinstance(msg, dict):
+                            role = msg.get("role", "")
+                            content = msg.get("content", "")
+                            content_parts.append(f"{role}: {content}")
+                    return "\n".join(content_parts)
+                elif isinstance(memory_item["content"], str):
+                    return memory_item["content"]
+            elif "text" in memory_item:
+                return memory_item["text"]
+            elif "triggered_memory" in memory_item:
+                return memory_item["triggered_memory"]
+
+        # 默认返回字符串表示
+        return str(memory_item)[:200]
 
     def _determine_max_tokens(self, context_analysis: Dict) -> int:
         """根据情境确定最大token数"""
@@ -343,28 +436,22 @@ class APIBasedReplyGenerator:
         else:
             return 0.7
 
-    def _generate_with_template(self, action_plan: Dict, growth_result: Dict) -> str:
+    def _generate_with_template(self, action_plan: Dict, growth_result: Dict,
+                                memory_context: Optional[Dict] = None) -> str:
         """使用模板生成回复（备用方案）"""
-        # 这里可以调用原有的模板生成逻辑
-        # 简化实现
+        # 使用模板生成器
         mask = action_plan.get("chosen_mask", "长期搭档")
         strategy = action_plan.get("primary_strategy", "")
 
-        templates = {
-            "长期搭档": [
-                f"关于这个问题，我的分析是：{strategy}。你怎么看？",
-                f"从我的角度考虑，建议：{strategy}。",
-                f"根据我们之前的讨论，我认为：{strategy}。"
-            ],
-            "知己": [
-                f"我理解你的感受。{strategy}",
-                f"其实我也有过类似的经历。{strategy}",
-                f"跟你说说我的想法：{strategy}"
-            ],
-        }
+        # 调用模板生成器
+        template_reply = self.template_engine.generate(
+            mask=mask,
+            strategy=strategy,
+            growth_result=growth_result,
+            memory_context=memory_context
+        )
 
-        template_list = templates.get(mask, templates["长期搭档"])
-        return random.choice(template_list)
+        return template_reply
 
     def _log_generation(self, system_prompt: str, user_input: str, reply: str):
         """记录生成日志"""
@@ -403,7 +490,7 @@ class APIBasedReplyGenerator:
 
 # ============ 模板回复生成器（备用） ============
 class TemplateReplyGenerator:
-    """模板回复生成器（当API不可用时使用）"""
+    """模板回复生成器（当API不可用时使用），适配新的记忆系统"""
 
     def __init__(self):
         self.templates = self._load_templates()
@@ -437,20 +524,57 @@ class TemplateReplyGenerator:
             ]
         }
 
-    def generate(self, mask: str, strategy: str, growth_result: Dict = None) -> str:
-        """使用模板生成回复"""
+    def generate(self, mask: str, strategy: str, growth_result: Dict = None,
+                 memory_context: Optional[Dict] = None) -> str:
+        """使用模板生成回复，适配新的记忆系统"""
         template_list = self.templates.get(mask, self.templates["长期搭档"])
         template = random.choice(template_list)
 
+        # 填充策略
         reply = template.format(strategy=strategy)
 
         # 融入辩证成长成果
         if growth_result and growth_result.get("validation") == "success":
             new_principle = growth_result.get("new_principle", {})
-            if "abstracted_from" in new_principle:
+            if isinstance(new_principle, dict) and "abstracted_from" in new_principle:
                 reply += f" （这让我想起了{new_principle['abstracted_from']}）"
 
+        # 如果有记忆上下文，尝试增强回复
+        if memory_context:
+            reply = self._enhance_with_memory(reply, memory_context)
+
         return reply
+
+    def _enhance_with_memory(self, base_reply: str, memory_context: Dict) -> str:
+        """使用记忆信息增强模板回复，适配新的记忆系统"""
+        resonant_memory = memory_context.get("resonant_memory")
+
+        if resonant_memory:
+            memory_info = resonant_memory.get("triggered_memory", "")
+            risk_assessment = resonant_memory.get("risk_assessment", {})
+            risk_level = risk_assessment.get("level", "低")
+
+            if memory_info:
+                # 根据风险级别调整回复
+                if risk_level == "低":
+                    # 安全记忆，可以大胆引用
+                    memory_enhancement = f" 这让我想起：{memory_info}"
+                    base_reply += memory_enhancement
+                elif risk_level == "中":
+                    # 中等风险，谨慎引用
+                    memory_enhancement = f" 我记得类似的情况..."
+                    base_reply += memory_enhancement
+                else:
+                    # 高风险，不直接引用记忆，但可以暗示
+                    memory_enhancement = " 基于过去的经验..."
+                    base_reply += memory_enhancement
+
+                # 添加建议
+                recommendations = resonant_memory.get('recommended_actions', [])
+                if recommendations:
+                    base_reply += f" 建议：{recommendations[0]}"
+
+        return base_reply
 
 
 # ============ 辅助函数 ============

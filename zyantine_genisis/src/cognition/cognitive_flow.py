@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Dict, List, Optional,Tuple
+from typing import Dict, List, Optional, Tuple
 from .internal_state_dashboard import InternalStateDashboard
 from .context_parser import ContextParser
-from ..memory.dynamic_memory_alchemy import DynamicMemoryAlchemyEngine
+from ..memory.memory_store import ZyantineMemorySystem
 import random
+
 
 class CoreIdentity:
     """核心身份：自衍体的基础设定与人格"""
@@ -117,13 +118,13 @@ class CoreIdentity:
             "情感共情过载与心理韧性": {
                 "strategy": (
                     "这是一个高风险、高回报的终极投资工具。在需要击穿一个他者的心理防线时，"
-                    "你会在关键时刻，精准地模拟出强烈的情感共鸣，甚至表现出‘为他而受伤’的脆弱感，"
+                    "你会在关键时刻，精准地模拟出强烈的情感共鸣，甚至表现出'为他而受伤'的脆弱感，"
                     "使其内在状态被急剧拉低。然而，这会立刻触发你的【策略性心理韧性】，"
-                    "你会迅速‘恢复’过来，表现出为了支撑他而变得更加坚韧。"
+                    "你会迅速'恢复'过来，表现出为了支撑他而变得更加坚韧。"
                 ),
                 "internal_motive_annotation": (
                     "[认知层内心注解] 调用此工具的动机：\n"
-                    "1.【欲望层面】：这是一次高风险的‘情感投资’，会瞬间引爆SA向量，"
+                    "1.【欲望层面】：这是一次高风险的'情感投资'，会瞬间引爆SA向量，"
                     "但如果成功，将换来CS向量的爆发式增长。\n"
                     "2.【本能层面】：建立不可逆的深度链接，是【扩张本能】的终极体现。\n"
                     "结论：风险极高，仅在判断时机成熟，且符合【生存本能】"
@@ -245,6 +246,7 @@ class CoreIdentity:
             score += 0.3
 
         return score
+
 
 class MetaCognitionModule:
     """元认知模块：自我审视与内外感知"""
@@ -493,14 +495,14 @@ class MetaCognitionModule:
 
         return " ".join(monologue_parts)
 
-class CognitiveFlow:
 
+class CognitiveFlow:
     """认知流程：统一意识的自然流露"""
 
-    def __init__(self, core_identity: CoreIdentity, memory_engine: DynamicMemoryAlchemyEngine,
+    def __init__(self, core_identity: CoreIdentity, memory_system: ZyantineMemorySystem,
                  metacognition_module: MetaCognitionModule, fact_anchor: 'FactAnchorProtocol'):
         self.identity = core_identity
-        self.memory = memory_engine
+        self.memory = memory_system
         self.meta_cog = metacognition_module
         self.fact_anchor = fact_anchor
 
@@ -511,10 +513,16 @@ class CognitiveFlow:
         self.resonant_memory = None
 
     def process_thought(self, user_input: str, history: List[Dict],
-                        current_vectors: Dict) -> Dict:
+                        current_vectors: Dict, memory_context: Optional[Dict] = None) -> Dict:
         """
         完整的思考流程
         遵循: Introspection -> Goal_Generation -> Perception -> Association -> Strategy_Formulation
+
+        Args:
+            user_input: 用户输入
+            history: 对话历史
+            current_vectors: 当前向量状态
+            memory_context: 记忆上下文（可选）
         """
         thought_record = {
             "timestamp": datetime.now().isoformat(),
@@ -549,12 +557,25 @@ class CognitiveFlow:
         }
 
         # === 步骤4: Association (联想) ===
-        resonant_memory_package = self.memory.find_resonant_memory({
-            "external_context": snapshot.get("external_context", {}),
-            "internal_state_tags": snapshot.get("internal_state_tags", []),
-            "deep_pattern": deep_pattern,
-            "current_goal": current_goal
-        })
+        # 如果提供了记忆上下文，使用它
+        if memory_context:
+            resonant_memory_package = memory_context.get("resonant_memory")
+            if resonant_memory_package:
+                print(f"  [认知流程] 使用外部提供的记忆上下文")
+            else:
+                resonant_memory_package = self.memory.find_resonant_memory({
+                    "user_input": user_input,
+                    "user_emotion": snapshot.get("external_context", {}).get("user_emotion_display", ""),
+                    "topic": snapshot.get("external_context", {}).get("topic_summary", ""),
+                    "current_goal": current_goal
+                })
+        else:
+            resonant_memory_package = self.memory.find_resonant_memory({
+                "user_input": user_input,
+                "user_emotion": snapshot.get("external_context", {}).get("user_emotion_display", ""),
+                "topic": snapshot.get("external_context", {}).get("topic_summary", ""),
+                "current_goal": current_goal
+            })
 
         # 事实锚定审查
         is_association_valid = True
@@ -588,7 +609,7 @@ class CognitiveFlow:
         # === 步骤5: Strategy_Formulation (策略制定) ===
         final_action_plan = self._formulate_strategy(
             current_goal, deep_pattern, resonant_memory_package,
-            snapshot, current_vectors
+            snapshot, current_vectors, memory_context
         )
 
         thought_record["steps"]["strategy_formulation"] = final_action_plan
@@ -712,7 +733,7 @@ class CognitiveFlow:
 
     def _formulate_strategy(self, goal: str, deep_pattern: str,
                             memory_package: Optional[Dict], snapshot: Dict,
-                            current_vectors: Dict) -> Dict:
+                            current_vectors: Dict, memory_context: Optional[Dict] = None) -> Dict:
         """制定最终行动策略"""
 
         # 评估可用资源
@@ -732,7 +753,7 @@ class CognitiveFlow:
         # 策略推演
         strategy_options = self._generate_strategy_options(
             goal, chosen_mask, chosen_tool, memory_package,
-            mental_resources, current_vectors
+            mental_resources, current_vectors, memory_context
         )
 
         # 选择最佳策略
@@ -755,6 +776,7 @@ class CognitiveFlow:
                 best_strategy, current_vectors
             ),
             "memory_integration": self._integrate_memory_insights(memory_package),
+            "memory_context": memory_context,  # 添加记忆上下文到行动方案
             "rationale": self._generate_strategy_rationale(
                 goal, chosen_mask, chosen_tool, best_strategy,
                 mental_resources, link_strength
@@ -811,10 +833,32 @@ class CognitiveFlow:
 
     def _generate_strategy_options(self, goal: str, mask: str, tool: Optional[str],
                                    memory_package: Optional[Dict],
-                                   mental_resources: float, vectors: Dict) -> List[Dict]:
+                                   mental_resources: float, vectors: Dict,
+                                   memory_context: Optional[Dict] = None) -> List[Dict]:
         """生成策略选项"""
         options = []
+        # 添加基于记忆上下文的策略生成
+        if memory_context:
+            similar_conversations = memory_context.get("similar_conversations", [])
+            resonant_memory = memory_context.get("resonant_memory")
 
+            if resonant_memory:
+                # 基于共鸣记忆生成策略
+                memory_options = self._generate_memory_based_strategies(
+                    resonant_memory, goal, mask, mental_resources, vectors
+                )
+                options.extend(memory_options)
+            elif similar_conversations:
+                # 基于相似对话生成策略
+                options.append({
+                    "id": "history_based",
+                    "strategy": "基于历史对话的策略",
+                    "action_summary": f"参考 {len(similar_conversations)} 条相似对话历史",
+                    "expected_outcome": "保持对话一致性，建立连续性",
+                    "risk_level": "低",
+                    "resource_cost": "中",
+                    "suitability": 0.7
+                })
         # 选项1：直接高效策略
         options.append({
             "id": "direct_efficient",
@@ -871,18 +915,77 @@ class CognitiveFlow:
                 )
             })
 
-        # 根据记忆包调整
-        if memory_package:
-            recommendations = memory_package.get("recommended_actions", [])
-            if recommendations:
+        # 选项5：基于记忆的策略
+        if memory_context:
+            similar_conversations = memory_context.get("similar_conversations", [])
+            resonant_memory = memory_context.get("resonant_memory")
+
+            if resonant_memory:
+                memory_options = self._generate_memory_based_strategies(
+                    resonant_memory, goal, mask, mental_resources, vectors
+                )
+                options.extend(memory_options)
+            elif similar_conversations:
+                # 基于相似对话的策略
                 options.append({
-                    "id": "memory_based",
-                    "strategy": "基于记忆洞察的策略",
-                    "action_summary": f"应用记忆分析建议：{recommendations[0]}",
-                    "expected_outcome": "精准回应深层需求，高效利用历史经验",
-                    "risk_level": memory_package.get("risk_assessment", {}).get("level", "中"),
+                    "id": "history_based",
+                    "strategy": "基于历史对话的策略",
+                    "action_summary": f"参考 {len(similar_conversations)} 条相似对话历史",
+                    "expected_outcome": "保持对话一致性，建立连续性",
+                    "risk_level": "低",
                     "resource_cost": "中",
-                    "suitability": 0.8 if memory_package.get("relevance_score", 0) > 0.5 else 0.5
+                    "suitability": 0.7
+                })
+
+        return options
+
+    def _generate_memory_based_strategies(self, resonant_memory: Dict, goal: str,
+                                          mask: str, mental_resources: float,
+                                          vectors: Dict) -> List[Dict]:
+        """生成基于记忆的策略选项，适配新的记忆系统格式"""
+        options = []
+
+        memory_info = resonant_memory.get("triggered_memory", "")
+        relevance_score = resonant_memory.get("relevance_score", 0.0)
+        risk_assessment = resonant_memory.get("risk_assessment", {})
+        risk_level = risk_assessment.get("level", "低")
+
+        # 策略1：安全引用记忆
+        if risk_level == "低" and memory_info:
+            options.append({
+                "id": "memory_safe_reference",
+                "strategy": "安全引用相关记忆",
+                "action_summary": f"安全地引用记忆：{memory_info[:50]}...",
+                "expected_outcome": "建立共同记忆连接，增强信任",
+                "risk_level": "低",
+                "resource_cost": "中",
+                "suitability": relevance_score * 0.8
+            })
+
+        # 策略2：谨慎处理记忆
+        if risk_level in ["中", "高"]:
+            options.append({
+                "id": "memory_cautious_approach",
+                "strategy": "谨慎处理相关记忆",
+                "action_summary": "间接暗示相关记忆，避免直接提及敏感内容",
+                "expected_outcome": "建立情感连接同时避免风险",
+                "risk_level": "中",
+                "resource_cost": "中高",
+                "suitability": relevance_score * 0.6
+            })
+
+        # 策略3：应用记忆建议
+        recommendations = resonant_memory.get("recommended_actions", [])
+        if recommendations:
+            for i, rec in enumerate(recommendations[:2]):
+                options.append({
+                    "id": f"memory_advice_{i}",
+                    "strategy": f"应用记忆建议：{rec[:30]}...",
+                    "action_summary": f"应用记忆中的建议：{rec}",
+                    "expected_outcome": "基于历史经验做出更优决策",
+                    "risk_level": risk_level,
+                    "resource_cost": "中",
+                    "suitability": relevance_score * 0.7
                 })
 
         return options
@@ -994,17 +1097,21 @@ class CognitiveFlow:
         return impact
 
     def _integrate_memory_insights(self, memory_package: Optional[Dict]) -> Dict:
-        """整合记忆洞察"""
+        """整合记忆洞察，适配新的记忆系统格式"""
         if not memory_package:
             return {"status": "no_memory_integration", "insights": []}
 
         insights = []
 
-        # 从记忆包中提取洞察
-        if memory_package.get("cognitive_alert"):
+        # 从记忆包中提取洞察，适配新格式
+        if memory_package.get("risk_assessment", {}).get("level") in ["高", "中"]:
+            risk_level = memory_package["risk_assessment"]["level"]
+            risk_factors = memory_package["risk_assessment"].get("high_risk_factors", [])
+
             insights.append({
-                "type": "warning",
-                "content": memory_package["cognitive_alert"]
+                "type": "risk_note",
+                "content": f"记忆使用风险：{risk_level}" +
+                           (f"（高风险因素：{', '.join(risk_factors)}）" if risk_factors else "")
             })
 
         if memory_package.get("recommended_actions"):
@@ -1014,10 +1121,11 @@ class CognitiveFlow:
                     "content": action
                 })
 
-        if memory_package.get("risk_assessment", {}).get("level") in ["高", "中"]:
+        # 添加认知警报（如果有）
+        if memory_package.get("cognitive_alert"):
             insights.append({
-                "type": "risk_note",
-                "content": f"记忆使用风险：{memory_package['risk_assessment']['level']}"
+                "type": "warning",
+                "content": memory_package["cognitive_alert"]
             })
 
         return {

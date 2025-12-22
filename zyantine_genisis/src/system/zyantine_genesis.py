@@ -212,6 +212,7 @@ class ZyantineGenesisV2:
             cognitive_snapshot = self.meta_cognition.perform_introspection(
                 user_input, self.conversation_history
             )
+            reply_draft = reply_draft[0]
             regulated_reply = self.length_regulator.regulate(reply_draft, cognitive_snapshot)
             print(f"  长度规整: {len(reply_draft)} -> {len(regulated_reply)}字符")
 
