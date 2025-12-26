@@ -442,18 +442,3 @@ class ZyantineConfig:
             return False
 
 
-# 测试代码（可选）
-if __name__ == "__main__":
-    # 创建配置管理器实例
-    config_manager = ZyantineConfig()
-
-    # 示例：获取各类配置
-    print("OpenAI配置:", config_manager.get_openai_config())
-    print("身份配置:", config_manager.get_identity_config())
-
-    # 示例：创建默认配置文件
-    # ZyantineConfig.create_default_config("./my_zyantine_config.json")
-
-    # 示例：更新并保存配置
-    # config_manager.update_config("system", "debug_mode", True)
-    # config_manager.save_config()

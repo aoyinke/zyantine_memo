@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "export_time": "2025-12-23T16:52:14.302502",
+    "user_id": "user_default",
+    "session_id": "default",
+    "total_memories": 4
+  },
+  "semantic_memory_map": {
+    "test_20251223164949_58bbab57": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "test_20251223164949_58bbab57",
+          "memory_type": "test",
+          "session_id": "default",
+          "created_at": "2025-12-23T16:49:49.591086",
+          "tags": [
+            "测试"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 4,
+          "content_preview": "连接测试",
+          "user_id": "user_default"
+        },
+        "content_preview": "连接测试",
+        "tags": [
+          "测试"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "user_experience_20251223164953_4a105c89": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "user_experience_20251223164953_4a105c89",
+          "memory_type": "user_experience",
+          "session_id": "default",
+          "created_at": "2025-12-23T16:49:53.852375",
+          "tags": [
+            "用户记忆",
+            "导入"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 42,
+          "content_preview": "于 2025-12-23 16:49:49 首次使用memo0记忆系统的自衍体系统。",
+          "user_id": "user_default"
+        },
+        "content_preview": "于 2025-12-23 16:49:49 首次使用memo0记忆系统的自衍体系统。",
+        "tags": [
+          "用户记忆",
+          "导入"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "self_experience_20251223164959_cd3828f8": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "self_experience_20251223164959_cd3828f8",
+          "memory_type": "self_experience",
+          "session_id": "default",
+          "created_at": "2025-12-23T16:49:59.983507",
+          "tags": [
+            "自衍体记忆",
+            "导入"
+          ],
+          "emotional_intensity": 0.3,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 40,
+          "content_preview": "memo0记忆系统的自衍体系统于 2025-12-23 16:49:49 启动。",
+          "user_id": "user_default"
+        },
+        "content_preview": "memo0记忆系统的自衍体系统于 2025-12-23 16:49:49 启动。",
+        "tags": [
+          "自衍体记忆",
+          "导入"
+        ],
+        "emotional_intensity": 0.3,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 1,
+      "last_accessed": "2025-12-23T16:50:21.702059",
+      "strategic_score": 0
+    },
+    "conversation_20251223165024_87afeb4d": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251223165024_87afeb4d",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-23T16:50:24.163193",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 159,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"今天天气怎么样\"}, {\"role\": \"assistant\", \"content\": \"呵~今天的天气我还不能实时更新，不过你可以看看天气预报或者出门观察一下，上海的冬天一般比较稳定，天气偏冷一些，偶尔会有阴天或者小雨。需要我帮你查具体的天气预报吗。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000020"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"今天天气怎么样\"}, {\"role\": \"assistant\", \"content\": \"呵~今天的天气我还不能实时更新，不过你可以看看天气预报或者出门观察一下，上海的冬天一般比较稳定，天气偏冷一些，偶尔会有阴天或者小雨。需要我帮你查具体的天气预报吗。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    }
+  },
+  "statistics": {
+    "total_memories": 4,
+    "by_type": {
+      "test": 1,
+      "user_experience": 1,
+      "self_experience": 1,
+      "conversation": 1
+    },
+    "access_counts": {
+      "self_experience_20251223164959_cd3828f8": 1
+    },
+    "tags_distribution": {
+      "测试": 1,
+      "用户记忆": 1,
+      "导入": 2,
+      "自衍体记忆": 1,
+      "对话": 1,
+      "交互": 1
+    }
+  },
+  "strategic_tags": [
+    "测试",
+    "用户记忆",
+    "导入",
+    "自衍体记忆",
+    "对话",
+    "交互"
+  ]
+}

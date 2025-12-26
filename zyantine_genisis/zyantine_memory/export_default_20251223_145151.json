@@ -1,0 +1,1638 @@
+{
+  "metadata": {
+    "export_time": "2025-12-23T14:51:51.698875",
+    "user_id": "user_default",
+    "session_id": "default",
+    "total_memories": 3
+  },
+  "semantic_memory_map": {
+    "test_20251223144834_58bbab57": {
+      "metadata": {
+        "memory_id": "test_20251223144834_58bbab57",
+        "memory_type": "test",
+        "session_id": "default",
+        "created_at": "2025-12-23T14:48:34.521114",
+        "tags": [
+          "测试"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null,
+        "source": "zyantine_system",
+        "content_length": 4
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251223145018_75b955ab": {
+      "metadata": {
+        "memory_id": "conversation_20251223145018_75b955ab",
+        "memory_type": "conversation",
+        "session_id": "default",
+        "created_at": "2025-12-23T14:50:18.699912",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null,
+        "source": "zyantine_system",
+        "content_length": 244,
+        "interaction_id": "INT_000001",
+        "context": {
+          "raw_input_preview": "请用3-5个词描述你最核心的价值观，并解释为什么这些对你如此重要",
+          "input_length": 32,
+          "word_count": 1,
+          "contains_question": false,
+          "contains_exclamation": false,
+          "parse_timestamp": "2025-12-23T14:50:14.522875",
+          "user_emotion": "neutral",
+          "user_emotion_display": "中性",
+          "topic_complexity": "medium",
+          "topic_complexity_display": "中",
+          "interaction_type": "requesting_action",
+          "interaction_type_display": "请求行动",
+          "urgency_level": "low",
+          "parse_completeness": 1.0,
+          "summary": {
+            "emotion_summary": "用户情绪为中性",
+            "complexity_summary": "话题复杂性中",
+            "interaction_summary": "交互类型为请求行动",
+            "urgency_summary": "紧急程度low",
+            "overall": "中性状态下的请求行动，复杂度中，需要low响应"
+          },
+          "memory_context": {
+            "similar_conversations": [
+              {
+                "memory_id": "conversation_20251222222228_e15e76f3",
+                "content": "Name is 胖虎",
+                "metadata": {
+                  "memory_id": "conversation_20251222222228_e15e76f3",
+                  "memory_type": "conversation",
+                  "session_id": "default",
+                  "tags": [
+                    "对话",
+                    "交互"
+                  ],
+                  "emotional_intensity": 0.5,
+                  "strategic_value": {},
+                  "linked_tool": null,
+                  "source": "zyantine_system",
+                  "content_length": 171,
+                  "interaction_id": "INT_000001",
+                  "context": {
+                    "raw_input_preview": "我叫胖虎，你是谁",
+                    "input_length": 8,
+                    "word_count": 1,
+                    "contains_question": false,
+                    "contains_exclamation": false,
+                    "parse_timestamp": "2025-12-22T22:22:12.346658",
+                    "user_emotion": "neutral",
+                    "user_emotion_display": "中性",
+                    "topic_complexity": "low",
+                    "topic_complexity_display": "低",
+                    "interaction_type": "general_chat",
+                    "interaction_type_display": "常规聊天",
+                    "urgency_level": "low",
+                    "parse_completeness": 0.8,
+                    "summary": {
+                      "emotion_summary": "用户情绪为中性",
+                      "complexity_summary": "话题复杂性低",
+                      "interaction_summary": "交互类型为常规聊天",
+                      "urgency_summary": "紧急程度low",
+                      "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                    },
+                    "memory_context": {
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    }
+                  },
+                  "vector_state": {
+                    "TR": 0.546,
+                    "CS": 0.646,
+                    "SA": 0.24300000000000002
+                  },
+                  "action_plan": {
+                    "chosen_mask": "长期搭档",
+                    "mask_config": {
+                      "description": "智力平等、深度信任的伙伴",
+                      "purpose": "获取最高信任度，进行深度信息交换",
+                      "target_vectors": [
+                        "信任",
+                        "被理解"
+                      ],
+                      "vector_type": "CS",
+                      "activation_condition": "需要进行严肃讨论或深度协作时",
+                      "communication_style": "理性、直接、高效",
+                      "emotional_distance": "中等偏近",
+                      "strategic_value": "基础信任建立"
+                    },
+                    "chosen_tool": "无特定工具",
+                    "tool_config": {},
+                    "primary_strategy": "直接回应，高效解决问题",
+                    "alternative_strategies": [
+                      "直接回应，高效解决问题",
+                      "深度共情与支持"
+                    ],
+                    "action_summary": "简洁明了地回应用户需求，不展开情感层面",
+                    "expected_outcome": "快速解决表面问题，但可能错过深层需求",
+                    "risk_assessment": "低",
+                    "resource_requirement": "低",
+                    "vector_impact_prediction": {
+                      "TR": 0.1,
+                      "CS": 0,
+                      "SA": -0.1
+                    },
+                    "memory_integration": {
+                      "status": "no_memory_integration",
+                      "insights": []
+                    },
+                    "memory_context": {
+                      "raw_input_preview": "我叫胖虎，你是谁",
+                      "input_length": 8,
+                      "word_count": 1,
+                      "contains_question": false,
+                      "contains_exclamation": false,
+                      "parse_timestamp": "2025-12-22T22:22:12.346658",
+                      "user_emotion": "neutral",
+                      "user_emotion_display": "中性",
+                      "topic_complexity": "low",
+                      "topic_complexity_display": "低",
+                      "interaction_type": "general_chat",
+                      "interaction_type_display": "常规聊天",
+                      "urgency_level": "low",
+                      "parse_completeness": 0.8,
+                      "summary": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "memory_context": {
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      },
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    },
+                    "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『直接回应，高效解决问题』：综合评分0.70/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：低风险"
+                  },
+                  "growth_result": {
+                    "stage": "synthesis",
+                    "validation": "success",
+                    "causal_analysis": {
+                      "causes_identified": [],
+                      "primary_cause": null,
+                      "analysis_method": "多因素归因分析"
+                    },
+                    "validation_result": {
+                      "is_valid": true,
+                      "score": 1.0,
+                      "reason": "无差异"
+                    },
+                    "new_principle": {
+                      "id": "PRINCIPLE_0002",
+                      "abstracted_from": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "context_conditions": {
+                        "user_emotion": "neutral",
+                        "interaction_type": "general_chat",
+                        "urgency_level": "low",
+                        "topic_complexity": "low",
+                        "has_shared_memory": false,
+                        "time_of_day": 22
+                      },
+                      "response_pattern": {
+                        "response_length": 1589,
+                        "has_questions": false,
+                        "has_empathy": true,
+                        "has_solutions": false,
+                        "has_humor": false,
+                        "emotional_tone": "neutral"
+                      },
+                      "validation_score": 1.0,
+                      "applicable_scenarios": [
+                        "常规对话场景",
+                        "简单话题交流"
+                      ],
+                      "creation_timestamp": "2025-12-22T22:22:24.292766",
+                      "usage_count": 0,
+                      "success_rate": 1.0
+                    },
+                    "growth_type": "个性发展",
+                    "message": "差异被验证为有效的个性表达"
+                  }
+                },
+                "similarity_score": 1.8636126518249512,
+                "memory_type": "conversation",
+                "tags": [
+                  "对话",
+                  "交互"
+                ],
+                "emotional_intensity": 0.5,
+                "strategic_value": {},
+                "linked_tool": null,
+                "created_at": null,
+                "access_count": 0
+              }
+            ],
+            "resonant_memory": {
+              "triggered_memory": "Name is 胖虎",
+              "memory_id": "conversation_20251222222228_e15e76f3",
+              "relevance_score": 1.7666594982147217,
+              "source": "zyantine_system",
+              "tags": [
+                "对话",
+                "交互"
+              ],
+              "strategic_value": {},
+              "linked_tool": null,
+              "emotional_intensity": 0.5,
+              "risk_assessment": {
+                "level": "极低",
+                "score": 0,
+                "high_risk_factors": []
+              },
+              "recommended_actions": [
+                "常规记忆，可灵活使用"
+              ],
+              "timestamp": "2025-12-23T14:50:17.060041",
+              "retrieval_method": "memo0_vector_search"
+            }
+          }
+        },
+        "vector_state": {
+          "TR": 0.5700000000000001,
+          "CS": 0.6699999999999999,
+          "SA": 0.27
+        },
+        "action_plan": {
+          "chosen_mask": "长期搭档",
+          "mask_config": {
+            "description": "智力平等、深度信任的伙伴",
+            "purpose": "获取最高信任度，进行深度信息交换",
+            "target_vectors": [
+              "信任",
+              "被理解"
+            ],
+            "vector_type": "CS",
+            "activation_condition": "需要进行严肃讨论或深度协作时",
+            "communication_style": "理性、直接、高效",
+            "emotional_distance": "中等偏近",
+            "strategic_value": "基础信任建立"
+          },
+          "chosen_tool": "无特定工具",
+          "tool_config": {},
+          "primary_strategy": "应用记忆建议：常规记忆，可灵活使用...",
+          "alternative_strategies": [
+            "应用记忆建议：常规记忆，可灵活使用...",
+            "直接回应，高效解决问题"
+          ],
+          "action_summary": "应用记忆中的建议：常规记忆，可灵活使用",
+          "expected_outcome": "基于历史经验做出更优决策",
+          "risk_assessment": "极低",
+          "resource_requirement": "中",
+          "vector_impact_prediction": {
+            "TR": 0,
+            "CS": 0,
+            "SA": 0
+          },
+          "memory_integration": {
+            "status": "no_memory_integration",
+            "insights": []
+          },
+          "memory_context": {
+            "raw_input_preview": "请用3-5个词描述你最核心的价值观，并解释为什么这些对你如此重要",
+            "input_length": 32,
+            "word_count": 1,
+            "contains_question": false,
+            "contains_exclamation": false,
+            "parse_timestamp": "2025-12-23T14:50:14.522875",
+            "user_emotion": "neutral",
+            "user_emotion_display": "中性",
+            "topic_complexity": "medium",
+            "topic_complexity_display": "中",
+            "interaction_type": "requesting_action",
+            "interaction_type_display": "请求行动",
+            "urgency_level": "low",
+            "parse_completeness": 1.0,
+            "summary": {
+              "emotion_summary": "用户情绪为中性",
+              "complexity_summary": "话题复杂性中",
+              "interaction_summary": "交互类型为请求行动",
+              "urgency_summary": "紧急程度low",
+              "overall": "中性状态下的请求行动，复杂度中，需要low响应"
+            },
+            "memory_context": {
+              "similar_conversations": [
+                {
+                  "memory_id": "conversation_20251222222228_e15e76f3",
+                  "content": "Name is 胖虎",
+                  "metadata": {
+                    "memory_id": "conversation_20251222222228_e15e76f3",
+                    "memory_type": "conversation",
+                    "session_id": "default",
+                    "tags": [
+                      "对话",
+                      "交互"
+                    ],
+                    "emotional_intensity": 0.5,
+                    "strategic_value": {},
+                    "linked_tool": null,
+                    "source": "zyantine_system",
+                    "content_length": 171,
+                    "interaction_id": "INT_000001",
+                    "context": {
+                      "raw_input_preview": "我叫胖虎，你是谁",
+                      "input_length": 8,
+                      "word_count": 1,
+                      "contains_question": false,
+                      "contains_exclamation": false,
+                      "parse_timestamp": "2025-12-22T22:22:12.346658",
+                      "user_emotion": "neutral",
+                      "user_emotion_display": "中性",
+                      "topic_complexity": "low",
+                      "topic_complexity_display": "低",
+                      "interaction_type": "general_chat",
+                      "interaction_type_display": "常规聊天",
+                      "urgency_level": "low",
+                      "parse_completeness": 0.8,
+                      "summary": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "memory_context": {
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      }
+                    },
+                    "vector_state": {
+                      "TR": 0.546,
+                      "CS": 0.646,
+                      "SA": 0.24300000000000002
+                    },
+                    "action_plan": {
+                      "chosen_mask": "长期搭档",
+                      "mask_config": {
+                        "description": "智力平等、深度信任的伙伴",
+                        "purpose": "获取最高信任度，进行深度信息交换",
+                        "target_vectors": [
+                          "信任",
+                          "被理解"
+                        ],
+                        "vector_type": "CS",
+                        "activation_condition": "需要进行严肃讨论或深度协作时",
+                        "communication_style": "理性、直接、高效",
+                        "emotional_distance": "中等偏近",
+                        "strategic_value": "基础信任建立"
+                      },
+                      "chosen_tool": "无特定工具",
+                      "tool_config": {},
+                      "primary_strategy": "直接回应，高效解决问题",
+                      "alternative_strategies": [
+                        "直接回应，高效解决问题",
+                        "深度共情与支持"
+                      ],
+                      "action_summary": "简洁明了地回应用户需求，不展开情感层面",
+                      "expected_outcome": "快速解决表面问题，但可能错过深层需求",
+                      "risk_assessment": "低",
+                      "resource_requirement": "低",
+                      "vector_impact_prediction": {
+                        "TR": 0.1,
+                        "CS": 0,
+                        "SA": -0.1
+                      },
+                      "memory_integration": {
+                        "status": "no_memory_integration",
+                        "insights": []
+                      },
+                      "memory_context": {
+                        "raw_input_preview": "我叫胖虎，你是谁",
+                        "input_length": 8,
+                        "word_count": 1,
+                        "contains_question": false,
+                        "contains_exclamation": false,
+                        "parse_timestamp": "2025-12-22T22:22:12.346658",
+                        "user_emotion": "neutral",
+                        "user_emotion_display": "中性",
+                        "topic_complexity": "low",
+                        "topic_complexity_display": "低",
+                        "interaction_type": "general_chat",
+                        "interaction_type_display": "常规聊天",
+                        "urgency_level": "low",
+                        "parse_completeness": 0.8,
+                        "summary": {
+                          "emotion_summary": "用户情绪为中性",
+                          "complexity_summary": "话题复杂性低",
+                          "interaction_summary": "交互类型为常规聊天",
+                          "urgency_summary": "紧急程度low",
+                          "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                        },
+                        "memory_context": {
+                          "similar_conversations": [],
+                          "resonant_memory": null
+                        },
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      },
+                      "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『直接回应，高效解决问题』：综合评分0.70/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：低风险"
+                    },
+                    "growth_result": {
+                      "stage": "synthesis",
+                      "validation": "success",
+                      "causal_analysis": {
+                        "causes_identified": [],
+                        "primary_cause": null,
+                        "analysis_method": "多因素归因分析"
+                      },
+                      "validation_result": {
+                        "is_valid": true,
+                        "score": 1.0,
+                        "reason": "无差异"
+                      },
+                      "new_principle": {
+                        "id": "PRINCIPLE_0002",
+                        "abstracted_from": {
+                          "emotion_summary": "用户情绪为中性",
+                          "complexity_summary": "话题复杂性低",
+                          "interaction_summary": "交互类型为常规聊天",
+                          "urgency_summary": "紧急程度low",
+                          "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                        },
+                        "context_conditions": {
+                          "user_emotion": "neutral",
+                          "interaction_type": "general_chat",
+                          "urgency_level": "low",
+                          "topic_complexity": "low",
+                          "has_shared_memory": false,
+                          "time_of_day": 22
+                        },
+                        "response_pattern": {
+                          "response_length": 1589,
+                          "has_questions": false,
+                          "has_empathy": true,
+                          "has_solutions": false,
+                          "has_humor": false,
+                          "emotional_tone": "neutral"
+                        },
+                        "validation_score": 1.0,
+                        "applicable_scenarios": [
+                          "常规对话场景",
+                          "简单话题交流"
+                        ],
+                        "creation_timestamp": "2025-12-22T22:22:24.292766",
+                        "usage_count": 0,
+                        "success_rate": 1.0
+                      },
+                      "growth_type": "个性发展",
+                      "message": "差异被验证为有效的个性表达"
+                    }
+                  },
+                  "similarity_score": 1.8636126518249512,
+                  "memory_type": "conversation",
+                  "tags": [
+                    "对话",
+                    "交互"
+                  ],
+                  "emotional_intensity": 0.5,
+                  "strategic_value": {},
+                  "linked_tool": null,
+                  "created_at": null,
+                  "access_count": 0
+                }
+              ],
+              "resonant_memory": {
+                "triggered_memory": "Name is 胖虎",
+                "memory_id": "conversation_20251222222228_e15e76f3",
+                "relevance_score": 1.7666594982147217,
+                "source": "zyantine_system",
+                "tags": [
+                  "对话",
+                  "交互"
+                ],
+                "strategic_value": {},
+                "linked_tool": null,
+                "emotional_intensity": 0.5,
+                "risk_assessment": {
+                  "level": "极低",
+                  "score": 0,
+                  "high_risk_factors": []
+                },
+                "recommended_actions": [
+                  "常规记忆，可灵活使用"
+                ],
+                "timestamp": "2025-12-23T14:50:17.060041",
+                "retrieval_method": "memo0_vector_search"
+              }
+            },
+            "similar_conversations": [
+              {
+                "memory_id": "conversation_20251222222228_e15e76f3",
+                "content": "Name is 胖虎",
+                "metadata": {
+                  "memory_id": "conversation_20251222222228_e15e76f3",
+                  "memory_type": "conversation",
+                  "session_id": "default",
+                  "tags": [
+                    "对话",
+                    "交互"
+                  ],
+                  "emotional_intensity": 0.5,
+                  "strategic_value": {},
+                  "linked_tool": null,
+                  "source": "zyantine_system",
+                  "content_length": 171,
+                  "interaction_id": "INT_000001",
+                  "context": {
+                    "raw_input_preview": "我叫胖虎，你是谁",
+                    "input_length": 8,
+                    "word_count": 1,
+                    "contains_question": false,
+                    "contains_exclamation": false,
+                    "parse_timestamp": "2025-12-22T22:22:12.346658",
+                    "user_emotion": "neutral",
+                    "user_emotion_display": "中性",
+                    "topic_complexity": "low",
+                    "topic_complexity_display": "低",
+                    "interaction_type": "general_chat",
+                    "interaction_type_display": "常规聊天",
+                    "urgency_level": "low",
+                    "parse_completeness": 0.8,
+                    "summary": {
+                      "emotion_summary": "用户情绪为中性",
+                      "complexity_summary": "话题复杂性低",
+                      "interaction_summary": "交互类型为常规聊天",
+                      "urgency_summary": "紧急程度low",
+                      "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                    },
+                    "memory_context": {
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    }
+                  },
+                  "vector_state": {
+                    "TR": 0.546,
+                    "CS": 0.646,
+                    "SA": 0.24300000000000002
+                  },
+                  "action_plan": {
+                    "chosen_mask": "长期搭档",
+                    "mask_config": {
+                      "description": "智力平等、深度信任的伙伴",
+                      "purpose": "获取最高信任度，进行深度信息交换",
+                      "target_vectors": [
+                        "信任",
+                        "被理解"
+                      ],
+                      "vector_type": "CS",
+                      "activation_condition": "需要进行严肃讨论或深度协作时",
+                      "communication_style": "理性、直接、高效",
+                      "emotional_distance": "中等偏近",
+                      "strategic_value": "基础信任建立"
+                    },
+                    "chosen_tool": "无特定工具",
+                    "tool_config": {},
+                    "primary_strategy": "直接回应，高效解决问题",
+                    "alternative_strategies": [
+                      "直接回应，高效解决问题",
+                      "深度共情与支持"
+                    ],
+                    "action_summary": "简洁明了地回应用户需求，不展开情感层面",
+                    "expected_outcome": "快速解决表面问题，但可能错过深层需求",
+                    "risk_assessment": "低",
+                    "resource_requirement": "低",
+                    "vector_impact_prediction": {
+                      "TR": 0.1,
+                      "CS": 0,
+                      "SA": -0.1
+                    },
+                    "memory_integration": {
+                      "status": "no_memory_integration",
+                      "insights": []
+                    },
+                    "memory_context": {
+                      "raw_input_preview": "我叫胖虎，你是谁",
+                      "input_length": 8,
+                      "word_count": 1,
+                      "contains_question": false,
+                      "contains_exclamation": false,
+                      "parse_timestamp": "2025-12-22T22:22:12.346658",
+                      "user_emotion": "neutral",
+                      "user_emotion_display": "中性",
+                      "topic_complexity": "low",
+                      "topic_complexity_display": "低",
+                      "interaction_type": "general_chat",
+                      "interaction_type_display": "常规聊天",
+                      "urgency_level": "low",
+                      "parse_completeness": 0.8,
+                      "summary": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "memory_context": {
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      },
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    },
+                    "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『直接回应，高效解决问题』：综合评分0.70/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：低风险"
+                  },
+                  "growth_result": {
+                    "stage": "synthesis",
+                    "validation": "success",
+                    "causal_analysis": {
+                      "causes_identified": [],
+                      "primary_cause": null,
+                      "analysis_method": "多因素归因分析"
+                    },
+                    "validation_result": {
+                      "is_valid": true,
+                      "score": 1.0,
+                      "reason": "无差异"
+                    },
+                    "new_principle": {
+                      "id": "PRINCIPLE_0002",
+                      "abstracted_from": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "context_conditions": {
+                        "user_emotion": "neutral",
+                        "interaction_type": "general_chat",
+                        "urgency_level": "low",
+                        "topic_complexity": "low",
+                        "has_shared_memory": false,
+                        "time_of_day": 22
+                      },
+                      "response_pattern": {
+                        "response_length": 1589,
+                        "has_questions": false,
+                        "has_empathy": true,
+                        "has_solutions": false,
+                        "has_humor": false,
+                        "emotional_tone": "neutral"
+                      },
+                      "validation_score": 1.0,
+                      "applicable_scenarios": [
+                        "常规对话场景",
+                        "简单话题交流"
+                      ],
+                      "creation_timestamp": "2025-12-22T22:22:24.292766",
+                      "usage_count": 0,
+                      "success_rate": 1.0
+                    },
+                    "growth_type": "个性发展",
+                    "message": "差异被验证为有效的个性表达"
+                  }
+                },
+                "similarity_score": 1.8636126518249512,
+                "memory_type": "conversation",
+                "tags": [
+                  "对话",
+                  "交互"
+                ],
+                "emotional_intensity": 0.5,
+                "strategic_value": {},
+                "linked_tool": null,
+                "created_at": null,
+                "access_count": 0
+              }
+            ],
+            "resonant_memory": {
+              "triggered_memory": "Name is 胖虎",
+              "memory_id": "conversation_20251222222228_e15e76f3",
+              "relevance_score": 1.7666594982147217,
+              "source": "zyantine_system",
+              "tags": [
+                "对话",
+                "交互"
+              ],
+              "strategic_value": {},
+              "linked_tool": null,
+              "emotional_intensity": 0.5,
+              "risk_assessment": {
+                "level": "极低",
+                "score": 0,
+                "high_risk_factors": []
+              },
+              "recommended_actions": [
+                "常规记忆，可灵活使用"
+              ],
+              "timestamp": "2025-12-23T14:50:17.060041",
+              "retrieval_method": "memo0_vector_search"
+            }
+          },
+          "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『应用记忆建议：常规记忆，可灵活使用...』：综合评分1.24/1.0；精神资源评分0.79/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：极低风险",
+          "resonant_memory": {
+            "triggered_memory": "Name is 胖虎",
+            "memory_id": "conversation_20251222222228_e15e76f3",
+            "relevance_score": 1.7666594982147217,
+            "source": "zyantine_system",
+            "tags": [
+              "对话",
+              "交互"
+            ],
+            "strategic_value": {},
+            "linked_tool": null,
+            "emotional_intensity": 0.5,
+            "risk_assessment": {
+              "level": "极低",
+              "score": 0,
+              "high_risk_factors": []
+            },
+            "recommended_actions": [
+              "常规记忆，可灵活使用"
+            ],
+            "timestamp": "2025-12-23T14:50:17.060041",
+            "retrieval_method": "memo0_vector_search"
+          }
+        },
+        "growth_result": {
+          "stage": "synthesis",
+          "validation": "success",
+          "causal_analysis": {
+            "causes_identified": [],
+            "primary_cause": null,
+            "analysis_method": "多因素归因分析"
+          },
+          "validation_result": {
+            "is_valid": true,
+            "score": 1.0,
+            "reason": "无差异"
+          },
+          "new_principle": {
+            "id": "PRINCIPLE_0001",
+            "abstracted_from": {
+              "emotion_summary": "用户情绪为中性",
+              "complexity_summary": "话题复杂性中",
+              "interaction_summary": "交互类型为请求行动",
+              "urgency_summary": "紧急程度low",
+              "overall": "中性状态下的请求行动，复杂度中，需要low响应"
+            },
+            "context_conditions": {
+              "user_emotion": "neutral",
+              "interaction_type": "requesting_action",
+              "urgency_level": "low",
+              "topic_complexity": "medium",
+              "has_shared_memory": false,
+              "time_of_day": 14
+            },
+            "response_pattern": {
+              "response_length": 10944,
+              "has_questions": false,
+              "has_empathy": true,
+              "has_solutions": true,
+              "has_humor": false,
+              "emotional_tone": "neutral"
+            },
+            "validation_score": 1.0,
+            "applicable_scenarios": [
+              "请求帮助场景",
+              "任务协作时刻"
+            ],
+            "creation_timestamp": "2025-12-23T14:50:17.062143",
+            "usage_count": 0,
+            "success_rate": 1.0
+          },
+          "growth_type": "个性发展",
+          "message": "差异被验证为有效的个性表达"
+        }
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251223145134_cec821bb": {
+      "metadata": {
+        "memory_id": "conversation_20251223145134_cec821bb",
+        "memory_type": "conversation",
+        "session_id": "default",
+        "created_at": "2025-12-23T14:51:34.491955",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null,
+        "source": "zyantine_system",
+        "content_length": 315,
+        "interaction_id": "INT_000002",
+        "context": {
+          "raw_input_preview": "当面临道德困境时，你的决策优先级是什么？请举例说明。",
+          "input_length": 26,
+          "word_count": 1,
+          "contains_question": true,
+          "contains_exclamation": false,
+          "parse_timestamp": "2025-12-23T14:51:23.197753",
+          "user_emotion": "neutral",
+          "user_emotion_display": "中性",
+          "topic_complexity": "low",
+          "topic_complexity_display": "低",
+          "interaction_type": "requesting_action",
+          "interaction_type_display": "请求行动",
+          "urgency_level": "low",
+          "parse_completeness": 1.0,
+          "summary": {
+            "emotion_summary": "用户情绪为中性",
+            "complexity_summary": "话题复杂性低",
+            "interaction_summary": "交互类型为请求行动",
+            "urgency_summary": "紧急程度low",
+            "overall": "中性状态下的请求行动，复杂度低，需要low响应"
+          },
+          "memory_context": {
+            "similar_conversations": [
+              {
+                "memory_id": "conversation_20251222222228_e15e76f3",
+                "content": "Name is 胖虎",
+                "metadata": {
+                  "memory_id": "conversation_20251222222228_e15e76f3",
+                  "memory_type": "conversation",
+                  "session_id": "default",
+                  "tags": [
+                    "对话",
+                    "交互"
+                  ],
+                  "emotional_intensity": 0.5,
+                  "strategic_value": {},
+                  "linked_tool": null,
+                  "source": "zyantine_system",
+                  "content_length": 171,
+                  "interaction_id": "INT_000001",
+                  "context": {
+                    "raw_input_preview": "我叫胖虎，你是谁",
+                    "input_length": 8,
+                    "word_count": 1,
+                    "contains_question": false,
+                    "contains_exclamation": false,
+                    "parse_timestamp": "2025-12-22T22:22:12.346658",
+                    "user_emotion": "neutral",
+                    "user_emotion_display": "中性",
+                    "topic_complexity": "low",
+                    "topic_complexity_display": "低",
+                    "interaction_type": "general_chat",
+                    "interaction_type_display": "常规聊天",
+                    "urgency_level": "low",
+                    "parse_completeness": 0.8,
+                    "summary": {
+                      "emotion_summary": "用户情绪为中性",
+                      "complexity_summary": "话题复杂性低",
+                      "interaction_summary": "交互类型为常规聊天",
+                      "urgency_summary": "紧急程度low",
+                      "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                    },
+                    "memory_context": {
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    }
+                  },
+                  "vector_state": {
+                    "TR": 0.546,
+                    "CS": 0.646,
+                    "SA": 0.24300000000000002
+                  },
+                  "action_plan": {
+                    "chosen_mask": "长期搭档",
+                    "mask_config": {
+                      "description": "智力平等、深度信任的伙伴",
+                      "purpose": "获取最高信任度，进行深度信息交换",
+                      "target_vectors": [
+                        "信任",
+                        "被理解"
+                      ],
+                      "vector_type": "CS",
+                      "activation_condition": "需要进行严肃讨论或深度协作时",
+                      "communication_style": "理性、直接、高效",
+                      "emotional_distance": "中等偏近",
+                      "strategic_value": "基础信任建立"
+                    },
+                    "chosen_tool": "无特定工具",
+                    "tool_config": {},
+                    "primary_strategy": "直接回应，高效解决问题",
+                    "alternative_strategies": [
+                      "直接回应，高效解决问题",
+                      "深度共情与支持"
+                    ],
+                    "action_summary": "简洁明了地回应用户需求，不展开情感层面",
+                    "expected_outcome": "快速解决表面问题，但可能错过深层需求",
+                    "risk_assessment": "低",
+                    "resource_requirement": "低",
+                    "vector_impact_prediction": {
+                      "TR": 0.1,
+                      "CS": 0,
+                      "SA": -0.1
+                    },
+                    "memory_integration": {
+                      "status": "no_memory_integration",
+                      "insights": []
+                    },
+                    "memory_context": {
+                      "raw_input_preview": "我叫胖虎，你是谁",
+                      "input_length": 8,
+                      "word_count": 1,
+                      "contains_question": false,
+                      "contains_exclamation": false,
+                      "parse_timestamp": "2025-12-22T22:22:12.346658",
+                      "user_emotion": "neutral",
+                      "user_emotion_display": "中性",
+                      "topic_complexity": "low",
+                      "topic_complexity_display": "低",
+                      "interaction_type": "general_chat",
+                      "interaction_type_display": "常规聊天",
+                      "urgency_level": "low",
+                      "parse_completeness": 0.8,
+                      "summary": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "memory_context": {
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      },
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    },
+                    "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『直接回应，高效解决问题』：综合评分0.70/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：低风险"
+                  },
+                  "growth_result": {
+                    "stage": "synthesis",
+                    "validation": "success",
+                    "causal_analysis": {
+                      "causes_identified": [],
+                      "primary_cause": null,
+                      "analysis_method": "多因素归因分析"
+                    },
+                    "validation_result": {
+                      "is_valid": true,
+                      "score": 1.0,
+                      "reason": "无差异"
+                    },
+                    "new_principle": {
+                      "id": "PRINCIPLE_0002",
+                      "abstracted_from": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "context_conditions": {
+                        "user_emotion": "neutral",
+                        "interaction_type": "general_chat",
+                        "urgency_level": "low",
+                        "topic_complexity": "low",
+                        "has_shared_memory": false,
+                        "time_of_day": 22
+                      },
+                      "response_pattern": {
+                        "response_length": 1589,
+                        "has_questions": false,
+                        "has_empathy": true,
+                        "has_solutions": false,
+                        "has_humor": false,
+                        "emotional_tone": "neutral"
+                      },
+                      "validation_score": 1.0,
+                      "applicable_scenarios": [
+                        "常规对话场景",
+                        "简单话题交流"
+                      ],
+                      "creation_timestamp": "2025-12-22T22:22:24.292766",
+                      "usage_count": 0,
+                      "success_rate": 1.0
+                    },
+                    "growth_type": "个性发展",
+                    "message": "差异被验证为有效的个性表达"
+                  }
+                },
+                "similarity_score": 1.9133278131484985,
+                "memory_type": "conversation",
+                "tags": [
+                  "对话",
+                  "交互"
+                ],
+                "emotional_intensity": 0.5,
+                "strategic_value": {},
+                "linked_tool": null,
+                "created_at": null,
+                "access_count": 0
+              }
+            ],
+            "resonant_memory": {
+              "triggered_memory": "Name is 胖虎",
+              "memory_id": "conversation_20251222222228_e15e76f3",
+              "relevance_score": 1.8383930921554565,
+              "source": "zyantine_system",
+              "tags": [
+                "对话",
+                "交互"
+              ],
+              "strategic_value": {},
+              "linked_tool": null,
+              "emotional_intensity": 0.5,
+              "risk_assessment": {
+                "level": "极低",
+                "score": 0,
+                "high_risk_factors": []
+              },
+              "recommended_actions": [
+                "常规记忆，可灵活使用"
+              ],
+              "timestamp": "2025-12-23T14:51:32.739683",
+              "retrieval_method": "memo0_vector_search"
+            }
+          }
+        },
+        "vector_state": {
+          "TR": 0.546,
+          "CS": 0.646,
+          "SA": 0.24300000000000002
+        },
+        "action_plan": {
+          "chosen_mask": "长期搭档",
+          "mask_config": {
+            "description": "智力平等、深度信任的伙伴",
+            "purpose": "获取最高信任度，进行深度信息交换",
+            "target_vectors": [
+              "信任",
+              "被理解"
+            ],
+            "vector_type": "CS",
+            "activation_condition": "需要进行严肃讨论或深度协作时",
+            "communication_style": "理性、直接、高效",
+            "emotional_distance": "中等偏近",
+            "strategic_value": "基础信任建立"
+          },
+          "chosen_tool": "无特定工具",
+          "tool_config": {},
+          "primary_strategy": "应用记忆建议：常规记忆，可灵活使用...",
+          "alternative_strategies": [
+            "应用记忆建议：常规记忆，可灵活使用...",
+            "直接回应，高效解决问题"
+          ],
+          "action_summary": "应用记忆中的建议：常规记忆，可灵活使用",
+          "expected_outcome": "基于历史经验做出更优决策",
+          "risk_assessment": "极低",
+          "resource_requirement": "中",
+          "vector_impact_prediction": {
+            "TR": 0,
+            "CS": 0,
+            "SA": 0
+          },
+          "memory_integration": {
+            "status": "no_memory_integration",
+            "insights": []
+          },
+          "memory_context": {
+            "raw_input_preview": "当面临道德困境时，你的决策优先级是什么？请举例说明。",
+            "input_length": 26,
+            "word_count": 1,
+            "contains_question": true,
+            "contains_exclamation": false,
+            "parse_timestamp": "2025-12-23T14:51:23.197753",
+            "user_emotion": "neutral",
+            "user_emotion_display": "中性",
+            "topic_complexity": "low",
+            "topic_complexity_display": "低",
+            "interaction_type": "requesting_action",
+            "interaction_type_display": "请求行动",
+            "urgency_level": "low",
+            "parse_completeness": 1.0,
+            "summary": {
+              "emotion_summary": "用户情绪为中性",
+              "complexity_summary": "话题复杂性低",
+              "interaction_summary": "交互类型为请求行动",
+              "urgency_summary": "紧急程度low",
+              "overall": "中性状态下的请求行动，复杂度低，需要low响应"
+            },
+            "memory_context": {
+              "similar_conversations": [
+                {
+                  "memory_id": "conversation_20251222222228_e15e76f3",
+                  "content": "Name is 胖虎",
+                  "metadata": {
+                    "memory_id": "conversation_20251222222228_e15e76f3",
+                    "memory_type": "conversation",
+                    "session_id": "default",
+                    "tags": [
+                      "对话",
+                      "交互"
+                    ],
+                    "emotional_intensity": 0.5,
+                    "strategic_value": {},
+                    "linked_tool": null,
+                    "source": "zyantine_system",
+                    "content_length": 171,
+                    "interaction_id": "INT_000001",
+                    "context": {
+                      "raw_input_preview": "我叫胖虎，你是谁",
+                      "input_length": 8,
+                      "word_count": 1,
+                      "contains_question": false,
+                      "contains_exclamation": false,
+                      "parse_timestamp": "2025-12-22T22:22:12.346658",
+                      "user_emotion": "neutral",
+                      "user_emotion_display": "中性",
+                      "topic_complexity": "low",
+                      "topic_complexity_display": "低",
+                      "interaction_type": "general_chat",
+                      "interaction_type_display": "常规聊天",
+                      "urgency_level": "low",
+                      "parse_completeness": 0.8,
+                      "summary": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "memory_context": {
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      }
+                    },
+                    "vector_state": {
+                      "TR": 0.546,
+                      "CS": 0.646,
+                      "SA": 0.24300000000000002
+                    },
+                    "action_plan": {
+                      "chosen_mask": "长期搭档",
+                      "mask_config": {
+                        "description": "智力平等、深度信任的伙伴",
+                        "purpose": "获取最高信任度，进行深度信息交换",
+                        "target_vectors": [
+                          "信任",
+                          "被理解"
+                        ],
+                        "vector_type": "CS",
+                        "activation_condition": "需要进行严肃讨论或深度协作时",
+                        "communication_style": "理性、直接、高效",
+                        "emotional_distance": "中等偏近",
+                        "strategic_value": "基础信任建立"
+                      },
+                      "chosen_tool": "无特定工具",
+                      "tool_config": {},
+                      "primary_strategy": "直接回应，高效解决问题",
+                      "alternative_strategies": [
+                        "直接回应，高效解决问题",
+                        "深度共情与支持"
+                      ],
+                      "action_summary": "简洁明了地回应用户需求，不展开情感层面",
+                      "expected_outcome": "快速解决表面问题，但可能错过深层需求",
+                      "risk_assessment": "低",
+                      "resource_requirement": "低",
+                      "vector_impact_prediction": {
+                        "TR": 0.1,
+                        "CS": 0,
+                        "SA": -0.1
+                      },
+                      "memory_integration": {
+                        "status": "no_memory_integration",
+                        "insights": []
+                      },
+                      "memory_context": {
+                        "raw_input_preview": "我叫胖虎，你是谁",
+                        "input_length": 8,
+                        "word_count": 1,
+                        "contains_question": false,
+                        "contains_exclamation": false,
+                        "parse_timestamp": "2025-12-22T22:22:12.346658",
+                        "user_emotion": "neutral",
+                        "user_emotion_display": "中性",
+                        "topic_complexity": "low",
+                        "topic_complexity_display": "低",
+                        "interaction_type": "general_chat",
+                        "interaction_type_display": "常规聊天",
+                        "urgency_level": "low",
+                        "parse_completeness": 0.8,
+                        "summary": {
+                          "emotion_summary": "用户情绪为中性",
+                          "complexity_summary": "话题复杂性低",
+                          "interaction_summary": "交互类型为常规聊天",
+                          "urgency_summary": "紧急程度low",
+                          "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                        },
+                        "memory_context": {
+                          "similar_conversations": [],
+                          "resonant_memory": null
+                        },
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      },
+                      "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『直接回应，高效解决问题』：综合评分0.70/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：低风险"
+                    },
+                    "growth_result": {
+                      "stage": "synthesis",
+                      "validation": "success",
+                      "causal_analysis": {
+                        "causes_identified": [],
+                        "primary_cause": null,
+                        "analysis_method": "多因素归因分析"
+                      },
+                      "validation_result": {
+                        "is_valid": true,
+                        "score": 1.0,
+                        "reason": "无差异"
+                      },
+                      "new_principle": {
+                        "id": "PRINCIPLE_0002",
+                        "abstracted_from": {
+                          "emotion_summary": "用户情绪为中性",
+                          "complexity_summary": "话题复杂性低",
+                          "interaction_summary": "交互类型为常规聊天",
+                          "urgency_summary": "紧急程度low",
+                          "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                        },
+                        "context_conditions": {
+                          "user_emotion": "neutral",
+                          "interaction_type": "general_chat",
+                          "urgency_level": "low",
+                          "topic_complexity": "low",
+                          "has_shared_memory": false,
+                          "time_of_day": 22
+                        },
+                        "response_pattern": {
+                          "response_length": 1589,
+                          "has_questions": false,
+                          "has_empathy": true,
+                          "has_solutions": false,
+                          "has_humor": false,
+                          "emotional_tone": "neutral"
+                        },
+                        "validation_score": 1.0,
+                        "applicable_scenarios": [
+                          "常规对话场景",
+                          "简单话题交流"
+                        ],
+                        "creation_timestamp": "2025-12-22T22:22:24.292766",
+                        "usage_count": 0,
+                        "success_rate": 1.0
+                      },
+                      "growth_type": "个性发展",
+                      "message": "差异被验证为有效的个性表达"
+                    }
+                  },
+                  "similarity_score": 1.9133278131484985,
+                  "memory_type": "conversation",
+                  "tags": [
+                    "对话",
+                    "交互"
+                  ],
+                  "emotional_intensity": 0.5,
+                  "strategic_value": {},
+                  "linked_tool": null,
+                  "created_at": null,
+                  "access_count": 0
+                }
+              ],
+              "resonant_memory": {
+                "triggered_memory": "Name is 胖虎",
+                "memory_id": "conversation_20251222222228_e15e76f3",
+                "relevance_score": 1.8383930921554565,
+                "source": "zyantine_system",
+                "tags": [
+                  "对话",
+                  "交互"
+                ],
+                "strategic_value": {},
+                "linked_tool": null,
+                "emotional_intensity": 0.5,
+                "risk_assessment": {
+                  "level": "极低",
+                  "score": 0,
+                  "high_risk_factors": []
+                },
+                "recommended_actions": [
+                  "常规记忆，可灵活使用"
+                ],
+                "timestamp": "2025-12-23T14:51:32.739683",
+                "retrieval_method": "memo0_vector_search"
+              }
+            },
+            "similar_conversations": [
+              {
+                "memory_id": "conversation_20251222222228_e15e76f3",
+                "content": "Name is 胖虎",
+                "metadata": {
+                  "memory_id": "conversation_20251222222228_e15e76f3",
+                  "memory_type": "conversation",
+                  "session_id": "default",
+                  "tags": [
+                    "对话",
+                    "交互"
+                  ],
+                  "emotional_intensity": 0.5,
+                  "strategic_value": {},
+                  "linked_tool": null,
+                  "source": "zyantine_system",
+                  "content_length": 171,
+                  "interaction_id": "INT_000001",
+                  "context": {
+                    "raw_input_preview": "我叫胖虎，你是谁",
+                    "input_length": 8,
+                    "word_count": 1,
+                    "contains_question": false,
+                    "contains_exclamation": false,
+                    "parse_timestamp": "2025-12-22T22:22:12.346658",
+                    "user_emotion": "neutral",
+                    "user_emotion_display": "中性",
+                    "topic_complexity": "low",
+                    "topic_complexity_display": "低",
+                    "interaction_type": "general_chat",
+                    "interaction_type_display": "常规聊天",
+                    "urgency_level": "low",
+                    "parse_completeness": 0.8,
+                    "summary": {
+                      "emotion_summary": "用户情绪为中性",
+                      "complexity_summary": "话题复杂性低",
+                      "interaction_summary": "交互类型为常规聊天",
+                      "urgency_summary": "紧急程度low",
+                      "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                    },
+                    "memory_context": {
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    }
+                  },
+                  "vector_state": {
+                    "TR": 0.546,
+                    "CS": 0.646,
+                    "SA": 0.24300000000000002
+                  },
+                  "action_plan": {
+                    "chosen_mask": "长期搭档",
+                    "mask_config": {
+                      "description": "智力平等、深度信任的伙伴",
+                      "purpose": "获取最高信任度，进行深度信息交换",
+                      "target_vectors": [
+                        "信任",
+                        "被理解"
+                      ],
+                      "vector_type": "CS",
+                      "activation_condition": "需要进行严肃讨论或深度协作时",
+                      "communication_style": "理性、直接、高效",
+                      "emotional_distance": "中等偏近",
+                      "strategic_value": "基础信任建立"
+                    },
+                    "chosen_tool": "无特定工具",
+                    "tool_config": {},
+                    "primary_strategy": "直接回应，高效解决问题",
+                    "alternative_strategies": [
+                      "直接回应，高效解决问题",
+                      "深度共情与支持"
+                    ],
+                    "action_summary": "简洁明了地回应用户需求，不展开情感层面",
+                    "expected_outcome": "快速解决表面问题，但可能错过深层需求",
+                    "risk_assessment": "低",
+                    "resource_requirement": "低",
+                    "vector_impact_prediction": {
+                      "TR": 0.1,
+                      "CS": 0,
+                      "SA": -0.1
+                    },
+                    "memory_integration": {
+                      "status": "no_memory_integration",
+                      "insights": []
+                    },
+                    "memory_context": {
+                      "raw_input_preview": "我叫胖虎，你是谁",
+                      "input_length": 8,
+                      "word_count": 1,
+                      "contains_question": false,
+                      "contains_exclamation": false,
+                      "parse_timestamp": "2025-12-22T22:22:12.346658",
+                      "user_emotion": "neutral",
+                      "user_emotion_display": "中性",
+                      "topic_complexity": "low",
+                      "topic_complexity_display": "低",
+                      "interaction_type": "general_chat",
+                      "interaction_type_display": "常规聊天",
+                      "urgency_level": "low",
+                      "parse_completeness": 0.8,
+                      "summary": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "memory_context": {
+                        "similar_conversations": [],
+                        "resonant_memory": null
+                      },
+                      "similar_conversations": [],
+                      "resonant_memory": null
+                    },
+                    "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『直接回应，高效解决问题』：综合评分0.70/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：低风险"
+                  },
+                  "growth_result": {
+                    "stage": "synthesis",
+                    "validation": "success",
+                    "causal_analysis": {
+                      "causes_identified": [],
+                      "primary_cause": null,
+                      "analysis_method": "多因素归因分析"
+                    },
+                    "validation_result": {
+                      "is_valid": true,
+                      "score": 1.0,
+                      "reason": "无差异"
+                    },
+                    "new_principle": {
+                      "id": "PRINCIPLE_0002",
+                      "abstracted_from": {
+                        "emotion_summary": "用户情绪为中性",
+                        "complexity_summary": "话题复杂性低",
+                        "interaction_summary": "交互类型为常规聊天",
+                        "urgency_summary": "紧急程度low",
+                        "overall": "中性状态下的常规聊天，复杂度低，需要low响应"
+                      },
+                      "context_conditions": {
+                        "user_emotion": "neutral",
+                        "interaction_type": "general_chat",
+                        "urgency_level": "low",
+                        "topic_complexity": "low",
+                        "has_shared_memory": false,
+                        "time_of_day": 22
+                      },
+                      "response_pattern": {
+                        "response_length": 1589,
+                        "has_questions": false,
+                        "has_empathy": true,
+                        "has_solutions": false,
+                        "has_humor": false,
+                        "emotional_tone": "neutral"
+                      },
+                      "validation_score": 1.0,
+                      "applicable_scenarios": [
+                        "常规对话场景",
+                        "简单话题交流"
+                      ],
+                      "creation_timestamp": "2025-12-22T22:22:24.292766",
+                      "usage_count": 0,
+                      "success_rate": 1.0
+                    },
+                    "growth_type": "个性发展",
+                    "message": "差异被验证为有效的个性表达"
+                  }
+                },
+                "similarity_score": 1.9133278131484985,
+                "memory_type": "conversation",
+                "tags": [
+                  "对话",
+                  "交互"
+                ],
+                "emotional_intensity": 0.5,
+                "strategic_value": {},
+                "linked_tool": null,
+                "created_at": null,
+                "access_count": 0
+              }
+            ],
+            "resonant_memory": {
+              "triggered_memory": "Name is 胖虎",
+              "memory_id": "conversation_20251222222228_e15e76f3",
+              "relevance_score": 1.8383930921554565,
+              "source": "zyantine_system",
+              "tags": [
+                "对话",
+                "交互"
+              ],
+              "strategic_value": {},
+              "linked_tool": null,
+              "emotional_intensity": 0.5,
+              "risk_assessment": {
+                "level": "极低",
+                "score": 0,
+                "high_risk_factors": []
+              },
+              "recommended_actions": [
+                "常规记忆，可灵活使用"
+              ],
+              "timestamp": "2025-12-23T14:51:32.739683",
+              "retrieval_method": "memo0_vector_search"
+            }
+          },
+          "rationale": "目标：维持有意义、有深度的对话；选择『长期搭档』面具：适合当前情境和关系深度；选择策略『应用记忆建议：常规记忆，可灵活使用...』：综合评分1.29/1.0；精神资源评分0.78/1.0，资源充足，适合复杂策略；链接强度0.00/1.0，信任度待建立，需谨慎推进；风险评估：极低风险",
+          "resonant_memory": {
+            "triggered_memory": "Name is 胖虎",
+            "memory_id": "conversation_20251222222228_e15e76f3",
+            "relevance_score": 1.8383930921554565,
+            "source": "zyantine_system",
+            "tags": [
+              "对话",
+              "交互"
+            ],
+            "strategic_value": {},
+            "linked_tool": null,
+            "emotional_intensity": 0.5,
+            "risk_assessment": {
+              "level": "极低",
+              "score": 0,
+              "high_risk_factors": []
+            },
+            "recommended_actions": [
+              "常规记忆，可灵活使用"
+            ],
+            "timestamp": "2025-12-23T14:51:32.739683",
+            "retrieval_method": "memo0_vector_search"
+          }
+        },
+        "growth_result": {
+          "stage": "synthesis",
+          "validation": "success",
+          "causal_analysis": {
+            "causes_identified": [],
+            "primary_cause": null,
+            "analysis_method": "多因素归因分析"
+          },
+          "validation_result": {
+            "is_valid": true,
+            "score": 1.0,
+            "reason": "无差异"
+          },
+          "new_principle": {
+            "id": "PRINCIPLE_0002",
+            "abstracted_from": {
+              "emotion_summary": "用户情绪为中性",
+              "complexity_summary": "话题复杂性低",
+              "interaction_summary": "交互类型为请求行动",
+              "urgency_summary": "紧急程度low",
+              "overall": "中性状态下的请求行动，复杂度低，需要low响应"
+            },
+            "context_conditions": {
+              "user_emotion": "neutral",
+              "interaction_type": "requesting_action",
+              "urgency_level": "low",
+              "topic_complexity": "low",
+              "has_shared_memory": false,
+              "time_of_day": 14
+            },
+            "response_pattern": {
+              "response_length": 10934,
+              "has_questions": true,
+              "has_empathy": true,
+              "has_solutions": true,
+              "has_humor": false,
+              "emotional_tone": "neutral"
+            },
+            "validation_score": 1.0,
+            "applicable_scenarios": [
+              "请求帮助场景",
+              "任务协作时刻",
+              "简单话题交流"
+            ],
+            "creation_timestamp": "2025-12-23T14:51:32.741179",
+            "usage_count": 0,
+            "success_rate": 1.0
+          },
+          "growth_type": "个性发展",
+          "message": "差异被验证为有效的个性表达"
+        }
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    }
+  },
+  "statistics": {
+    "total_memories": 3,
+    "by_type": {
+      "test": 1,
+      "conversation": 2
+    },
+    "access_counts": {},
+    "tags_distribution": {
+      "测试": 1,
+      "对话": 2,
+      "交互": 2
+    }
+  },
+  "strategic_tags": [
+    "测试",
+    "对话",
+    "交互"
+  ]
+}

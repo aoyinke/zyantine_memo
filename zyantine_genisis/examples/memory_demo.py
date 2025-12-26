@@ -191,7 +191,7 @@ def main():
 
         while True:
             try:
-                user_input = input(f"\n[自衍体] 你: ").strip()
+                user_input = input(f"\n你: ").strip()
 
                 if not user_input:
                     continue

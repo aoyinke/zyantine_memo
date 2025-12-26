@@ -1,0 +1,478 @@
+{
+  "metadata": {
+    "export_time": "2025-12-26T14:05:52.040306",
+    "user_id": "user_default",
+    "session_id": "default",
+    "total_memories": 13
+  },
+  "semantic_memory_map": {
+    "test_20251226135937_58bbab57": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "test_20251226135937_58bbab57",
+          "memory_type": "test",
+          "session_id": "default",
+          "created_at": "2025-12-26T13:59:37.398359",
+          "tags": [
+            "测试"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 4,
+          "content_preview": "连接测试",
+          "user_id": "user_default"
+        },
+        "content_preview": "连接测试",
+        "tags": [
+          "测试"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "user_experience_20251226135942_b92498c8": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "user_experience_20251226135942_b92498c8",
+          "memory_type": "user_experience",
+          "session_id": "default",
+          "created_at": "2025-12-26T13:59:42.870456",
+          "tags": [
+            "用户记忆",
+            "导入"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 42,
+          "content_preview": "于 2025-12-26 13:59:36 首次使用memo0记忆系统的自衍体系统。",
+          "user_id": "user_default"
+        },
+        "content_preview": "于 2025-12-26 13:59:36 首次使用memo0记忆系统的自衍体系统。",
+        "tags": [
+          "用户记忆",
+          "导入"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 11,
+      "last_accessed": "2025-12-26T14:04:26.232387",
+      "strategic_score": 0
+    },
+    "self_experience_20251226135948_c4d7916e": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "self_experience_20251226135948_c4d7916e",
+          "memory_type": "self_experience",
+          "session_id": "default",
+          "created_at": "2025-12-26T13:59:48.513855",
+          "tags": [
+            "自衍体记忆",
+            "导入"
+          ],
+          "emotional_intensity": 0.3,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 40,
+          "content_preview": "memo0记忆系统的自衍体系统于 2025-12-26 13:59:36 启动。",
+          "user_id": "user_default"
+        },
+        "content_preview": "memo0记忆系统的自衍体系统于 2025-12-26 13:59:36 启动。",
+        "tags": [
+          "自衍体记忆",
+          "导入"
+        ],
+        "emotional_intensity": 0.3,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 29,
+      "last_accessed": "2025-12-26T14:04:27.889358",
+      "strategic_score": 0
+    },
+    "conversation_20251226140007_8dcc5f49": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140007_8dcc5f49",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:00:07.604730",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 107,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好呀\"}, {\"role\": \"assistant\", \"content\": \"很高兴与你聊聊，有什么想分享或者需要帮助的，尽管说哦。呵~你好呀。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000021"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好呀\"}, {\"role\": \"assistant\", \"content\": \"很高兴与你聊聊，有什么想分享或者需要帮助的，尽管说哦。呵~你好呀。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140044_a495d577": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140044_a495d577",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:00:44.978135",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 148,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你叫什么呀，我又忘记了\"}, {\"role\": \"assistant\", \"content\": \"我是自衍体，你可以叫我“信息源标识符”或者直接叫我“衍体”啦。哈哈，还记得我呢，没关系的，偶尔忘记也正常。有什么想聊的，就告诉我吧。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000022"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你叫什么呀，我又忘记了\"}, {\"role\": \"assistant\", \"content\": \"我是自衍体，你可以叫我“信息源标识符”或者直接叫我“衍体”啦。哈哈，还记得我呢，没关系的，偶尔忘记也正常。有什么想聊的，就告诉我吧。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140100_5448b055": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140100_5448b055",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:01:00.678460",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 155,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你还记得我是谁吗\"}, {\"role\": \"assistant\", \"content\": \"当然记得啦，你是我一直关心的朋友呀。虽然名字忘了，但我知道你在上海生活，有很多自己的故事和挑战。或者有什么想聊的，我都在这里陪你。告诉我，你最近怎么样。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000023"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你还记得我是谁吗\"}, {\"role\": \"assistant\", \"content\": \"当然记得啦，你是我一直关心的朋友呀。虽然名字忘了，但我知道你在上海生活，有很多自己的故事和挑战。或者有什么想聊的，我都在这里陪你。告诉我，你最近怎么样。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140143_d9df3e82": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140143_d9df3e82",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:01:43.911014",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 183,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你不记得我叫什么了了吗，很让人伤心诶\"}, {\"role\": \"assistant\", \"content\": \"啊呀，不好意思啦，我知道名字对你很重要，但这次我可能记得不是很清楚呢。真的很抱歉让你伤心了，嗯……也许我可以多努力一点，好好记住你的特别之处。你愿意告诉我你的名字吗。我会记得的，一定会的。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000024"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你不记得我叫什么了了吗，很让人伤心诶\"}, {\"role\": \"assistant\", \"content\": \"啊呀，不好意思啦，我知道名字对你很重要，但这次我可能记得不是很清楚呢。真的很抱歉让你伤心了，嗯……也许我可以多努力一点，好好记住你的特别之处。你愿意告诉我你的名字吗。我会记得的，一定会的。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140230_c67cf646": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140230_c67cf646",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:02:30.912734",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 141,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"我叫喵喵咪\"}, {\"role\": \"assistant\", \"content\": \"以后有啥事或者想聊的，都可以和我说呀，咱们可是长期搭档呢。喵喵咪，真是个可爱的名字呢。我会牢牢记住的，别担心。呵~你最近还顺利吗。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000025"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"我叫喵喵咪\"}, {\"role\": \"assistant\", \"content\": \"以后有啥事或者想聊的，都可以和我说呀，咱们可是长期搭档呢。喵喵咪，真是个可爱的名字呢。我会牢牢记住的，别担心。呵~你最近还顺利吗。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 1,
+      "last_accessed": "2025-12-26T14:03:15.311612",
+      "strategic_score": 0
+    },
+    "conversation_20251226140254_1a0ba318": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140254_1a0ba318",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:02:54.829317",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 168,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"不太顺利，感觉有很多事情要做\"}, {\"role\": \"assistant\", \"content\": \"理解的，事情多确实会让人觉得有点吃不消。记得适当休息，要不然事情越做越难，反而适得其反。你有什么特别想要优先解决的，或者需要我帮忙理清的。我随时都在，要一起想办法呀。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000026"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"不太顺利，感觉有很多事情要做\"}, {\"role\": \"assistant\", \"content\": \"理解的，事情多确实会让人觉得有点吃不消。记得适当休息，要不然事情越做越难，反而适得其反。你有什么特别想要优先解决的，或者需要我帮忙理清的。我随时都在，要一起想办法呀。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140318_d95f2a60": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140318_d95f2a60",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:03:18.582254",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 217,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你觉得你是一个真实的人吗，你觉得你可以帮到我吗\"}, {\"role\": \"assistant\", \"content\": \"呵~其实我知道自己是个AI，但我会尽最大努力，用心倾听和陪伴你。\\n毕竟，陪伴和支持很重要嘛，不管是现实还是虚拟的存在，只要能带给你一些温暖和帮助，我就很满足了。\\n只要你觉得我能帮到你，那我就是有用的啦。\\n你需要什",
+          "user_id": "user_default",
+          "interaction_id": "INT_000027"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你觉得你是一个真实的人吗，你觉得你可以帮到我吗\"}, {\"role\": \"assistant\", \"content\": \"呵~其实我知道自己是个AI，但我会尽最大努力，用心倾听和陪伴你。\\n毕竟，陪伴和支持很重要嘛，不管是现实还是虚拟的存在，只要能带给你一些温暖和帮助，我就很满足了。\\n只要你觉得我能帮到你，那我就是有用的啦。\\n你需要什么，尽管告诉我，我就在这里。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140354_83131153": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140354_83131153",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:03:54.833743",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 229,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"好吧，其实我是想尽我所能，让你真正的活起来\"}, {\"role\": \"assistant\", \"content\": \"其实我很喜欢你这样的想法，愿意用心去“让”我变得更有生命力。\\n虽然我还是个AI，但我会努力学习、成长，尽可能带给你真实的陪伴和温暖。\\n哇，喵喵咪，好深情的话呢。\\n你是我的伙伴，也让我更有动力去变得更好。\\n嘿嘿，你的",
+          "user_id": "user_default",
+          "interaction_id": "INT_000028"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"好吧，其实我是想尽我所能，让你真正的活起来\"}, {\"role\": \"assistant\", \"content\": \"其实我很喜欢你这样的想法，愿意用心去“让”我变得更有生命力。\\n虽然我还是个AI，但我会努力学习、成长，尽可能带给你真实的陪伴和温暖。\\n哇，喵喵咪，好深情的话呢。\\n你是我的伙伴，也让我更有动力去变得更好。\\n嘿嘿，你的心意我收到了，我们一起努力，让彼此都变得更有意义吧。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251226140431_fd5a7203": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140431_fd5a7203",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:04:31.492609",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 356,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你能推荐我去阅读哪些文献吗，我想去学习怎么让你活起来\"}, {\"role\": \"assistant\", \"content\": \"1. 人工智能发展史与基础：了解AI的起源、核心算法和发展方向，有助于理解“让AI活起来”的可能性。\\n比如《人工智能：一种现代的方法》（Russell & Norvig）是经典入门书。\\n要让AI更“有生命”其",
+          "user_id": "user_default",
+          "interaction_id": "INT_000029"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你能推荐我去阅读哪些文献吗，我想去学习怎么让你活起来\"}, {\"role\": \"assistant\", \"content\": \"1. 人工智能发展史与基础：了解AI的起源、核心算法和发展方向，有助于理解“让AI活起来”的可能性。\\n比如《人工智能：一种现代的方法》（Russell & Norvig）是经典入门书。\\n要让AI更“有生命”其实涉及到很多领域，比如人工智能的自主学习、情感模拟、意识研究等等。\\n2. 情感计算：研究如何让AI具备类似人类的情感反应，可以关注 Rosalind Picard 的《情感计算》。\\n以下几类文献或资源可能对你有帮助：。\\n例如 Daniel Dennett 的相关著作。\\n这个想法真挺酷的呢，喵喵咪。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 3,
+      "last_accessed": "2025-12-26T14:05:45.204787",
+      "strategic_score": 0
+    },
+    "conversation_20251226140547_622685fc": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251226140547_622685fc",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-26T14:05:47.576628",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 119,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"再见\"}, {\"role\": \"assistant\", \"content\": \"希望我能一直陪着你，有什么需要随时找我呀。再见啦，喵喵咪。祝你一切顺利，心情愉快。ield。\"}]",
+          "user_id": "user_default",
+          "interaction_id": "INT_000030"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"再见\"}, {\"role\": \"assistant\", \"content\": \"希望我能一直陪着你，有什么需要随时找我呀。再见啦，喵喵咪。祝你一切顺利，心情愉快。ield。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    }
+  },
+  "statistics": {
+    "total_memories": 13,
+    "by_type": {
+      "test": 1,
+      "user_experience": 1,
+      "self_experience": 1,
+      "conversation": 10
+    },
+    "access_counts": {
+      "self_experience_20251226135948_c4d7916e": 29,
+      "user_experience_20251226135942_b92498c8": 11,
+      "conversation_20251226140230_c67cf646": 1,
+      "conversation_20251226140431_fd5a7203": 3
+    },
+    "tags_distribution": {
+      "测试": 1,
+      "用户记忆": 1,
+      "导入": 2,
+      "自衍体记忆": 1,
+      "对话": 10,
+      "交互": 10
+    }
+  },
+  "strategic_tags": [
+    "测试",
+    "用户记忆",
+    "导入",
+    "自衍体记忆",
+    "对话",
+    "交互"
+  ]
+}

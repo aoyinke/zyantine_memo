@@ -1,0 +1,202 @@
+{
+  "metadata": {
+    "export_time": "2025-12-23T15:21:53.183420",
+    "user_id": "user_default",
+    "session_id": "default",
+    "total_memories": 5
+  },
+  "semantic_memory_map": {
+    "test_20251223151459_58bbab57": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "test_20251223151459_58bbab57",
+          "memory_type": "test",
+          "session_id": "default",
+          "created_at": "2025-12-23T15:14:59.438070",
+          "tags": [
+            "测试"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 4,
+          "content_preview": "连接测试",
+          "user_id": "user_default"
+        },
+        "content_preview": "连接测试",
+        "tags": [
+          "测试"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "user_experience_20251223151503_770438c4": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "user_experience_20251223151503_770438c4",
+          "memory_type": "user_experience",
+          "session_id": "default",
+          "created_at": "2025-12-23T15:15:03.472676",
+          "tags": [
+            "用户记忆",
+            "导入"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 42,
+          "content_preview": "于 2025-12-23 15:14:59 首次使用memo0记忆系统的自衍体系统。",
+          "user_id": "user_default"
+        },
+        "content_preview": "于 2025-12-23 15:14:59 首次使用memo0记忆系统的自衍体系统。",
+        "tags": [
+          "用户记忆",
+          "导入"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20251223151929_1b1dec5b": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251223151929_1b1dec5b",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-23T15:19:29.563586",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 314,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好！我叫林小雨，今年28岁，在上海的一家科技公司做产品经理。我来自一个三代同堂的家庭，父母都是教师，还有一个比我小5岁的弟弟。我住在一个有10年历史的老小区里，阳台上种满了各种绿植，这是我每天回家后最放松的地方。\"}, {\"role\": \"assistant\", \"content\": \"我不太确定具体细节，但根据我的理解，听起来你的生活",
+          "user_id": "user_default",
+          "interaction_id": "INT_000006"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好！我叫林小雨，今年28岁，在上海的一家科技公司做产品经理。我来自一个三代同堂的家庭，父母都是教师，还有一个比我小5岁的弟弟。我住在一个有10年历史的老小区里，阳台上种满了各种绿植，这是我每天回家后最放松的地方。\"}, {\"role\": \"assistant\", \"content\": \"我不太确定具体细节，但根据我的理解，听起来你的生活非常丰富而温馨，阳台那些绿植一定让家更有生机，也能带来不少放松的时光。\\n作为产品经理，应该每天都在面对各种创新和挑战，挺有意思的吧。\\n你好，小雨。\\n如果想聊聊工作上的事情，或者分享一下你的绿植养护经验，我都很乐意哦。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 6,
+      "last_accessed": "2025-12-23T15:20:46.260442",
+      "strategic_score": 0
+    },
+    "conversation_20251223152048_fdf91176": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251223152048_fdf91176",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-23T15:20:48.816537",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 380,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"我特别喜欢摄影，尤其是街头摄影。每个周末我都会带着我的老式胶片相机出去拍照，记录城市的瞬间。我还养了一只叫'咖啡'的橘猫，它总是趁我不注意的时候跳到我的相机包上。除了摄影，我还喜欢做手工面包，虽然技术不太稳定，有时候会失败，但成功的那一刻特别有成就感。\"}, {\"role\": \"assistant\", \"content\": \"我不太确定具",
+          "user_id": "user_default",
+          "interaction_id": "INT_000007"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"我特别喜欢摄影，尤其是街头摄影。每个周末我都会带着我的老式胶片相机出去拍照，记录城市的瞬间。我还养了一只叫'咖啡'的橘猫，它总是趁我不注意的时候跳到我的相机包上。除了摄影，我还喜欢做手工面包，虽然技术不太稳定，有时候会失败，但成功的那一刻特别有成就感。\"}, {\"role\": \"assistant\", \"content\": \"我不太确定具体细节，但根据我的理解，呵~听你这么说，我都能感受到你对生活的热爱和细腻的感知力。\\n街头摄影记录城市的瞬间，真是很有意思的爱好，每个画面都充满故事性。\\n而咖啡那只调皮的小猫，趁你不注意偷偷跳到相机包上，想必也是你的生活中一个有趣的小插曲吧。\\n做手工面包虽然偶尔会失败，但那种成功的喜悦一定特别特别的满满。\\n生活的点滴都被你用心记录，真让人羡慕呢。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 6,
+      "last_accessed": "2025-12-23T15:21:13.528758",
+      "strategic_score": 0
+    },
+    "conversation_20251223152115_e9ee50dc": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251223152115_e9ee50dc",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-23T15:21:15.641026",
+          "tags": [
+            "对话",
+            "交互"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 364,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"去年我经历了一段比较困难的时期。我负责的一个重要项目失败了，团队被解散，我差点想要转行。但在这个过程中，我重新发现了对摄影的热爱，它帮助我度过了那段低谷。现在回想起来，那次失败反而让我更清楚自己真正想要的是什么。\"}, {\"role\": \"assistant\", \"content\": \"我不太确定具体细节，但根据我的理解，听你这么说，我真",
+          "user_id": "user_default",
+          "interaction_id": "INT_000008"
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"去年我经历了一段比较困难的时期。我负责的一个重要项目失败了，团队被解散，我差点想要转行。但在这个过程中，我重新发现了对摄影的热爱，它帮助我度过了那段低谷。现在回想起来，那次失败反而让我更清楚自己真正想要的是什么。\"}, {\"role\": \"assistant\", \"content\": \"我不太确定具体细节，但根据我的理解，听你这么说，我真的很为你感到高兴。\\n经历低谷以后还能重新找回对摄影的热爱，说明你内心很坚韧，也很懂得用爱去抚平那些困难。\\n或许那次失败让你更清楚了自己真正的方向，也让你变得更强大了吧。\\n每段经历都是成长的积淀，能够从中找到自己的热情，真是太难得了。\\n现在的你，不论是在工作中还是摄影里，都有了更加深刻的认识和力量，真为你感到骄傲。\"}]",
+        "tags": [
+          "对话",
+          "交互"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    }
+  },
+  "statistics": {
+    "total_memories": 5,
+    "by_type": {
+      "test": 1,
+      "user_experience": 1,
+      "conversation": 3
+    },
+    "access_counts": {
+      "conversation_20251223151929_1b1dec5b": 6,
+      "conversation_20251223152048_fdf91176": 6
+    },
+    "tags_distribution": {
+      "测试": 1,
+      "用户记忆": 1,
+      "导入": 1,
+      "对话": 3,
+      "交互": 3
+    }
+  },
+  "strategic_tags": [
+    "测试",
+    "用户记忆",
+    "导入",
+    "对话",
+    "交互"
+  ]
+}
