@@ -1,0 +1,60 @@
+2025-12-26 22:30:03 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2025-12-26 22:30:28 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2025-12-26 22:30:30 - ZyantineCore - INFO - 开始处理: 你好...
+2025-12-26 22:30:30 - ZyantineCore - INFO - 处理完成，响应长度: 0
+2025-12-26 22:30:30 - ZyantineCore - ERROR - 生成错误响应: 阶段 white_dove_check 失败: 'WhiteDoveCheckHandler' object has no attribute 'log'
+2025-12-26 22:30:30 - ZyantineCore - ERROR - 处理失败，使用错误响应: ["阶段 preprocess 失败: 'PreprocessHandler' object has no attribute 'log'", "阶段 instinct_check 失败: 'InstinctCheckHandler' object has no attribute 'log'", "阶段 memory_retrieval 失败: 'MemoryRetrievalHandler' object has no attribute 'log'", "阶段 desire_update 失败: 'DesireUpdateHandler' object has no attribute 'log'", "阶段 cognitive_flow 失败: 'CognitiveFlowHandler' object has no attribute 'log'", "阶段 dialectical_growth 失败: 'DialecticalGrowthHandler' object has no attribute 'log'", "阶段 reply_generation 失败: 'ReplyGenerationHandler' object has no attribute 'log'", "阶段 protocol_review 失败: 'ProtocolReviewHandler' object has no attribute 'log'", "阶段 interaction_recording 失败: 'InteractionRecordingHandler' object has no attribute 'log'", "阶段 white_dove_check 失败: 'WhiteDoveCheckHandler' object has no attribute 'log'"]
+2025-12-26 22:36:33 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2025-12-26 22:36:40 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2025-12-26 22:36:42 - ZyantineCore - INFO - 开始处理: 你好...
+2025-12-26 22:36:42 - ZyantineCore - INFO - 本能响应触发: greeting
+2025-12-26 22:36:42 - ZyantineCore - WARNING - 处理被本能接管
+2025-12-26 22:36:50 - ZyantineCore - INFO - 开始处理用户输入: 你是谁呀...
+2025-12-26 22:36:52 - ZyantineCore - INFO - 开始处理: 你是谁呀...
+2025-12-26 22:36:55 - ZyantineCore - WARNING - 欲望引擎不可用，跳过此阶段
+2025-12-26 22:36:55 - ZyantineCore - ERROR - 认知流程失败: CognitiveFlowManager.process_thought() got an unexpected keyword argument 'retrieved_memories'
+2025-12-26 22:36:55 - ZyantineCore - WARNING - 辩证成长组件不可用，跳过此阶段
+2025-12-26 22:36:55 - ZyantineCore - WARNING - 交互记录失败
+2025-12-26 22:36:55 - ZyantineCore - INFO - 处理完成，响应长度: 25
+2025-12-26 22:36:55 - ZyantineCore - INFO - 处理成功，响应长度: 25
+2025-12-26 22:38:21 - ZyantineCore - INFO - 正在关闭系统...
+2025-12-26 22:38:21 - ZyantineCore - INFO - 正在保存记忆系统到: ./memory_backups/default_20251226_223821.json
+2025-12-26 22:38:21 - ZyantineCore - INFO - 系统关闭完成
+2025-12-26 22:45:10 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2025-12-26 22:45:18 - ZyantineCore - INFO - 开始处理用户输入: 你是谁...
+2025-12-26 22:45:22 - ZyantineCore - INFO - 开始处理: 你是谁...
+2025-12-26 22:45:24 - ZyantineCore - WARNING - 欲望引擎不可用，跳过此阶段
+2025-12-26 22:45:26 - ZyantineCore - WARNING - 辩证成长组件不可用，跳过此阶段
+2025-12-26 22:45:26 - ZyantineCore - WARNING - 交互记录失败
+2025-12-26 22:45:26 - ZyantineCore - INFO - 处理完成，响应长度: 22
+2025-12-26 22:45:26 - ZyantineCore - INFO - 处理成功，响应长度: 22
+2025-12-26 22:48:05 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2025-12-26 22:48:09 - ZyantineCore - INFO - 开始处理用户输入: 你是谁...
+2025-12-26 22:48:12 - ZyantineCore - INFO - 开始处理: 你是谁...
+2025-12-26 22:48:14 - ZyantineCore - WARNING - 欲望引擎不可用，跳过此阶段
+2025-12-26 22:48:16 - ZyantineCore - WARNING - 辩证成长组件不可用，跳过此阶段
+2025-12-26 22:48:16 - ZyantineCore - WARNING - 交互记录失败
+2025-12-26 22:48:16 - ZyantineCore - INFO - 处理完成，响应长度: 29
+2025-12-26 22:48:16 - ZyantineCore - INFO - 处理成功，响应长度: 29
+2025-12-26 22:54:13 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2025-12-26 22:54:17 - ZyantineCore - INFO - 开始处理用户输入: 你是谁...
+2025-12-26 22:54:19 - ZyantineCore - INFO - 开始处理: 你是谁...
+2025-12-26 22:54:22 - ZyantineCore - WARNING - 欲望引擎不可用，跳过此阶段
+2025-12-26 22:54:23 - ZyantineCore - WARNING - 辩证成长组件不可用，跳过此阶段
+2025-12-26 22:54:25 - ZyantineCore - INFO - 处理完成，响应长度: 25
+2025-12-26 22:54:25 - ZyantineCore - INFO - 处理成功，响应长度: 25
+2025-12-26 22:55:49 - ZyantineCore - INFO - 开始处理用户输入: 你是谁...
+2025-12-26 22:55:50 - ZyantineCore - INFO - 开始处理: 你是谁...
+2025-12-26 22:55:53 - ZyantineCore - WARNING - 欲望引擎不可用，跳过此阶段
+2025-12-26 22:55:54 - ZyantineCore - WARNING - 辩证成长组件不可用，跳过此阶段
+2025-12-26 22:55:57 - ZyantineCore - INFO - 处理完成，响应长度: 25
+2025-12-26 22:55:57 - ZyantineCore - INFO - 处理成功，响应长度: 25
+2025-12-26 22:58:17 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2025-12-26 22:58:53 - ZyantineCore - INFO - 开始处理用户输入: 你是谁...
+2025-12-26 22:58:55 - ZyantineCore - INFO - 开始处理: 你是谁...
+2025-12-26 22:58:58 - ZyantineCore - WARNING - 欲望引擎不可用，跳过此阶段
+2025-12-26 22:59:04 - ZyantineCore - WARNING - 辩证成长组件不可用，跳过此阶段
+2025-12-26 22:59:06 - ZyantineCore - INFO - 处理完成，响应长度: 22
+2025-12-26 22:59:06 - ZyantineCore - INFO - 处理成功，响应长度: 22
+2025-12-26 23:00:00 - ZyantineCore - INFO - 核心组件加载完成，组件列表: core_identity, memory_manager, internal_state_dashboard, meta_cognition, expression_validator, length_regulator, fact_checker, protocol_engine, cognitive_flow
+2025-12-26 23:00:00 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default

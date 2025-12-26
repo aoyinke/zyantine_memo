@@ -1,0 +1,43 @@
+2025-12-26 21:34:53 - facade_structured - INFO - {"timestamp": "2025-12-26T21:34:53.665595", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:35:38 - facade_structured - INFO - {"timestamp": "2025-12-26T21:35:38.609035", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:47:09 - facade_structured - INFO - {"timestamp": "2025-12-26T21:47:09.532147", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:47:41 - facade_structured - INFO - {"timestamp": "2025-12-26T21:47:41.998727", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:54:25 - facade_structured - INFO - {"timestamp": "2025-12-26T21:54:25.538406", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:54:38 - facade_structured - INFO - {"timestamp": "2025-12-26T21:54:38.306541", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:55:00 - facade_structured - INFO - {"timestamp": "2025-12-26T21:55:00.025296", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:55:13 - facade_structured - INFO - {"timestamp": "2025-12-26T21:55:13.870052", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 21:55:26 - facade_structured - INFO - {"timestamp": "2025-12-26T21:55:26.576595", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:01:17 - facade_structured - INFO - {"timestamp": "2025-12-26T22:01:17.098205", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:02:16 - facade_structured - INFO - {"timestamp": "2025-12-26T22:02:16.165276", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:03:05 - facade_structured - INFO - {"timestamp": "2025-12-26T22:03:05.125208", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:05:10 - facade_structured - INFO - {"timestamp": "2025-12-26T22:05:10.222785", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:07:06 - facade_structured - INFO - {"timestamp": "2025-12-26T22:07:06.520673", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:08:26 - facade_structured - INFO - {"timestamp": "2025-12-26T22:08:26.400206", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:17:27 - facade_structured - INFO - {"timestamp": "2025-12-26T22:17:27.716190", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:17:50 - facade_structured - INFO - {"timestamp": "2025-12-26T22:17:50.127052", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:22:42 - facade_structured - INFO - {"timestamp": "2025-12-26T22:22:42.674775", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:28:53 - facade_structured - INFO - {"timestamp": "2025-12-26T22:28:53.888634", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:30:00 - facade_structured - INFO - {"timestamp": "2025-12-26T22:30:00.335744", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:30:28 - facade_structured - INFO - {"timestamp": "2025-12-26T22:30:28.388021", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2025-12-26 22:30:30 - facade_structured - INFO - {"timestamp": "2025-12-26T22:30:30.272319", "level": "INFO", "message": "响应生成完成", "response_preview": "意识流有点波动，让我重新整理一下思绪。", "response_length": 19, "response_time": 1.8836989402770996}
+2025-12-26 22:36:29 - facade_structured - INFO - {"timestamp": "2025-12-26T22:36:29.953075", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:36:40 - facade_structured - INFO - {"timestamp": "2025-12-26T22:36:40.029871", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2025-12-26 22:36:42 - facade_structured - INFO - {"timestamp": "2025-12-26T22:36:42.472207", "level": "INFO", "message": "响应生成完成", "response_preview": "你好！很高兴见到你！", "response_length": 10, "response_time": 2.442000150680542}
+2025-12-26 22:36:50 - facade_structured - INFO - {"timestamp": "2025-12-26T22:36:50.791571", "level": "INFO", "message": "处理用户输入", "input_preview": "你是谁呀", "input_length": 4}
+2025-12-26 22:36:55 - facade_structured - INFO - {"timestamp": "2025-12-26T22:36:55.784184", "level": "INFO", "message": "响应生成完成", "response_preview": "根据我们之前的讨论，我认为：{strategy}。", "response_length": 25, "response_time": 4.99167275428772}
+2025-12-26 22:45:06 - facade_structured - INFO - {"timestamp": "2025-12-26T22:45:06.248494", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:45:18 - facade_structured - INFO - {"timestamp": "2025-12-26T22:45:18.954477", "level": "INFO", "message": "处理用户输入", "input_preview": "你是谁", "input_length": 3}
+2025-12-26 22:45:26 - facade_structured - INFO - {"timestamp": "2025-12-26T22:45:26.594803", "level": "INFO", "message": "响应生成完成", "response_preview": "从我的角度考虑，建议：{strategy}。", "response_length": 22, "response_time": 7.640063047409058}
+2025-12-26 22:48:01 - facade_structured - INFO - {"timestamp": "2025-12-26T22:48:01.409712", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:48:09 - facade_structured - INFO - {"timestamp": "2025-12-26T22:48:09.699140", "level": "INFO", "message": "处理用户输入", "input_preview": "你是谁", "input_length": 3}
+2025-12-26 22:48:16 - facade_structured - INFO - {"timestamp": "2025-12-26T22:48:16.581010", "level": "INFO", "message": "响应生成完成", "response_preview": "关于这个问题，我的分析是：{strategy}。你怎么看？", "response_length": 29, "response_time": 6.881324768066406}
+2025-12-26 22:54:04 - facade_structured - INFO - {"timestamp": "2025-12-26T22:54:04.782291", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:54:10 - facade_structured - INFO - {"timestamp": "2025-12-26T22:54:10.236437", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:54:17 - facade_structured - INFO - {"timestamp": "2025-12-26T22:54:17.998906", "level": "INFO", "message": "处理用户输入", "input_preview": "你是谁", "input_length": 3}
+2025-12-26 22:54:25 - facade_structured - INFO - {"timestamp": "2025-12-26T22:54:25.426638", "level": "INFO", "message": "响应生成完成", "response_preview": "根据我们之前的讨论，我认为：{strategy}。", "response_length": 25, "response_time": 7.427217245101929}
+2025-12-26 22:55:49 - facade_structured - INFO - {"timestamp": "2025-12-26T22:55:49.152731", "level": "INFO", "message": "处理用户输入", "input_preview": "你是谁", "input_length": 3}
+2025-12-26 22:55:57 - facade_structured - INFO - {"timestamp": "2025-12-26T22:55:57.353781", "level": "INFO", "message": "响应生成完成", "response_preview": "根据我们之前的讨论，我认为：{strategy}。", "response_length": 25, "response_time": 8.200479984283447}
+2025-12-26 22:58:12 - facade_structured - INFO - {"timestamp": "2025-12-26T22:58:12.091748", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2025-12-26 22:58:53 - facade_structured - INFO - {"timestamp": "2025-12-26T22:58:53.835636", "level": "INFO", "message": "处理用户输入", "input_preview": "你是谁", "input_length": 3}
+2025-12-26 22:59:06 - facade_structured - INFO - {"timestamp": "2025-12-26T22:59:06.554728", "level": "INFO", "message": "响应生成完成", "response_preview": "从我的角度考虑，建议：{strategy}。", "response_length": 22, "response_time": 12.717950105667114}
+2025-12-26 22:59:57 - facade_structured - INFO - {"timestamp": "2025-12-26T22:59:57.717796", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}

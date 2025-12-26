@@ -1,0 +1,448 @@
+2025-12-26 21:34:53 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:34:53 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:34:53 - main - ERROR - 程序运行错误: SystemLogger.__new__() takes 1 positional argument but 2 were given
+2025-12-26 21:34:53 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 38, in __init__
+    self.logger = SystemLogger(self.config)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: SystemLogger.__new__() takes 1 positional argument but 2 were given
+
+2025-12-26 21:35:38 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:35:38 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:35:38 - main - ERROR - 程序运行错误: unhashable type: 'SystemConfig'
+2025-12-26 21:35:38 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 39, in __init__
+    self.error_handler = ErrorHandler(self.config)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/utils/error_handler.py", line 17, in __init__
+    self.logger = StructuredLogger(logger_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/utils/logger.py", line 121, in __init__
+    self.logger = SystemLogger().get_logger(logger_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/utils/logger.py", line 55, in get_logger
+    if name in self.loggers:
+       ^^^^^^^^^^^^^^^^^^^^
+TypeError: unhashable type: 'SystemConfig'
+
+2025-12-26 21:47:09 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:47:09 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:47:09 - main - ERROR - 程序运行错误: SystemLogger.__new__() takes 1 positional argument but 2 were given
+2025-12-26 21:47:09 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 43, in __init__
+    self.api_service_provider = APIServiceProvider(self.config)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 71, in __init__
+    self.logger = SystemLogger(config)
+                  ^^^^^^^^^^^^^^^^^^^^
+TypeError: SystemLogger.__new__() takes 1 positional argument but 2 were given
+
+2025-12-26 21:47:41 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:47:41 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:47:41 - main - ERROR - 程序运行错误: 'SystemLogger' object has no attribute 'warning'
+2025-12-26 21:47:42 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 43, in __init__
+    self.api_service_provider = APIServiceProvider(self.config)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 80, in __init__
+    self._initialize_services()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 111, in _initialize_services
+    self.logger.warning("API服务未启用或未配置API密钥，使用本地模式")
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SystemLogger' object has no attribute 'warning'
+
+2025-12-26 21:54:25 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:54:25 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:54:25 - main - ERROR - 程序运行错误: name 'logger' is not defined
+2025-12-26 21:54:25 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 43, in __init__
+    self.api_service_provider = APIServiceProvider(self.config)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 80, in __init__
+    self._initialize_services()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 90, in _initialize_services
+    logger.info(f"打印api_config={api_config}")
+    ^^^^^^
+NameError: name 'logger' is not defined
+
+2025-12-26 21:54:38 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:54:38 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:54:38 - main - ERROR - 程序运行错误: 'str' object has no attribute 'loggers'
+2025-12-26 21:54:38 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 43, in __init__
+    self.api_service_provider = APIServiceProvider(self.config)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 80, in __init__
+    self._initialize_services()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 93, in _initialize_services
+    openai_service = OpenAIService(
+                     ^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/openai_service.py", line 69, in __init__
+    self.logger = SystemLogger.get_logger("openai_service")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/utils/logger.py", line 55, in get_logger
+    if name in self.loggers:
+               ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'loggers'
+
+2025-12-26 21:55:00 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:55:00 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:55:02 - main - ERROR - 程序运行错误: 'str' object has no attribute 'loggers'
+2025-12-26 21:55:02 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 43, in __init__
+    self.api_service_provider = APIServiceProvider(self.config)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 83, in __init__
+    self._initialize_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 118, in _initialize_components
+    self.prompt_engine = PromptEngine(self.config)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/prompt_engine.py", line 42, in __init__
+    self.logger = SystemLogger.get_logger("prompt_engine")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/utils/logger.py", line 55, in get_logger
+    if name in self.loggers:
+               ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'loggers'
+
+2025-12-26 21:55:13 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:55:13 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:55:16 - main - ERROR - 程序运行错误: 'str' object has no attribute 'loggers'
+2025-12-26 21:55:16 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 43, in __init__
+    self.api_service_provider = APIServiceProvider(self.config)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 83, in __init__
+    self._initialize_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/service_provider.py", line 124, in _initialize_components
+    self.reply_generator = APIBasedReplyGenerator(
+                           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/api/reply_generator.py", line 54, in __init__
+    self.logger = SystemLogger.get_logger("reply_generator")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/utils/logger.py", line 55, in get_logger
+    if name in self.loggers:
+               ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'loggers'
+
+2025-12-26 21:55:26 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 21:55:26 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 21:55:29 - main - ERROR - 程序运行错误: MemoryManager.__init__() got an unexpected keyword argument 'api_service'
+2025-12-26 21:55:29 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 46, in __init__
+    self.memory_manager = MemoryManager(
+                          ^^^^^^^^^^^^^^
+TypeError: MemoryManager.__init__() got an unexpected keyword argument 'api_service'
+
+2025-12-26 22:01:17 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:01:17 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:01:21 - main - ERROR - 程序运行错误: 'ComponentManager' object has no attribute 'get_all_components'
+2025-12-26 22:01:21 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 51, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 71, in _load_core_components
+    self.components = self.component_manager.get_all_components()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'ComponentManager' object has no attribute 'get_all_components'
+
+2025-12-26 22:02:16 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:02:16 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:02:18 - main - ERROR - 程序运行错误: name 'InternalStateDashboard' is not defined
+2025-12-26 22:02:18 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 51, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 71, in _load_core_components
+    self.components = self.component_manager.initialize_components()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/component_manager.py", line 29, in initialize_components
+    self.components['internal_state_dashboard'] = InternalStateDashboard()
+                                                  ^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'InternalStateDashboard' is not defined
+
+2025-12-26 22:03:05 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:03:05 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:03:09 - main - ERROR - 程序运行错误: ProtocolEngine.__init__() got an unexpected keyword argument 'config'
+2025-12-26 22:03:09 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 51, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 79, in _load_core_components
+    self.protocol_engine = ProtocolEngine(
+                           ^^^^^^^^^^^^^^^
+TypeError: ProtocolEngine.__init__() got an unexpected keyword argument 'config'
+
+2025-12-26 22:05:10 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:05:10 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:05:13 - main - ERROR - 程序运行错误: CognitiveFlowManager.__init__() got an unexpected keyword argument 'fact_anchor'
+2025-12-26 22:05:13 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 51, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 86, in _load_core_components
+    self.cognitive_flow_manager = CognitiveFlowManager(
+                                  ^^^^^^^^^^^^^^^^^^^^^
+TypeError: CognitiveFlowManager.__init__() got an unexpected keyword argument 'fact_anchor'
+
+2025-12-26 22:07:06 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:07:06 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:07:10 - main - ERROR - 程序运行错误: CognitiveFlowManager.__init__() got an unexpected keyword argument 'config'
+2025-12-26 22:07:10 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 51, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 86, in _load_core_components
+    self.cognitive_flow_manager = CognitiveFlowManager(
+                                  ^^^^^^^^^^^^^^^^^^^^^
+TypeError: CognitiveFlowManager.__init__() got an unexpected keyword argument 'config'
+
+2025-12-26 22:08:26 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:08:26 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:08:29 - main - ERROR - 程序运行错误: No module named 'core.stage_handlers'
+2025-12-26 22:08:29 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 54, in __init__
+    self.pipeline = self._initialize_pipeline()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 95, in _initialize_pipeline
+    from core.stage_handlers import (
+ModuleNotFoundError: No module named 'core.stage_handlers'
+
+2025-12-26 22:17:27 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:17:27 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:17:31 - main - ERROR - 程序运行错误: No module named 'processing_pipeline'
+2025-12-26 22:17:31 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 54, in __init__
+    self.pipeline = self._initialize_pipeline()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 95, in _initialize_pipeline
+    from core.stage_handlers import (
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/stage_handlers.py", line 10, in <module>
+    from processing_pipeline import ProcessingStage, StageContext
+ModuleNotFoundError: No module named 'processing_pipeline'
+
+2025-12-26 22:17:50 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:17:50 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:17:53 - main - ERROR - 程序运行错误: 'PreprocessHandler' object has no attribute 'stage_name'
+2025-12-26 22:17:53 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 54, in __init__
+    self.pipeline = self._initialize_pipeline()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 108, in _initialize_pipeline
+    pipeline.register_stage(PreprocessHandler(
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/processing_pipeline.py", line 149, in register_stage
+    self.stages[stage_handler.stage_name] = stage_handler
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PreprocessHandler' object has no attribute 'stage_name'
+
+2025-12-26 22:22:42 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:22:42 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:22:46 - main - ERROR - 程序运行错误: 'InstinctCheckHandler' object has no attribute 'stage_name'
+2025-12-26 22:22:46 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 54, in __init__
+    self.pipeline = self._initialize_pipeline()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 113, in _initialize_pipeline
+    pipeline.register_stage(InstinctCheckHandler(
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/processing_pipeline.py", line 180, in register_stage
+    stage_name = stage_handler.stage_name
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'InstinctCheckHandler' object has no attribute 'stage_name'
+
+2025-12-26 22:28:53 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:28:53 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:28:57 - main - ERROR - 程序运行错误: 'SystemLogger' object has no attribute 'info'
+2025-12-26 22:28:57 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 66, in __init__
+    self.logger.info(f"系统核心初始化完成，会话ID: {self.config.session_id}")
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'SystemLogger' object has no attribute 'info'
+
+2025-12-26 22:30:00 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:30:00 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:36:29 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:36:29 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:38:21 - main - INFO - 系统已安全关闭
+2025-12-26 22:45:06 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:45:06 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:48:01 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:48:01 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:54:04 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:54:04 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:54:08 - main - ERROR - 程序运行错误: partially initialized module 'pandas' has no attribute 'core' (most likely due to a circular import)
+2025-12-26 22:54:08 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 169, in main
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 46, in __init__
+    self.memory_manager = MemoryManager(
+                          ^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_manager.py", line 58, in __init__
+    self.memory_system = self._initialize_memory_system()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_manager.py", line 79, in _initialize_memory_system
+    return ZyantineMemorySystem(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_store.py", line 32, in __init__
+    self.memory = self._initialize_memo0()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_store.py", line 74, in _initialize_memo0
+    return Memory.from_config(config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/memory/main.py", line 243, in from_config
+    return cls(config)
+           ^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/memory/main.py", line 183, in __init__
+    self.vector_store = VectorStoreFactory.create(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/utils/factory.py", line 197, in create
+    vector_store_instance = load_class(class_type)
+                            ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/utils/factory.py", line 24, in load_class
+    module = importlib.import_module(module_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/milvus.py", line 10, in <module>
+    import pymilvus  # noqa: F401
+    ^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/pymilvus/__init__.py", line 22, in <module>
+    from .client.prepare import Prepare
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/pymilvus/client/prepare.py", line 14, in <module>
+    from pymilvus.orm.schema import (
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/pymilvus/orm/schema.py", line 17, in <module>
+    import pandas as pd
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/pandas/__init__.py", line 139, in <module>
+    from pandas import testing
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/pandas/testing.py", line 6, in <module>
+    from pandas._testing import (
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/pandas/_testing/__init__.py", line 405, in <module>
+    cython_table = pd.core.common._cython_table.items()
+                   ^^^^^^^
+AttributeError: partially initialized module 'pandas' has no attribute 'core' (most likely due to a circular import)
+
+2025-12-26 22:54:10 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:54:10 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:58:12 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:58:12 - main - INFO - 使用配置文件创建系统实例: None
+2025-12-26 22:59:57 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-26 22:59:57 - main - INFO - 使用配置文件创建系统实例: None
