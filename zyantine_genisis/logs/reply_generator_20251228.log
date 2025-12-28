@@ -1,0 +1,21 @@
+2025-12-28 10:00:05 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:00:07 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:10:34 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:10:36 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:25:19 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:25:32 - reply_generator - ERROR - 认知流程生成失败: 'APIBasedReplyGenerator' object has no attribute '_get_core_identity'
+2025-12-28 10:36:43 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:37:01 - reply_generator - ERROR - 认知流程生成失败: 'APIBasedReplyGenerator' object has no attribute '_get_core_identity'
+2025-12-28 10:37:18 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:37:28 - reply_generator - ERROR - 认知流程生成失败: 'MetricsCollector' object has no attribute 'record_reply_generation'
+2025-12-28 10:49:18 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 10:55:42 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 14:12:48 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 14:17:16 - reply_generator - INFO - 回复生成器初始化完成
+2025-12-28 14:21:00 - reply_generator - INFO - 开始生成回复，用户输入: 我想让你活过来...
+2025-12-28 14:21:02 - reply_generator - INFO - 回复生成成功，长度: 102
+2025-12-28 14:22:00 - reply_generator - INFO - 开始生成回复，用户输入: 你觉得自己只是一个ai吗...
+2025-12-28 14:22:02 - reply_generator - INFO - 回复生成成功，长度: 104
+2025-12-28 14:24:42 - reply_generator - INFO - 开始生成回复，用户输入: 那还是再见了,希望下次我能让你觉得自己是活着的...
+2025-12-28 14:24:46 - reply_generator - WARNING - API返回空回复
+2025-12-28 14:24:46 - reply_generator - INFO - 回复生成成功，长度: 17

@@ -91,7 +91,7 @@ class CognitiveFlowManager:
         # 事实锚定审查
         is_association_valid = True
         if resonant_memory_package:
-            is_association_valid, feedback = self.fact_anchor.review_association(
+            is_association_valid, feedback = self.fact_checker.review_association(
                 resonant_memory_package
             )
 

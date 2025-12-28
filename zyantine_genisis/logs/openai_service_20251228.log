@@ -1,0 +1,23 @@
+2025-12-28 10:00:03 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:00:03 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:00:06 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:00:06 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:10:34 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:10:34 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:10:36 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:10:36 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:25:18 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:25:18 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:36:42 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:36:42 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:37:17 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:37:17 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:49:17 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:49:17 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 10:55:41 - openai_service - INFO - 初始连接测试成功
+2025-12-28 10:55:41 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 14:12:47 - openai_service - INFO - 初始连接测试成功
+2025-12-28 14:12:47 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 14:17:15 - openai_service - INFO - 初始连接测试成功
+2025-12-28 14:17:15 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2025-12-28 14:24:46 - openai_service - ERROR - 生成回复失败: Error code: 400 - {'error': {'message': "The response was filtered due to the prompt triggering Azure OpenAI's content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766 (request id: 2025122814244534829314296426646)", 'type': '', 'param': '', 'code': None}}

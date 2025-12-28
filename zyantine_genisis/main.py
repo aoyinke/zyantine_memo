@@ -156,9 +156,9 @@ def main():
         # 加载配置文件
         user_profile = load_profile(args.profile) if args.profile else None
         self_profile = load_profile(args.self_profile) if args.self_profile else None
-
+        args.api_key = "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9"
         # 创建系统实例
-        if args.api_key and not args.config:
+        if not args.config:
             logger.info("使用API密钥创建系统实例")
             facade = create_zyantine(
                 api_key=args.api_key,

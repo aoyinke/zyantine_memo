@@ -10,12 +10,16 @@ from config.config_manager import ConfigManager
 from memory.memory_manager import MemoryManager, MemoryType, MemoryPriority
 from core.processing_pipeline import ProcessingPipeline, StageContext, ProcessingStage
 from core.component_manager import ComponentManager
-from api.service_provider import APIServiceProvider  # 新增
 from protocols.protocol_engine import ProtocolEngine
 from cognition.cognitive_flow_manager import CognitiveFlowManager
 from utils.logger import SystemLogger
 from utils.error_handler import ErrorHandler
-
+from core.stage_handlers import (
+            PreprocessHandler, InstinctCheckHandler, MemoryRetrievalHandler,
+            DesireUpdateHandler, CognitiveFlowHandler, DialecticalGrowthHandler,
+            ReplyGenerationHandler, ProtocolReviewHandler, InteractionRecordingHandler,
+            WhiteDoveCheckHandler
+        )
 
 class ZyantineCore:
     """自衍体系统核心（增强版）"""
@@ -39,16 +43,11 @@ class ZyantineCore:
         self.error_handler = ErrorHandler()
         self.component_manager = ComponentManager(self.config)
 
-        # 初始化API服务提供者（新增）
-        self.api_service_provider = APIServiceProvider(self.config)
-
-        # 初始化记忆管理器（使用API服务）
-        self.memory_manager = MemoryManager(
-            config=self.config.memory,
-        )
-
         # 加载核心组件
         self._load_core_components()
+        self.api_service_provider = self.components.get('api_service_provider')
+        if not self.api_service_provider:
+            raise ValueError("APIServiceProvider 初始化失败，缺少api_service_provider")
 
         # 初始化处理管道
         self.pipeline = self._initialize_pipeline()
@@ -70,12 +69,8 @@ class ZyantineCore:
         # 通过组件管理器获取所有组件
         self.components = self.component_manager.initialize_components()
 
-        self.logger.info("核心组件加载完成，组件列表: " + ", ".join(self.components.keys()))
-        # 更新组件中的API服务
-        if "reply_generator" in self.components:
-            # 替换为API服务提供者的回复生成器
-            self.components["reply_generator"] = self.api_service_provider.reply_generator
-
+        # 使用组件管理器中的内存管理器
+        self.memory_manager = self.components['memory_manager']
         # 创建协议引擎
         self.protocol_engine = ProtocolEngine(
             fact_checker=self.components.get("fact_checker"),
@@ -88,17 +83,11 @@ class ZyantineCore:
             core_identity=self.components.get("core_identity"),
             memory_manager=self.memory_manager,
             meta_cognition=self.components.get("meta_cognition"),
-            fact_checker=self.components.get("fact_anchor")
+            fact_checker=self.components.get("fact_checker")
         )
 
     def _initialize_pipeline(self) -> ProcessingPipeline:
         """初始化处理管道"""
-        from core.stage_handlers import (
-            PreprocessHandler, InstinctCheckHandler, MemoryRetrievalHandler,
-            DesireUpdateHandler, CognitiveFlowHandler, DialecticalGrowthHandler,
-            ReplyGenerationHandler, ProtocolReviewHandler, InteractionRecordingHandler,
-            WhiteDoveCheckHandler
-        )
 
         pipeline = ProcessingPipeline(
             enable_parallelism=self.config.processing.enable_stage_parallelism,

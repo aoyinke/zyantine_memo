@@ -334,31 +334,70 @@ class DesireUpdateHandler(BaseStageHandler):
                     self.logger.warning("欲望引擎不可用，跳过此阶段")
                 return context
 
-            # 分析输入对欲望的影响
+            # 构建欲望引擎所需的参数
             desire_impact = self._analyze_desire_impact(context)
 
-            # 更新欲望向量
-            updated_vectors = self.desire_engine.update(
-                user_input=context.user_input,
-                retrieved_memories=context.retrieved_memories,
-                impact_factors=desire_impact
-            )
+            # 确保 desire_engine 有 update 方法
+            # 如果没有，使用 update_vectors 方法
+            if hasattr(self.desire_engine, 'update'):
+                # 使用兼容的 update 方法
+                updated_vectors = self.desire_engine.update(
+                    user_input=context.user_input,
+                    retrieved_memories=context.retrieved_memories,
+                    impact_factors=desire_impact
+                )
+            elif hasattr(self.desire_engine, 'update_vectors'):
+                # 使用 update_vectors 方法
+                interaction_context = {
+                    "description": context.user_input[:100],
+                    "sentiment": desire_impact.get("sentiment", 0.0),
+                    "intensity": desire_impact.get("overall_impact", 0.5),
+                    "event_type": "interaction",
+                    "duration_seconds": 0.0,
+                    "tags": ["system_update"],
+                    "metadata": {
+                        "user_input": context.user_input[:50],
+                        "context_info": context.context_info
+                    }
+                }
+                updated_vectors = self.desire_engine.update_vectors(interaction_context)
+            else:
+                # 如果都没有，返回默认值
+                updated_vectors = {"TR": 0.5, "CS": 0.5, "SA": 0.5}
 
             # 更新仪表板（如果可用）
             if self.dashboard and hasattr(self.dashboard, 'update_desires'):
                 self.dashboard.update_desires(updated_vectors)
 
-            # 更新上下文
-            context.desire_vectors = updated_vectors
+            # 更新上下文 - 只提取向量部分
+            if isinstance(updated_vectors, dict):
+                # 如果返回的是完整的响应，只提取向量部分
+                if "vectors" in updated_vectors:
+                    context.desire_vectors = updated_vectors["vectors"]
+                elif "TR" in updated_vectors and "CS" in updated_vectors and "SA" in updated_vectors:
+                    context.desire_vectors = {
+                        "TR": updated_vectors.get("TR", 0.5),
+                        "CS": updated_vectors.get("CS", 0.5),
+                        "SA": updated_vectors.get("SA", 0.5)
+                    }
+                else:
+                    # 默认值
+                    context.desire_vectors = {"TR": 0.5, "CS": 0.5, "SA": 0.5}
+            else:
+                context.desire_vectors = {"TR": 0.5, "CS": 0.5, "SA": 0.5}
 
             if self.logger:
-                self.logger.debug(f"欲望更新完成: 更新了 {len(updated_vectors)} 个向量")
+                self.logger.debug(f"欲望更新完成: TR={context.desire_vectors.get('TR', 0.5):.2f}, "
+                                  f"CS={context.desire_vectors.get('CS', 0.5):.2f}, "
+                                  f"SA={context.desire_vectors.get('SA', 0.5):.2f}")
 
         except Exception as e:
             error_msg = f"欲望更新失败: {str(e)}"
             if self.logger:
                 self.logger.error(error_msg)
             context.add_error(error_msg)
+            # 设置默认值
+            context.desire_vectors = {"TR": 0.5, "CS": 0.5, "SA": 0.5}
 
         return context
 
@@ -535,32 +574,18 @@ class ReplyGenerationHandler(BaseStageHandler):
             if self.logger:
                 self.logger.debug("开始回复生成")
 
-            # 确定使用哪个面具（角色）
-            mask_type = self._determine_mask(context)
+            # 构建回复生成参数
+            generation_params = self._build_generation_params(context)
 
-            # 选择模板
-            template = self._select_template(mask_type, context)
-
-
-            # 生成回复内容
-            if self.reply_generator and hasattr(self.reply_generator, 'generate'):
-                # 使用回复生成器
-                reply = self.reply_generator.generate(
-                    context=context,
-                    strategy=context.strategy,
-                    template=template,
-                    mask_type=mask_type
-                )
+            if context.cognitive_result:
+                reply = self.reply_generator.generate_from_cognitive_flow(generation_params)
             else:
-                # 简单的模板填充
-                reply = self._fill_template(template, context)
-
+                reply = self.reply_generator.generate_reply(**generation_params)
             # 更新上下文
             context.final_reply = reply
-            context.mask_type = mask_type
 
             if self.logger:
-                self.logger.debug(f"回复生成完成: 长度 {len(reply)}, 面具类型 {mask_type}")
+                self.logger.debug(f"回复生成完成: 长度 {len(reply)}")
 
         except Exception as e:
             error_msg = f"回复生成失败: {str(e)}"
@@ -569,6 +594,24 @@ class ReplyGenerationHandler(BaseStageHandler):
             context.add_error(error_msg)
 
         return context
+
+    def _build_generation_params(self, context: StageContext) -> Dict:
+        """构建回复生成参数"""
+        return {
+            "user_input": context.user_input,
+            "action_plan": {
+                "chosen_mask": self._determine_mask(context),
+                "primary_strategy": context.strategy
+            },
+            "growth_result": context.growth_result,
+            "context_analysis": context.context_info,
+            "conversation_history": context.conversation_history,
+            "current_vectors": context.desire_vectors,
+            "memory_context": {
+                "retrieved_memories": context.retrieved_memories,
+                "resonant_memory": context.resonant_memory
+            }
+        }
 
     def _determine_mask(self, context: StageContext) -> str:
         """确定使用哪个面具（角色）"""
@@ -679,12 +722,12 @@ class ProtocolReviewHandler(BaseStageHandler):
                     needs_fix = True
                     break
 
-            # 如果有问题，尝试修复
             if needs_fix and self.protocol_engine and hasattr(self.protocol_engine, 'fix_issues'):
                 fixed_reply = self.protocol_engine.fix_issues(
                     reply=context.final_reply,
                     issues=[r["result"] for r in review_results if r["result"]]
                 )
+                # [修复] 只有在修复成功且有返回时才更新
                 if fixed_reply:
                     context.final_reply = fixed_reply
 
@@ -748,7 +791,7 @@ class InteractionRecordingHandler(BaseStageHandler):
             import hashlib
             import json
             interaction_id = hashlib.md5(
-                json.dumps(interaction_data, sort_keys=True).encode()
+                json.dumps(interaction_data, sort_keys=True, default=str).encode()
             ).hexdigest()[:16]
             interaction_data["interaction_id"] = interaction_id
 

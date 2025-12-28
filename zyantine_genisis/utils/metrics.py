@@ -348,6 +348,62 @@ class APIMetrics:
     def __init__(self, collector: MetricsCollector):
         self.collector = collector
 
+    def record_reply_generation(self, success: bool, length: int,
+                                generation_time: float, used_api: bool,
+                                labels: Optional[Dict[str, str]] = None):
+        """
+        记录回复生成指标
+
+        Args:
+            success: 是否成功生成
+            length: 回复长度
+            generation_time: 生成耗时（秒）
+            used_api: 是否使用了API
+            labels: 附加标签
+        """
+        base_labels = {
+            "success": str(success),
+            "used_api": str(used_api)
+        }
+
+        if labels:
+            base_labels.update(labels)
+
+        # 记录生成次数
+        self.increment_counter("reply.generation.count", labels=base_labels)
+
+        # 记录回复长度
+        self.record_histogram("reply.generation.length", length, labels=base_labels)
+
+        # 记录生成时间
+        self.record_histogram("reply.generation.time", generation_time, labels=base_labels)
+
+        # 记录成功率
+        if success:
+            self.increment_counter("reply.generation.success", labels=base_labels)
+        else:
+            self.increment_counter("reply.generation.failure", labels=base_labels)
+
+    # 在 APIMetrics 类中添加 record_api_call 方法：
+    def record_api_call(self, success: bool, latency: float, endpoint: str = "generate_reply",
+                        method: str = "POST", labels: Optional[Dict[str, str]] = None):
+        """
+        记录API调用指标
+
+        Args:
+            success: 是否成功
+            latency: 延迟时间（秒）
+            endpoint: API端点
+            method: HTTP方法
+            labels: 附加标签
+        """
+        if success:
+            status_code = 200
+        else:
+            status_code = 500
+
+        self.record_request(endpoint, method, status_code, latency)
+
     def record_request(self, endpoint: str, method: str,
                        status_code: int, duration: float):
         """

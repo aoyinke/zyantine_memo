@@ -3,12 +3,14 @@ from cognition.core_identity import CoreIdentity
 from cognition.meta_cognition import MetaCognitionModule
 from cognition.cognitive_flow_manager import CognitiveFlowManager
 from cognition.internal_state_dashboard import InternalStateDashboard
+from cognition.desire_engine import DesireEngine
+from cognition.dialectical_growth import DialecticalGrowth
 from memory.memory_manager import MemoryManager
 from protocols.fact_checker import FactChecker
 from protocols.expression_validator import ExpressionValidator
 from protocols.length_regulator import LengthRegulator
 from protocols.protocol_engine import ProtocolEngine
-from api.reply_generator import APIBasedReplyGenerator
+from api.service_provider import APIServiceProvider
 from typing import Dict
 
 
@@ -21,13 +23,21 @@ class ComponentManager:
 
     def initialize_components(self):
         """初始化所有组件"""
+
+
         # 初始化核心身份
         self.components['core_identity'] = CoreIdentity()
+        # 初始化基础服务
+        self.components['api_service_provider'] = APIServiceProvider(self.config,core_identity=self.components['core_identity'])
+        self.components['reply_generator'] = self.components['api_service_provider'].reply_generator
+        # 初始化记忆系统 - 传递API服务
+        self.components['memory_manager'] = MemoryManager(
+            config=self.config,
+        )
 
-        # 初始化记忆系统
-        self.components['memory_manager'] = MemoryManager(self.config)
-
-        # 初始化内部状态仪表盘
+        # 初始化其他组件...
+        self.components['desire_engine'] = DesireEngine()
+        self.components['dialectical_growth'] = DialecticalGrowth(self.config)
         self.components['internal_state_dashboard'] = InternalStateDashboard()
 
         # 初始化元认知模块
@@ -35,7 +45,7 @@ class ComponentManager:
             self.components['internal_state_dashboard']
         )
 
-        # 初始化协议层组件
+        # 初始化协议层组件（现在有API服务了）
         self._init_protocol_components()
 
         # 初始化认知流程管理器
@@ -50,17 +60,18 @@ class ComponentManager:
 
     def _init_protocol_components(self):
         """初始化协议层组件"""
+        # 获取API服务
+        api_service = self.components.get('api_service_provider')
+
         # 初始化表达验证器
         self.components['expression_validator'] = ExpressionValidator()
 
         # 初始化长度规整器
         self.components['length_regulator'] = LengthRegulator()
 
-        # 初始化事实检查器（需要记忆管理器和API服务）
-        memory_manager = self.components.get('memory_manager')
-        api_service = self.components.get('api_service')
+        # 初始化事实检查器
         self.components['fact_checker'] = FactChecker(
-            memory_manager=memory_manager,
+            memory_manager=self.components.get('memory_manager'),
             api_service=api_service
         )
 

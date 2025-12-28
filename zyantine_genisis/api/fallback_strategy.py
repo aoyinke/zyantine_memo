@@ -217,35 +217,80 @@ class FallbackStrategy:
             "is_complex": False,
             "has_memory_context": memory_context is not None,
             "mask_type": action_plan.get("chosen_mask", ""),
-            "strategy_type": action_plan.get("primary_strategy", "")
+            "strategy_type": action_plan.get("primary_strategy", ""),
+            "emotional_intensity": 0.0,  # 新增：情绪强度
+            "support_needs_level": 0.0  # 新增：支持需求等级
         }
 
-        # 分析用户输入
+        if not user_input:
+            return analysis
+
         user_input_lower = user_input.lower()
+        user_input_chars = len(user_input)
 
-        # 情绪关键词
-        emotional_keywords = ["难过", "伤心", "生气", "愤怒", "沮丧", "焦虑",
-                              "压力", "抑郁", "绝望", "崩溃", "哭了", "泪"]
-        analysis["is_emotional"] = any(keyword in user_input_lower for keyword in emotional_keywords)
+        # 更精细的情绪分析
+        emotional_keywords = {
+            "难过": 0.9, "伤心": 0.9, "悲伤": 0.9, "痛苦": 0.8,
+            "生气": 0.8, "愤怒": 0.8, "恼火": 0.7,
+            "沮丧": 0.7, "失落": 0.7, "绝望": 0.9,
+            "焦虑": 0.6, "压力": 0.6, "紧张": 0.6,
+            "抑郁": 0.9, "崩溃": 0.9, "哭了": 0.8, "泪": 0.7
+        }
 
-        # 支持需求关键词
-        support_keywords = ["帮帮我", "怎么办", "建议", "意见", "想法", "应该",
-                            "怎么做", "如何", "为什么", "原因"]
-        analysis["is_seeking_support"] = any(keyword in user_input_lower for keyword in support_keywords)
+        # 计算情绪强度
+        emotional_score = 0.0
+        emotional_count = 0
+        for keyword, weight in emotional_keywords.items():
+            if keyword in user_input_lower:
+                emotional_score += weight
+                emotional_count += 1
 
-        # 模糊问题判断
+        if emotional_count > 0:
+            emotional_intensity = emotional_score / emotional_count
+            analysis["is_emotional"] = emotional_intensity > 0.3
+            analysis["emotional_intensity"] = min(1.0, emotional_intensity * 1.2)  # 归一化
+
+        # 更精细的支持需求分析
+        support_keywords = {
+            "帮帮我": 1.0, "怎么办": 0.9, "建议": 0.7, "意见": 0.6,
+            "想法": 0.5, "应该": 0.4, "怎么做": 0.9, "如何": 0.8,
+            "为什么": 0.6, "原因": 0.5, "求助": 0.9, "指导": 0.7
+        }
+
+        support_score = 0.0
+        for keyword, weight in support_keywords.items():
+            if keyword in user_input_lower:
+                support_score += weight
+
+        # 考虑标点符号
+        if "?" in user_input or "？" in user_input:
+            support_score += 0.3
+
+        analysis["is_seeking_support"] = support_score > 0.5
+        analysis["support_needs_level"] = min(1.0, support_score / 3.0)
+
+        # 改进的模糊问题判断
         question_indicators = ["?", "？", "吗", "呢", "什么", "怎样", "如何", "为什么"]
-        unclear_indicators = ["有点", "可能", "大概", "也许", "似乎", "好像"]
+        unclear_indicators = ["有点", "可能", "大概", "也许", "似乎", "好像", "不太", "不太确定"]
 
         has_question = any(indicator in user_input for indicator in question_indicators)
         has_unclear = any(indicator in user_input_lower for indicator in unclear_indicators)
-        is_short = len(user_input) < 10
+        is_short = user_input_chars < 15  # 增加长度阈值
+        is_long = user_input_chars > 200
 
-        analysis["is_unclear"] = has_question and (has_unclear or is_short)
+        analysis["is_unclear"] = (has_question and has_unclear) or (has_question and is_short) or is_long
 
-        # 复杂性问题判断
-        complex_keywords = ["解释", "分析", "讨论", "深入", "复杂", "困难", "挑战"]
+        # 更精细的复杂性判断
+        complex_keywords = ["解释", "分析", "讨论", "深入", "复杂", "困难", "挑战", "原理", "机制", "系统"]
         analysis["is_complex"] = any(keyword in user_input_lower for keyword in complex_keywords)
+
+        # 检测重复内容（可能表示困惑）
+        words = user_input_lower.split()
+        if len(words) > 10:
+            unique_words = set(words)
+            repetition_ratio = len(unique_words) / len(words)
+            if repetition_ratio < 0.5:  # 大量重复
+                analysis["is_unclear"] = True
 
         return analysis
 
@@ -351,7 +396,7 @@ class FallbackStrategy:
             reply += random.choice(emotional_suffixes)
 
         # 根据面具类型优化语气
-        mask = analysis["mask_type"]
+        mask = analysis.get("mask_type", "")  # 确保安全获取
         if mask == "知己":
             # 更亲密的语气
             reply = self._add_intimacy_markers(reply)

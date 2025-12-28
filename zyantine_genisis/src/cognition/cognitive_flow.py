@@ -500,11 +500,11 @@ class CognitiveFlow:
     """认知流程：统一意识的自然流露"""
 
     def __init__(self, core_identity: CoreIdentity, memory_system: ZyantineMemorySystem,
-                 metacognition_module: MetaCognitionModule, fact_anchor: 'FactAnchorProtocol'):
+                 metacognition_module: MetaCognitionModule, fact_checker: 'FactAnchorProtocol'):
         self.identity = core_identity
         self.memory = memory_system
         self.meta_cog = metacognition_module
-        self.fact_anchor = fact_anchor
+        self.fact_checker = fact_checker
 
         # 流程状态
         self.thought_log = []
@@ -580,7 +580,7 @@ class CognitiveFlow:
         # 事实锚定审查
         is_association_valid = True
         if resonant_memory_package:
-            is_association_valid, feedback = self.fact_anchor.review_association(
+            is_association_valid, feedback = self.fact_checker.review_association(
                 resonant_memory_package
             )
 

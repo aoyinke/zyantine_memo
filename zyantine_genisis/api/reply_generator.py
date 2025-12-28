@@ -85,8 +85,8 @@ class APIBasedReplyGenerator:
         start_time = datetime.now()
 
         try:
-            # 构建生成上下文
-            context = GenerationContext(**kwargs)
+            # 使用工厂方法创建上下文
+            context = self._create_generation_context(**kwargs)
 
             self.logger.info(f"开始生成回复，用户输入: {context.user_input[:50]}...")
 
@@ -104,8 +104,8 @@ class APIBasedReplyGenerator:
             return reply
 
         except Exception as e:
-            self._log_error(None, e, start_time)
-            return self._generate_emergency_reply(None)
+            self._log_error(context if 'context' in locals() else None, e, start_time)
+            return self._generate_emergency_reply(context if 'context' in locals() else None)
 
     def generate_from_cognitive_flow(self, cognitive_result: Dict) -> str:
         """直接从认知流程结果生成回复"""
@@ -119,7 +119,7 @@ class APIBasedReplyGenerator:
             conversation_history = cognitive_result.get("conversation_history", [])
 
             # 获取核心身份
-            core_identity = self._get_core_identity()
+            core_identity = self.core_identity
 
             # 构建上下文
             context = GenerationContext(
@@ -190,6 +190,48 @@ class APIBasedReplyGenerator:
 
         return prompt
 
+    def _generate_with_api(self, context: GenerationContext) -> str:
+        """使用API生成回复"""
+        try:
+            # 构建系统提示词
+            system_prompt = self._build_system_prompt(context)
+
+            # 确定最大token数和温度
+            max_tokens = self._determine_max_tokens(context.context_analysis)
+            temperature = self._determine_temperature(context.current_vectors)
+
+            # 调用API
+            reply, metadata = self.api.generate_reply(
+                system_prompt=system_prompt,
+                user_input=context.user_input,
+                conversation_history=context.conversation_history,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                stream=False
+            )
+
+            if reply:
+                # 存储API使用元数据到上下文
+                if hasattr(context, 'metadata'):
+                    context.metadata = context.metadata or {}
+                    context.metadata.update({
+                        'api_used': True,
+                        'api_metadata': metadata
+                    })
+
+                self.logger.debug(
+                    f"API生成成功，tokens: {metadata.get('tokens_used', 0)}, latency: {metadata.get('latency', 0):.2f}s")
+                return reply
+            else:
+                self.logger.warning("API返回空回复")
+                # 如果API返回空，使用降级策略
+                return self._generate_with_fallback(context)
+
+        except Exception as e:
+            self.logger.error(f"API生成失败: {e}")
+            # API调用失败时，使用降级策略
+            return self._generate_with_fallback(context)
+
     def _generate_prompt_cache_key(self, context: GenerationContext) -> str:
         """生成提示词缓存键"""
         # 使用关键信息生成哈希键
@@ -205,6 +247,32 @@ class APIBasedReplyGenerator:
 
         key_str = str(sorted(key_data.items()))
         return hashlib.md5(key_str.encode()).hexdigest()[:16]
+
+    def _create_generation_context(self, **kwargs) -> GenerationContext:
+        """创建生成上下文，确保所有必需参数都存在"""
+        # 确保核心身份存在
+        if 'core_identity' not in kwargs:
+            kwargs['core_identity'] = self.core_identity
+
+        # 为缺失的必需参数提供默认值
+        defaults = {
+            'user_input': kwargs.get('user_input', ''),
+            'action_plan': kwargs.get('action_plan', {}),
+            'growth_result': kwargs.get('growth_result', {}),
+            'context_analysis': kwargs.get('context_analysis', {}),
+            'conversation_history': kwargs.get('conversation_history', []),
+            'current_vectors': kwargs.get('current_vectors', {}),
+            'memory_context': kwargs.get('memory_context', None),
+            'metadata': kwargs.get('metadata', None),
+            'cognitive_flow_id': kwargs.get('cognitive_flow_id', None)
+        }
+
+        # 更新 kwargs 中的缺失参数
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        return GenerationContext(**kwargs)
 
     def _determine_max_tokens(self, context_analysis: Dict) -> int:
         """确定最大token数"""
@@ -224,15 +292,34 @@ class APIBasedReplyGenerator:
         cs = current_vectors.get("CS", 0.5)
         sa = current_vectors.get("SA", 0.5)
 
-        # 高压状态需要更稳定的回复
-        if sa > 0.7:
-            return 0.4
-        # 高兴奋状态可以更有创造性
-        elif tr > 0.7 and cs > 0.6:
-            return 0.8
-        # 默认状态
-        else:
-            return 0.7
+        # 使用更平滑的温度曲线
+        base_temp = 0.7
+
+        # TR影响：高兴奋需要更多创造性
+        tr_adjustment = (tr - 0.5) * 0.4  # ±0.2
+
+        # CS影响：高亲密感可以更自然
+        cs_adjustment = (cs - 0.5) * 0.3  # ±0.15
+
+        # SA影响：高压需要更稳定
+        sa_adjustment = -sa * 0.3  # 最高降低0.3
+
+        temperature = base_temp + tr_adjustment + cs_adjustment + sa_adjustment
+
+        # 确保温度在合理范围内
+        temperature = max(0.3, min(1.0, temperature))
+
+        # 特殊情况的微调
+        if sa > 0.8 and tr > 0.7:
+            # 高压高兴奋：稍微降低温度避免过激
+            temperature *= 0.9
+
+        # 四舍五入到小数点后一位
+        temperature = round(temperature, 1)
+
+        self.logger.debug(f"计算温度: TR={tr:.2f}, CS={cs:.2f}, SA={sa:.2f} => temp={temperature}")
+
+        return temperature
 
     def _generate_with_fallback(self, context: GenerationContext) -> str:
         """使用降级策略生成回复"""
@@ -272,14 +359,30 @@ class APIBasedReplyGenerator:
         if len(self.generation_log) > 200:
             self.generation_log = self.generation_log[-200:]
 
-        # 记录指标
+        # 记录指标 - 修改这里
         if self.metrics:
-            self.metrics.record_reply_generation(
-                success=True,
-                length=len(reply),
-                generation_time=(datetime.now() - start_time).total_seconds(),
-                used_api=log_entry["used_api"]
-            )
+            # 使用正确的指标记录方法
+            labels = {
+                "mask": log_entry["mask"],
+                "strategy": log_entry["strategy"],
+                "api_used": str(log_entry["used_api"])
+            }
+
+            # 记录回复生成指标
+            self.metrics.increment_counter("reply.generation.total")
+
+            if log_entry["used_api"]:
+                self.metrics.increment_counter("reply.generation.api")
+            else:
+                self.metrics.increment_counter("reply.generation.fallback")
+
+            # 记录回复长度
+            self.metrics.record_histogram("reply.length", len(reply), labels=labels)
+
+            # 记录生成时间
+            self.metrics.record_histogram("reply.generation.time",
+                                          log_entry["generation_time"],
+                                          labels=labels)
 
     def _log_error(self, context: GenerationContext, error: Exception, start_time: datetime):
         """记录错误日志"""

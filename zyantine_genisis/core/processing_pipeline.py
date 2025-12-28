@@ -64,7 +64,7 @@ class StageContext:
     start_time: float = field(default_factory=time.time)
     performance_metrics: Dict[str, float] = field(default_factory=dict)
     interaction_recorded: bool = False  # 新增：交互是否已记录
-
+    stage_results: Dict[str, Any] = field(default_factory=dict)
     def add_stage_result(self, stage: ProcessingStage, result: ProcessingResult):
         """添加阶段结果"""
         self.stage_results[stage] = result

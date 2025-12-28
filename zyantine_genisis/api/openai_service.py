@@ -120,6 +120,7 @@ class OpenAIService:
 
             if test_response and test_response.choices:
                 self.logger.info("初始连接测试成功")
+                self.success_count += 1
             else:
                 self.logger.warning("初始连接测试响应为空")
         except Exception as e:
