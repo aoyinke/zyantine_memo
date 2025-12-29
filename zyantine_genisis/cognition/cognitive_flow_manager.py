@@ -54,8 +54,7 @@ class CognitiveFlowManager:
         self.current_goal = current_goal
         thought_record["steps"]["goal_generation"] = {
             "goal": current_goal,
-            "basis": "基于内省结果和当前向量状态",
-            "priority": "high" if "危机" in current_goal or "紧急" in current_goal else "normal"
+            "basis": "基于内省结果和当前向量状态"
         }
 
         # === 步骤3: Perception (感知) ===
@@ -63,8 +62,7 @@ class CognitiveFlowManager:
         self.deep_pattern = deep_pattern
         thought_record["steps"]["perception"] = {
             "surface_pattern": snapshot.get("external_context", {}).get("summary", {}),
-            "deep_pattern": deep_pattern,
-            "pattern_confidence": self._assess_pattern_confidence(deep_pattern, snapshot)
+            "deep_pattern": deep_pattern
         }
 
         # === 步骤4: Association (联想) ===

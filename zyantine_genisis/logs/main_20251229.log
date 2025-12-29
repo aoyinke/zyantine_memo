@@ -1,0 +1,195 @@
+2025-12-29 09:30:45 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 09:30:45 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 09:30:49 - main - ERROR - 程序运行错误: MetaCognitionModule.__init__() missing 1 required positional argument: 'context_parser'
+2025-12-29 09:30:49 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 163, in main
+    facade = create_zyantine(
+             ^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 398, in create_zyantine
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 47, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 70, in _load_core_components
+    self.components = self.component_manager.initialize_components()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/component_manager.py", line 44, in initialize_components
+    self.components['meta_cognition'] = MetaCognitionModule(
+                                        ^^^^^^^^^^^^^^^^^^^^
+TypeError: MetaCognitionModule.__init__() missing 1 required positional argument: 'context_parser'
+
+2025-12-29 09:33:34 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 09:33:34 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 09:43:55 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 09:43:55 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 10:30:53 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 10:30:53 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 10:30:56 - main - ERROR - 程序运行错误: MemoryManager.__init__() got an unexpected keyword argument 'config'
+2025-12-29 10:30:56 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 163, in main
+    facade = create_zyantine(
+             ^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 398, in create_zyantine
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 47, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 70, in _load_core_components
+    self.components = self.component_manager.initialize_components()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/component_manager.py", line 35, in initialize_components
+    self.components['memory_manager'] = MemoryManager(
+                                        ^^^^^^^^^^^^^^
+TypeError: MemoryManager.__init__() got an unexpected keyword argument 'config'
+
+2025-12-29 10:32:28 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 10:32:28 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 10:32:37 - main - ERROR - 程序运行错误: Unexpected Response: 502 (Bad Gateway)
+Raw response content:
+b''
+2025-12-29 10:32:37 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 163, in main
+    facade = create_zyantine(
+             ^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 398, in create_zyantine
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 47, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 70, in _load_core_components
+    self.components = self.component_manager.initialize_components()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/component_manager.py", line 35, in initialize_components
+    self.components['memory_manager'] = MemoryManager(
+                                        ^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_manager.py", line 55, in __init__
+    self.memory_system = ZyantineMemorySystem(
+                         ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_store.py", line 85, in __init__
+    self.vector_store = self._init_vector_store()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_store.py", line 129, in _init_vector_store
+    return Memory.from_config(config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/memory/main.py", line 243, in from_config
+    return cls(config)
+           ^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/memory/main.py", line 183, in __init__
+    self.vector_store = VectorStoreFactory.create(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/utils/factory.py", line 198, in create
+    return vector_store_instance(**config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/qdrant.py", line 76, in __init__
+    self.create_col(embedding_model_dims, on_disk)
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/qdrant.py", line 88, in create_col
+    response = self.list_cols()
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/qdrant.py", line 230, in list_cols
+    return self.client.get_collections()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/qdrant_client.py", line 1521, in get_collections
+    return self._client.get_collections(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/qdrant_remote.py", line 1786, in get_collections
+    self.http.collections_api.get_collections().result
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api/collections_api.py", line 330, in get_collections
+    return self._build_for_get_collections()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api/collections_api.py", line 159, in _build_for_get_collections
+    return self.api_client.request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api_client.py", line 95, in request
+    return self.send(request, type_)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api_client.py", line 130, in send
+    raise UnexpectedResponse.for_response(response)
+qdrant_client.http.exceptions.UnexpectedResponse: Unexpected Response: 502 (Bad Gateway)
+Raw response content:
+b''
+
+2025-12-29 10:33:19 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 10:33:19 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 10:33:27 - main - ERROR - 程序运行错误: Unexpected Response: 502 (Bad Gateway)
+Raw response content:
+b''
+2025-12-29 10:33:27 - main - ERROR - 错误详情: Traceback (most recent call last):
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/main.py", line 163, in main
+    facade = create_zyantine(
+             ^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 398, in create_zyantine
+    facade = ZyantineFacade(
+             ^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/zyantine_facade.py", line 59, in __init__
+    self.core = ZyantineCore(
+                ^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 47, in __init__
+    self._load_core_components()
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/system_core.py", line 70, in _load_core_components
+    self.components = self.component_manager.initialize_components()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/core/component_manager.py", line 35, in initialize_components
+    self.components['memory_manager'] = MemoryManager(
+                                        ^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_manager.py", line 56, in __init__
+    self.memory_system = ZyantineMemorySystem(
+                         ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_store.py", line 85, in __init__
+    self.vector_store = self._init_vector_store()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gyc/Desktop/GYC_coding/zyantine/zyantine_memo/zyantine_genisis/memory/memory_store.py", line 129, in _init_vector_store
+    return Memory.from_config(config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/memory/main.py", line 243, in from_config
+    return cls(config)
+           ^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/memory/main.py", line 183, in __init__
+    self.vector_store = VectorStoreFactory.create(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/utils/factory.py", line 198, in create
+    return vector_store_instance(**config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/qdrant.py", line 76, in __init__
+    self.create_col(embedding_model_dims, on_disk)
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/qdrant.py", line 88, in create_col
+    response = self.list_cols()
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/mem0/vector_stores/qdrant.py", line 230, in list_cols
+    return self.client.get_collections()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/qdrant_client.py", line 1521, in get_collections
+    return self._client.get_collections(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/qdrant_remote.py", line 1786, in get_collections
+    self.http.collections_api.get_collections().result
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api/collections_api.py", line 330, in get_collections
+    return self._build_for_get_collections()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api/collections_api.py", line 159, in _build_for_get_collections
+    return self.api_client.request(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api_client.py", line 95, in request
+    return self.send(request, type_)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/envs/zyantine_genisis/lib/python3.11/site-packages/qdrant_client/http/api_client.py", line 130, in send
+    raise UnexpectedResponse.for_response(response)
+qdrant_client.http.exceptions.UnexpectedResponse: Unexpected Response: 502 (Bad Gateway)
+Raw response content:
+b''
+
+2025-12-29 10:40:40 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 10:40:40 - main - INFO - 使用API密钥创建系统实例
+2025-12-29 10:49:25 - main - INFO - 系统已安全关闭
+2025-12-29 10:59:52 - main - INFO - 启动自衍体AI系统，日志级别: INFO
+2025-12-29 10:59:52 - main - INFO - 使用API密钥创建系统实例

@@ -1,84 +1,68 @@
 """
 内在状态仪表盘
 模拟无意识的身体状态变化
+[优化版]：将瞬时映射改为数值累积，实现状态的连续性和惯性
 """
 
 from datetime import datetime
 from typing import Dict, List, Any
 import random
 
-
 class InternalStateDashboard:
     """内在状态仪表盘"""
 
     def __init__(self):
-        # 初始状态 - 健康平衡点
+        # 内部数值 (0.0 - 100.0), 初始为健康平衡态
+        self._energy_val = 80.0
+        self._mood_val = 70.0
+        self._patience_val = 80.0
+        self._fatigue_val = 0.0
+
+        # 映射显示的标签
         self.energy_level = "精力充沛"
         self.mood_level = "心情愉快"
         self.patience_level = "很有耐心"
         self.mental_fatigue = 0
         self.concentration_level = "高度集中"
 
-        # 状态映射表
-        self.state_mappings = {
-            "energy_level": {
-                "very_low": "精疲力竭",
-                "low": "有些疲惫",
-                "medium": "精力尚可",
-                "high": "精力充沛",
-                "very_high": "能量过剩"
-            },
-            "mood_level": {
-                "very_low": "心情极差",
-                "low": "心情低落",
-                "medium": "心情平静",
-                "high": "心情愉快",
-                "very_high": "兴高采烈"
-            },
-            "patience_level": {
-                "very_low": "毫无耐心",
-                "low": "耐心有限",
-                "medium": "还算耐心",
-                "high": "很有耐心",
-                "very_high": "极度耐心"
-            }
-        }
-
-        # 历史状态记录
+        # 状态历史记录
         self.state_history = []
+        self._update_labels() # 初始化标签
         self._record_state("initialization")
 
     def update_based_on_vectors(self, TR_activity: float, CS_activity: float,
-                                SA_activity: float) -> Dict[str, str]:
+                                SA_activity: float) -> Dict[str, Any]:
         """
         基于向量活动更新仪表盘读数
-        模拟无意识的更新过程
+        模拟无意识的更新过程 (数值累积制)
         """
         previous_state = self.get_current_state()
 
-        # === 能量级别计算 ===
-        # 高SA和高TR消耗能量，高CS恢复能量
-        energy_impact = (CS_activity * 0.3 - SA_activity * 0.4 - TR_activity * 0.3)
-        self._update_energy_level(energy_impact)
+        # === 计算影响因子 (Sensitivity) ===
+        # 系数决定了状态变化的快慢
 
-        # === 情绪级别计算 ===
-        # TR和CS提升情绪，SA降低情绪
-        mood_impact = (TR_activity * 0.4 + CS_activity * 0.4 - SA_activity * 0.2)
-        self._update_mood_level(mood_impact)
+        # 1. 能量: CS(休息)恢复, SA(压力)和TR(兴奋)消耗
+        energy_change = (CS_activity * 2.0) - (SA_activity * 1.5) - (TR_activity * 1.0)
+        self._energy_val = self._clamp(self._energy_val + energy_change)
 
-        # === 耐心级别计算 ===
-        # SA显著降低耐心，CS提升耐心
-        patience_impact = (CS_activity * 0.5 - SA_activity * 0.5)
-        self._update_patience_level(patience_impact)
+        # 2. 情绪: TR/CS提升, SA显著降低
+        mood_change = (TR_activity * 1.5) + (CS_activity * 1.5) - (SA_activity * 3.0)
+        self._mood_val = self._clamp(self._mood_val + mood_change)
 
-        # === 精神疲劳计算 ===
-        # 持续高强度活动增加疲劳
-        fatigue_impact = (TR_activity * 0.3 + SA_activity * 0.5 - CS_activity * 0.2)
-        self._update_mental_fatigue(fatigue_impact)
+        # 3. 耐心: CS提升, SA消耗, 能量低时消耗更快
+        fatigue_penalty = 1.0 if self._fatigue_val < 60 else 2.0
+        patience_change = (CS_activity * 1.5) - (SA_activity * 2.0 * fatigue_penalty)
+        self._patience_val = self._clamp(self._patience_val + patience_change)
 
-        # === 自然回归机制 ===
-        # 在没有强刺激时向平衡点回归
+        # 4. 疲劳: TR/SA增加疲劳, CS减少
+        fatigue_change = (TR_activity * 1.2) + (SA_activity * 1.5) - (CS_activity * 1.0)
+        self._fatigue_val = self._clamp(self._fatigue_val + fatigue_change)
+
+        # === 自然回归机制 (Homeostasis) ===
         self._apply_natural_regression()
+
+        # === 更新显示标签 ===
+        self._update_labels()
 
         current_state = self.get_current_state()
         self._record_state("vector_update")
@@ -89,71 +73,58 @@ class InternalStateDashboard:
             "changes": self._calculate_state_changes(previous_state, current_state)
         }
 
-    def _update_energy_level(self, impact: float):
-        """更新能量级别"""
-        energy_map = {
-            -0.8: "very_low", -0.4: "low", 0.0: "medium", 0.4: "high", 0.8: "very_high"
-        }
+    def _clamp(self, value: float) -> float:
+        """将数值限制在 0-100 之间"""
+        return max(0.0, min(100.0, value))
 
-        # 找到最接近的映射
-        closest = min(energy_map.keys(), key=lambda x: abs(x - impact))
-        level_key = energy_map[closest]
-        self.energy_level = self.state_mappings["energy_level"][level_key]
+    def _update_labels(self):
+        """根据内部数值更新文本标签"""
+        # 更新能量标签
+        if self._energy_val > 90: self.energy_level = "能量过剩"
+        elif self._energy_val > 70: self.energy_level = "精力充沛"
+        elif self._energy_val > 40: self.energy_level = "精力尚可"
+        elif self._energy_val > 20: self.energy_level = "有些疲惫"
+        else: self.energy_level = "精疲力竭"
 
-    def _update_mood_level(self, impact: float):
-        """更新情绪级别"""
-        mood_map = {
-            -0.6: "very_low", -0.3: "low", 0.0: "medium", 0.3: "high", 0.6: "very_high"
-        }
+        # 更新情绪标签
+        if self._mood_val > 85: self.mood_level = "兴高采烈"
+        elif self._mood_val > 60: self.mood_level = "心情愉快"
+        elif self._mood_val > 40: self.mood_level = "心情平静"
+        elif self._mood_val > 20: self.mood_level = "心情低落"
+        else: self.mood_level = "心情极差"
 
-        closest = min(mood_map.keys(), key=lambda x: abs(x - impact))
-        level_key = mood_map[closest]
-        self.mood_level = self.state_mappings["mood_level"][level_key]
+        # 更新耐心标签
+        if self._patience_val > 85: self.patience_level = "极度耐心"
+        elif self._patience_val > 60: self.patience_level = "很有耐心"
+        elif self._patience_val > 40: self.patience_level = "还算耐心"
+        elif self._patience_val > 20: self.patience_level = "耐心有限"
+        else: self.patience_level = "毫无耐心"
 
-    def _update_patience_level(self, impact: float):
-        """更新耐心级别"""
-        patience_map = {
-            -0.7: "very_low", -0.35: "low", 0.0: "medium", 0.35: "high", 0.7: "very_high"
-        }
-
-        closest = min(patience_map.keys(), key=lambda x: abs(x - impact))
-        level_key = patience_map[closest]
-        self.patience_level = self.state_mappings["patience_level"][level_key]
-
-    def _update_mental_fatigue(self, impact: float):
-        """更新精神疲劳"""
-        self.mental_fatigue = max(0, min(100, self.mental_fatigue + impact * 20))
-
-        # 根据疲劳度更新专注力
-        if self.mental_fatigue > 80:
-            self.concentration_level = "难以集中"
-        elif self.mental_fatigue > 60:
-            self.concentration_level = "容易分心"
-        elif self.mental_fatigue > 40:
-            self.concentration_level = "一般专注"
-        elif self.mental_fatigue > 20:
-            self.concentration_level = "比较专注"
-        else:
-            self.concentration_level = "高度集中"
+        # 更新疲劳与专注
+        self.mental_fatigue = self._fatigue_val
+        if self._fatigue_val > 80: self.concentration_level = "难以集中"
+        elif self._fatigue_val > 60: self.concentration_level = "容易分心"
+        elif self._fatigue_val > 40: self.concentration_level = "一般专注"
+        elif self._fatigue_val > 20: self.concentration_level = "比较专注"
+        else: self.concentration_level = "高度集中"
 
     def _apply_natural_regression(self):
-        """自然回归：向健康平衡点缓慢回归"""
-        # 简化实现：每次更新轻微回归
-        if random.random() < 0.3:  # 30%概率回归
-            if self.energy_level == "精疲力竭":
-                self.energy_level = "有些疲惫"
-            elif self.mood_level == "心情极差":
-                self.mood_level = "心情低落"
-            elif self.patience_level == "毫无耐心":
-                self.patience_level = "耐心有限"
-            elif self.mental_fatigue > 50:
-                self.mental_fatigue *= 0.95  # 减少5%
+        """自然回归：数值向平衡点缓慢回归"""
+        # 平衡点设置
+        target_energy = 70.0
+        target_mood = 60.0
+        target_patience = 70.0
+        target_fatigue = 20.0 # 休息状态下应有少量疲劳恢复
+
+        rate = 0.05 # 回归速率
+
+        self._energy_val += (target_energy - self._energy_val) * rate
+        self._mood_val += (target_mood - self._mood_val) * rate
+        self._patience_val += (target_patience - self._patience_val) * rate
+        self._fatigue_val += (target_fatigue - self._fatigue_val) * rate
 
     def get_current_state_as_feeling_tags(self) -> List[str]:
-        """
-        将当前仪表盘读数转化为内在感觉标签
-        供认知层在思考时使用
-        """
+        """将当前仪表盘读数转化为内在感觉标签"""
         tags = []
 
         # 基于能量级别的标签
@@ -180,13 +151,6 @@ class InternalStateDashboard:
         elif self.mental_fatigue > 40:
             tags.append("我感到一些思维疲劳，需要更简单的表达")
 
-        # 基于专注力的标签
-        if self.concentration_level == "难以集中":
-            tags.append("我很难集中注意力，可能会错过一些细节")
-        elif self.concentration_level == "高度集中":
-            tags.append("我完全专注于当前对话，可以处理复杂思考")
-
-        # 如果没有特定标签，添加一般状态标签
         if not tags:
             tags.append("我感觉状态平稳，可以正常进行对话")
 
@@ -196,9 +160,10 @@ class InternalStateDashboard:
         """获取完整的当前状态"""
         return {
             "energy_level": self.energy_level,
+            "energy_value": round(self._energy_val, 1),
             "mood_level": self.mood_level,
             "patience_level": self.patience_level,
-            "mental_fatigue": self.mental_fatigue,
+            "mental_fatigue": round(self._fatigue_val, 1),
             "concentration_level": self.concentration_level,
             "timestamp": datetime.now().isoformat()
         }
@@ -209,19 +174,12 @@ class InternalStateDashboard:
             **self.get_current_state(),
             "update_reason": update_reason
         })
-
-        # 保持历史记录长度
         if len(self.state_history) > 500:
             self.state_history = self.state_history[-500:]
 
     def _calculate_state_changes(self, previous: Dict, current: Dict) -> Dict:
-        """计算状态变化"""
         changes = {}
-        for key in previous:
-            if key != "timestamp":
-                if previous[key] != current[key]:
-                    changes[key] = {
-                        "from": previous[key],
-                        "to": current[key]
-                    }
+        for key in ["energy_level", "mood_level", "patience_level", "concentration_level"]:
+            if previous.get(key) != current.get(key):
+                changes[key] = {"from": previous.get(key), "to": current.get(key)}
         return changes

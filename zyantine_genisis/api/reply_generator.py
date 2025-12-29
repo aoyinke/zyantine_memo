@@ -120,7 +120,18 @@ class APIBasedReplyGenerator:
 
             # 获取核心身份
             core_identity = self.core_identity
-
+            if memory_context:
+                # 如果有共鸣记忆，提取关键信息
+                resonant_memory = memory_context.get("resonant_memory")
+                if resonant_memory:
+                    simplified_memory_context = {
+                        "resonant_memory": {
+                            "triggered_memory": resonant_memory.get("triggered_memory", "")[:200],
+                            "relevance_score": resonant_memory.get("relevance_score", 0.0),
+                            "emotional_intensity": resonant_memory.get("emotional_intensity", 0.5),
+                            "tags": resonant_memory.get("tags", [])
+                        }
+                    }
             # 构建上下文
             context = GenerationContext(
                 user_input=user_input,

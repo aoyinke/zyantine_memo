@@ -8,8 +8,8 @@ import os
 import sys
 import json
 from datetime import datetime
-from src.config.config import ZyantineConfig
-from src.system.zyantine_memory import Memo0EnhancedZyantineGenesis
+from zyantine_old_version.config.config import ZyantineConfig
+from zyantine_old_version.system.zyantine_memory import Memo0EnhancedZyantineGenesis
 os.environ["OPENAI_API_KEY"] = "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9"
 os.environ["OPENAI_BASE_URL"] = "https://openkey.cloud/v1"
 def setup_environment():
@@ -88,7 +88,7 @@ def test_api_connection():
 
     try:
         # 测试API连接
-        from src.api.service import test_api_connection
+        from zyantine_old_version.api.service import test_api_connection
 
         api_key = os.getenv("OPENAI_API_KEY")
         base_url = "https://openkey.cloud/v1"

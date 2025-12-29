@@ -1,15 +1,21 @@
 from datetime import datetime
 from typing import Dict, List, Optional
-from .internal_state_dashboard import InternalStateDashboard
-from .context_parser import ContextParser
+
 
 
 class MetaCognitionModule:
     """元认知模块：自我审视与内外感知"""
 
-    def __init__(self, internal_dashboard: InternalStateDashboard):
+    def __init__(self, internal_dashboard,context_parser):
+        """
+                参数化依赖注入，避免循环导入
+
+                Args:
+                    internal_dashboard: 内部状态仪表盘实例
+                    context_parser: 情境解析器实例
+                """
         self.dashboard = internal_dashboard
-        self.context_parser = ContextParser()
+        self.context_parser = context_parser
         self.introspection_history = []
 
     def perform_introspection(self, user_input: str, history: List[Dict]) -> Dict:

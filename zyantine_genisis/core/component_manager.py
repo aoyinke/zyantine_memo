@@ -1,5 +1,6 @@
 # 修改所有相对导入为绝对导入
 from cognition.core_identity import CoreIdentity
+from cognition.context_parser import ContextParser
 from cognition.meta_cognition import MetaCognitionModule
 from cognition.cognitive_flow_manager import CognitiveFlowManager
 from cognition.internal_state_dashboard import InternalStateDashboard
@@ -37,12 +38,27 @@ class ComponentManager:
 
         # 初始化其他组件...
         self.components['desire_engine'] = DesireEngine()
-        self.components['dialectical_growth'] = DialecticalGrowth(self.config)
+        creator_anchor = {
+            "default": {
+                "concept": "真诚、善良、好奇、成长",
+                "expected_response": "基于核心价值观的回应"
+            },
+            "emotional_support": {
+                "concept": "共情与支持",
+                "expected_response": "先处理情绪，再处理问题"
+            },
+            "technical_question": {
+                "concept": "专业与准确",
+                "expected_response": "提供准确、专业的解答"
+            }
+        }
+        self.components['dialectical_growth'] = DialecticalGrowth(creator_anchor)
         self.components['internal_state_dashboard'] = InternalStateDashboard()
-
+        self.components['context_parser'] = ContextParser()
         # 初始化元认知模块
         self.components['meta_cognition'] = MetaCognitionModule(
-            self.components['internal_state_dashboard']
+            self.components['internal_state_dashboard'],
+            self.components['context_parser']
         )
 
         # 初始化协议层组件（现在有API服务了）

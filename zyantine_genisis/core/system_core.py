@@ -361,6 +361,10 @@ class ZyantineCore:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             file_path = f"./memory_backups/{self.config.session_id}_{timestamp}.json"
 
+        # 确保目录存在，如果不存在则创建（安全方式）
+        directory = os.path.dirname(file_path)
+        os.makedirs(directory, exist_ok=True)  # exist_ok=True 确保目录不存在时创建，存在时不会报错 [[7]]
+
         self.logger.info(f"正在保存记忆系统到: {file_path}")
         return self.memory_manager.export_memories(file_path)
 

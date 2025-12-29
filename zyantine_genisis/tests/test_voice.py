@@ -1,6 +1,6 @@
 # main.py
 import os
-from src.system.zyantine_genesis import ZyantineGenesisV2
+from zyantine_old_version.system.zyantine_genesis import ZyantineGenesisV2
 
 # 示例用户数据
 user_profile = {

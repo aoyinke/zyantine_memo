@@ -574,8 +574,13 @@ class ReplyGenerationHandler(BaseStageHandler):
             if self.logger:
                 self.logger.debug("开始回复生成")
 
+            # 1. 确定面具并保存到 context (修复 mask_type 丢失问题)
+            chosen_mask = self._determine_mask(context)
+            # 假设 StageContext 允许动态属性或已有该字段
+            context.mask_type = chosen_mask
+
             # 构建回复生成参数
-            generation_params = self._build_generation_params(context)
+            generation_params = self._build_generation_params(context,chosen_mask)
 
             if context.cognitive_result:
                 reply = self.reply_generator.generate_from_cognitive_flow(generation_params)
@@ -595,12 +600,12 @@ class ReplyGenerationHandler(BaseStageHandler):
 
         return context
 
-    def _build_generation_params(self, context: StageContext) -> Dict:
+    def _build_generation_params(self, context: StageContext,chosen_mask:str) -> Dict:
         """构建回复生成参数"""
         return {
             "user_input": context.user_input,
             "action_plan": {
-                "chosen_mask": self._determine_mask(context),
+                "chosen_mask": chosen_mask,
                 "primary_strategy": context.strategy
             },
             "growth_result": context.growth_result,

@@ -3,9 +3,9 @@
 """
 
 import pytest
-from src.core.instinctual_core import InstinctualCore
-from src.core.desire_engine import DesireEngine
-from src.core.dialectical_growth import DialecticalGrowth
+from zyantine_old_version.core.instinctual_core import InstinctualCore
+from zyantine_old_version.core.desire_engine import DesireEngine
+from zyantine_old_version.core.dialectical_growth import DialecticalGrowth
 
 
 def test_instinctual_core_initialization():
