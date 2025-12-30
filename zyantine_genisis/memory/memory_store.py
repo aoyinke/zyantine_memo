@@ -299,6 +299,52 @@ class ZyantineMemorySystem:
         target_session = session_id or self.session_id
         return self.search_memories(query=query, memory_type="conversation", limit=limit)
 
+    def get_recent_conversations(self,
+                                 session_id: Optional[str] = None,
+                                 limit: int = 5) -> List[Dict]:
+        """按时间顺序获取最近对话"""
+        target_session = session_id or self.session_id
+
+        try:
+            all_memories = self.memory.get_all(user_id=self.user_id)
+        except Exception as e:
+            print(f"[记忆系统] 获取所有记忆失败: {e}")
+            return []
+
+        recent_conversations = []
+        for memory_item in all_memories:
+            # 添加类型检查
+            if not isinstance(memory_item, dict):
+                print(f"[记忆系统] 警告：记忆项不是字典类型，而是 {type(memory_item)}，值: {repr(memory_item)[:200]}")
+                continue
+
+            memory_data = memory_item.get("memory", {})
+            metadata = memory_item.get("metadata", {})
+
+            if metadata.get("memory_type") != "conversation":
+                continue
+
+            if metadata.get("session_id") != target_session:
+                continue
+
+            created_at = metadata.get("created_at", datetime.now().isoformat())
+
+            recent_conversations.append({
+                "memory_id": metadata.get("memory_id"),
+                "content": self._extract_content_from_memory(memory_data),
+                "metadata": metadata,
+                "memory_type": metadata.get("memory_type"),
+                "tags": metadata.get("tags", []),
+                "emotional_intensity": metadata.get("emotional_intensity", 0.5),
+                "strategic_value": metadata.get("strategic_value", {}),
+                "linked_tool": metadata.get("linked_tool"),
+                "created_at": created_at,
+                "access_count": self.semantic_memory_map.get(metadata.get("memory_id"), {}).get("access_count", 0)
+            })
+
+        recent_conversations.sort(key=lambda x: x["created_at"], reverse=True)
+        return recent_conversations[:limit]
+
     def find_experiences(self,
                          context: Dict,
                          limit: int = 3) -> List[Dict]:

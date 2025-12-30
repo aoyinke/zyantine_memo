@@ -275,6 +275,10 @@ class MemoryManager:
             self._update_indexes(memory_record)
             self._update_stats(memory_record)
 
+            # 如果添加的是对话记忆，清除对话历史缓存以确保获取最新数据
+            if memory_type_enum == MemoryType.CONVERSATION:
+                self._clear_conversation_history_cache()
+
             response_time = (time.time() - start_time) * 1000
             self._record_response_time(response_time)
 
@@ -556,9 +560,8 @@ class MemoryManager:
         if cached and isinstance(cached.content, list):
             return cached.content[:limit]
 
-        # 从记忆系统加载
-        conversations = self.memory_system.find_conversations(
-            query="最近的对话",
+        # 从记忆系统加载（使用按时间顺序检索）
+        conversations = self.memory_system.get_recent_conversations(
             session_id=self.session_id,
             limit=limit * 2  # 获取更多用于过滤
         )
@@ -605,6 +608,29 @@ class MemoryManager:
 
         return history
 
+    def _clear_conversation_history_cache(self):
+        """清除所有对话历史缓存"""
+        try:
+            # 获取所有缓存键
+            cache_keys_to_clear = []
+
+            # 遍历缓存，找到所有对话历史缓存
+            if hasattr(self.cache, 'cache') and isinstance(self.cache.cache, dict):
+                for cache_key in list(self.cache.cache.keys()):
+                    if isinstance(cache_key, str) and cache_key.startswith("conversation_history_"):
+                        cache_keys_to_clear.append(cache_key)
+
+            # 清除所有对话历史缓存
+            for cache_key in cache_keys_to_clear:
+                self.cache.delete(cache_key)
+                print(f"[记忆管理器] 已清除对话历史缓存: {cache_key}")
+
+            if cache_keys_to_clear:
+                print(f"[记忆管理器] 共清除 {len(cache_keys_to_clear)} 个对话历史缓存")
+
+        except Exception as e:
+            print(f"[记忆管理器] 清除对话历史缓存失败: {e}")
+
     def record_interaction(self, interaction_data: Dict) -> bool:
         """记录交互（优化版）"""
         try:
@@ -649,6 +675,10 @@ class MemoryManager:
             )
 
             print(f"[记忆管理器] 交互记录成功，ID: {memory_id}")
+
+            # 清除对话历史缓存，确保下次获取时包含最新对话
+            self._clear_conversation_history_cache()
+
             return True
 
         except Exception as e:
@@ -921,12 +951,11 @@ class MemoryManager:
                 parts = content.split("user:", 1)
                 if len(parts) > 1:
                     return parts[1].split("\n", 1)[0].strip()
-            return content[:100] + "..." if len(content) > 100 else content
+            return content
         elif isinstance(content, list):
             for item in content:
                 if isinstance(item, dict) and item.get("role") == "user":
-                    content_str = item.get("content", "")
-                    return content_str[:100] + "..." if len(content_str) > 100 else content_str
+                    return item.get("content", "")
         return ""
 
     @staticmethod

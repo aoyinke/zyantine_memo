@@ -22,7 +22,7 @@ class DialecticalGrowth:
         self.assimilation_rate = 0.1  # 新原则同化速率
 
     def process(self, cognitive_result: Dict = None, user_input: str = None,
-                desire_vectors: Dict = None, **kwargs) -> Dict:
+                desire_vectors: Dict = None, context_info: Dict = None, **kwargs) -> Dict:
         """
         处理辩证成长过程（适配处理管道调用）
 
@@ -30,6 +30,7 @@ class DialecticalGrowth:
             cognitive_result: 认知结果（包含实际响应）
             user_input: 用户输入
             desire_vectors: 欲望向量
+            context_info: 上下文信息（包含已解析的情感、复杂度、交互类型等）
             **kwargs: 其他参数
 
         Returns:
@@ -37,38 +38,33 @@ class DialecticalGrowth:
         """
         try:
             if not cognitive_result:
-                # 如果没有认知结果，返回空的成长结果
                 return self._create_empty_growth_result()
 
-            # 从认知结果中提取必要信息
             action_plan = cognitive_result.get("final_action_plan", {})
             actual_response = cognitive_result.get("response", "")
             strategy = action_plan.get("primary_strategy", "")
             mask = action_plan.get("chosen_mask", "")
 
-            # 构建情境描述
             situation = self._build_situation_description(
                 user_input=user_input,
                 strategy=strategy,
                 mask=mask,
-                vectors=desire_vectors
+                vectors=desire_vectors,
+                context_info=context_info
             )
 
-            # 构建实际响应对象
             actual_response_obj = self._build_actual_response(
                 response_text=actual_response,
                 strategy=strategy,
                 vectors=desire_vectors
             )
 
-            # 执行辩证过程
             growth_result = self.dialectical_process(
                 situation=situation,
                 actual_response=actual_response_obj,
                 context_vectors=desire_vectors or {}
             )
 
-            # 返回格式化的成长结果
             return self._format_growth_result(growth_result, strategy)
 
         except Exception as e:
@@ -100,16 +96,16 @@ class DialecticalGrowth:
 
     def _build_situation_description(self, user_input: str = None,
                                      strategy: str = None, mask: str = None,
-                                     vectors: Dict = None) -> Dict:
+                                     vectors: Dict = None, context_info: Dict = None) -> Dict:
         """构建情境描述"""
-        # 分析用户输入的情感
-        user_emotion = self._analyze_user_emotion(user_input or "")
-
-        # 分析话题复杂度
-        topic_complexity = self._analyze_topic_complexity(user_input or "")
-
-        # 确定交互类型
-        interaction_type = self._determine_interaction_type(user_input or "")
+        if context_info:
+            user_emotion = context_info.get("user_emotion", "neutral")
+            topic_complexity = context_info.get("topic_complexity", "medium")
+            interaction_type = context_info.get("interaction_type", "general_conversation")
+        else:
+            user_emotion = "neutral"
+            topic_complexity = "medium"
+            interaction_type = "general_conversation"
 
         return {
             "summary": f"用户输入: {user_input[:50]}...",
@@ -144,52 +140,6 @@ class DialecticalGrowth:
             "timestamp": datetime.now().isoformat()
         }
 
-    def _analyze_user_emotion(self, text: str) -> str:
-        """分析用户情感"""
-        positive_words = ['开心', '高兴', '喜欢', '爱', '好', '棒', '优秀', '成功']
-        negative_words = ['难过', '伤心', '生气', '愤怒', '糟糕', '差', '垃圾', '失败', '讨厌', '恨']
-        neutral_words = ['问题', '请问', '知道', '了解', '解释', '说明']
-
-        text_lower = text.lower()
-
-        pos_count = sum(1 for word in positive_words if word in text_lower)
-        neg_count = sum(1 for word in negative_words if word in text_lower)
-        neu_count = sum(1 for word in neutral_words if word in text_lower)
-
-        if pos_count > neg_count and pos_count > neu_count:
-            return "positive"
-        elif neg_count > pos_count and neg_count > neu_count:
-            return "negative"
-        else:
-            return "neutral"
-
-    def _analyze_topic_complexity(self, text: str) -> str:
-        """分析话题复杂度"""
-        length = len(text)
-
-        if length < 20:
-            return "low"
-        elif length < 100:
-            return "medium"
-        else:
-            return "high"
-
-    def _determine_interaction_type(self, text: str) -> str:
-        """确定交互类型"""
-        seeking_support_words = ['帮助', '求助', '怎么办', '建议', '意见', '指导']
-        sharing_experience_words = ['记得', '想起', '之前', '经验', '经历', '故事']
-        requesting_action_words = ['做', '完成', '执行', '处理', '解决', '任务']
-
-        text_lower = text.lower()
-
-        if any(word in text_lower for word in seeking_support_words):
-            return "seeking_support"
-        elif any(word in text_lower for word in sharing_experience_words):
-            return "sharing_experience"
-        elif any(word in text_lower for word in requesting_action_words):
-            return "requesting_action"
-        else:
-            return "general_conversation"
 
     def _analyze_expression_style(self, text: str) -> str:
         """分析表达风格"""

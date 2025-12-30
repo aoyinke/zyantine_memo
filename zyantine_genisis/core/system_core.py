@@ -2,6 +2,7 @@
 系统核心 - 整合所有模块的主系统（更新API集成部分）
 """
 import os
+import uuid
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
@@ -283,11 +284,38 @@ class ZyantineCore:
             # 执行处理管道
             context = self.pipeline.execute(context)
 
+            # 调试：记录context对象的所有属性
+            self.logger.info(f"Pipeline执行后的context属性:")
+            for attr in ['final_reply', 'instinct_override', 'errors', 'conversation_history', 'retrieved_memories', 'resonant_memory', 'cognitive_result', 'growth_result']:
+                if hasattr(context, attr):
+                    value = getattr(context, attr)
+                    self.logger.info(f"  {attr}: type={type(value)}, value={repr(value)[:100] if isinstance(value, (str, dict, list)) else value}")
+
             # 处理结果
             if context.final_reply:
                 # 记录API使用情况
                 if hasattr(context, 'api_metadata'):
                     self._record_api_usage(context.api_metadata)
+
+                # 记录交互到记忆系统
+                try:
+                    interaction_data = {
+                        "user_input": user_input,
+                        "system_response": context.final_reply,
+                        "interaction_id": str(uuid.uuid4()),
+                        "context": {
+                            "conversation_history_length": len(context.conversation_history) if isinstance(context.conversation_history, list) else 0
+                        },
+                        "retrieved_memories_count": len(context.retrieved_memories) if hasattr(context, 'retrieved_memories') and isinstance(context.retrieved_memories, list) else 0,
+                        "resonant_memory": bool(context.resonant_memory) if hasattr(context, 'resonant_memory') and isinstance(context.resonant_memory, dict) else False,
+                        "cognitive_result": bool(context.cognitive_result) if hasattr(context, 'cognitive_result') and isinstance(context.cognitive_result, dict) else False,
+                        "growth_result": context.growth_result if hasattr(context, 'growth_result') and isinstance(context.growth_result, dict) else None
+                    }
+                    self.memory_manager.record_interaction(interaction_data)
+                except Exception as e:
+                    self.logger.error(f"记录交互失败: {e}")
+                    import traceback
+                    self.logger.error(traceback.format_exc())
 
                 self.logger.info(f"处理成功，响应长度: {len(context.final_reply)}")
                 return context.final_reply
@@ -305,6 +333,8 @@ class ZyantineCore:
 
         except Exception as e:
             self.logger.error(f"处理过程中发生异常: {str(e)}")
+            import traceback
+            self.logger.error(traceback.format_exc())
             return self._generate_error_response(e, user_input)
 
     def _record_api_usage(self, metadata: Dict):

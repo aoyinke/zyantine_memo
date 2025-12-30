@@ -19,3 +19,7 @@
 2025-12-29 10:59:54 - openai_service - INFO - 初始连接测试成功
 2025-12-29 10:59:54 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-4.1-nano-2025-04-14
 2025-12-29 11:05:22 - openai_service - ERROR - 生成回复失败: Connection error.
+2025-12-29 14:43:11 - openai_service - INFO - 正在关闭OpenAI服务...
+2025-12-29 14:43:11 - openai_service - INFO - OpenAI服务已关闭
+2025-12-29 14:43:11 - openai_service - INFO - 正在关闭OpenAI服务...
+2025-12-29 14:43:11 - openai_service - INFO - OpenAI服务已关闭

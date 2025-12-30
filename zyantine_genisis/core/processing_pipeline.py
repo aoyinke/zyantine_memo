@@ -65,6 +65,19 @@ class StageContext:
     performance_metrics: Dict[str, float] = field(default_factory=dict)
     interaction_recorded: bool = False  # 新增：交互是否已记录
     stage_results: Dict[str, Any] = field(default_factory=dict)
+    
+    def __post_init__(self):
+        """初始化后验证所有字典字段"""
+        dict_fields = ['context_info', 'desire_vectors', 'emotional_context', 'white_dove_check', 'stage_results']
+        for field in dict_fields:
+            if not isinstance(getattr(self, field), dict):
+                # 如果字段不是字典，重置为默认字典
+                setattr(self, field, {})
+                # 记录警告
+                import logging
+                logger = logging.getLogger("StageContext")
+                logger.warning(f"StageContext字段 {field} 不是字典类型，已重置为默认字典")
+    
     def add_stage_result(self, stage: ProcessingStage, result: ProcessingResult):
         """添加阶段结果"""
         self.stage_results[stage] = result

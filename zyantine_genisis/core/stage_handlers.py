@@ -45,6 +45,10 @@ class PreprocessHandler(BaseStageHandler):
 
             # 更新上下文
             context.user_input = cleaned_input
+            # 确保context_info是字典类型
+            if not isinstance(context_info, dict):
+                self.logger.error(f"上下文信息不是字典类型，而是{type(context_info)}，将使用默认值")
+                context_info = {"raw_input": cleaned_input}
             context.context_info = context_info
 
             if self.logger:
@@ -71,30 +75,51 @@ class PreprocessHandler(BaseStageHandler):
 
     def _extract_context(self, input_text: str, context: StageContext) -> Dict[str, Any]:
         """提取上下文信息"""
+        if self.logger:
+            self.logger.debug(f"开始提取上下文: input_text={repr(input_text[:50])}...")
+            self.logger.debug(f"当前context.context_info类型: {type(context.context_info)}, 值: {repr(context.context_info)[:200]}")
+        
         if not self.context_parser:
-            return {"raw_input": input_text}
+            result = {"raw_input": input_text}
+            if self.logger:
+                self.logger.debug(f"无上下文解析器，返回默认字典: type={type(result)}, value={result}")
+            return result
 
         try:
             # 尝试使用上下文解析器
             if hasattr(self.context_parser, 'parse'):
-                return self.context_parser.parse(input_text, context.conversation_history)
+                result = self.context_parser.parse(input_text, context.conversation_history)
+                if self.logger:
+                    self.logger.debug(f"上下文解析器返回: type={type(result)}, value={repr(result)[:200]}")
+                    # 如果返回的不是字典，记录详细信息
+                    if not isinstance(result, dict):
+                        self.logger.error(f"上下文解析器返回了非字典类型: {type(result)}, 值: {repr(result)[:500]}")
+                return result
             else:
                 # 简单的关键词提取
                 keywords = self._extract_keywords(input_text)
-                return {
+                result = {
                     "keywords": keywords,
                     "has_question": "?" in input_text,
                     "has_emotion": self._detect_emotion(input_text),
                     "length_category": self._categorize_length(input_text)
                 }
+                if self.logger:
+                    self.logger.debug(f"使用关键词提取，返回: type={type(result)}, value={repr(result)[:200]}")
+                return result
         except Exception as e:
             if self.logger:
                 self.logger.warning(f"上下文解析失败，使用默认解析: {e}")
-            return {
+                import traceback
+                self.logger.error(traceback.format_exc())
+            result = {
                 "keywords": [],
                 "has_question": "?" in input_text,
                 "raw_input": input_text[:200]
             }
+            if self.logger:
+                self.logger.debug(f"异常后返回默认字典: type={type(result)}, value={repr(result)[:200]}")
+            return result
 
     def _extract_keywords(self, text: str, max_keywords: int = 10) -> List[str]:
         """提取关键词"""
@@ -190,26 +215,6 @@ class InstinctCheckHandler(BaseStageHandler):
                 "skip_remaining_stages": True
             }
 
-        # 检查问候语（简单响应）
-        greetings = ['你好', '嗨', 'hello', 'hi', '早上好', '晚上好', '午安']
-        if any(greeting in input_text for greeting in greetings):
-            return {
-                "type": "greeting",
-                "response": random.choice(["你好！很高兴见到你！", "嗨！今天过得怎么样？", "你好呀！有什么可以帮你的吗？"]),
-                "reason": "greeting_detected",
-                "skip_remaining_stages": True
-            }
-
-        # 检查感谢
-        thanks = ['谢谢', '感谢', 'thank', 'thanks']
-        if any(thank in input_text for thank in thanks):
-            return {
-                "type": "thankyou",
-                "response": random.choice(["不客气！", "很高兴能帮到你！", "这是我的荣幸！"]),
-                "reason": "thanks_detected",
-                "skip_remaining_stages": True
-            }
-
         # 使用本能核心（如果可用）
         if self.instinct_core and hasattr(self.instinct_core, 'check'):
             try:
@@ -279,6 +284,11 @@ class MemoryRetrievalHandler(BaseStageHandler):
 
     def _build_search_query(self, context: StageContext) -> str:
         """构建搜索查询"""
+        # 确保context_info是字典
+        if not isinstance(context.context_info, dict):
+            self.logger.warning(f"context_info不是字典类型: {type(context.context_info)}")
+            return context.user_input[:200]
+        
         keywords = context.context_info.get("keywords", [])
 
         if keywords:
@@ -337,33 +347,20 @@ class DesireUpdateHandler(BaseStageHandler):
             # 构建欲望引擎所需的参数
             desire_impact = self._analyze_desire_impact(context)
 
-            # 确保 desire_engine 有 update 方法
-            # 如果没有，使用 update_vectors 方法
-            if hasattr(self.desire_engine, 'update'):
-                # 使用兼容的 update 方法
-                updated_vectors = self.desire_engine.update(
-                    user_input=context.user_input,
-                    retrieved_memories=context.retrieved_memories,
-                    impact_factors=desire_impact
-                )
-            elif hasattr(self.desire_engine, 'update_vectors'):
-                # 使用 update_vectors 方法
-                interaction_context = {
-                    "description": context.user_input[:100],
-                    "sentiment": desire_impact.get("sentiment", 0.0),
-                    "intensity": desire_impact.get("overall_impact", 0.5),
-                    "event_type": "interaction",
-                    "duration_seconds": 0.0,
-                    "tags": ["system_update"],
-                    "metadata": {
-                        "user_input": context.user_input[:50],
-                        "context_info": context.context_info
-                    }
+            # 使用 update_vectors 方法
+            interaction_context = {
+                "description": context.user_input[:100],
+                "sentiment": desire_impact.get("sentiment", 0.0),
+                "intensity": desire_impact.get("overall_impact", 0.5),
+                "event_type": "interaction",
+                "duration_seconds": 0.0,
+                "tags": ["system_update"],
+                "metadata": {
+                    "user_input": context.user_input[:50],
+                    "context_info": context.context_info
                 }
-                updated_vectors = self.desire_engine.update_vectors(interaction_context)
-            else:
-                # 如果都没有，返回默认值
-                updated_vectors = {"TR": 0.5, "CS": 0.5, "SA": 0.5}
+            }
+            updated_vectors = self.desire_engine.update_vectors(interaction_context)
 
             # 更新仪表板（如果可用）
             if self.dashboard and hasattr(self.dashboard, 'update_desires'):
@@ -436,7 +433,12 @@ class DesireUpdateHandler(BaseStageHandler):
             impact_factors["overall_impact"] += 0.2
 
         # 基于情感的影响
-        emotion = context.context_info.get("emotion", "neutral")
+        # 确保context_info是字典
+        if not isinstance(context.context_info, dict):
+            self.logger.warning(f"context_info不是字典类型: {type(context.context_info)}")
+            emotion = "neutral"
+        else:
+            emotion = context.context_info.get("emotion", "neutral")
         if emotion == "positive":
             impact_factors["overall_impact"] += 0.1
         elif emotion == "negative":
@@ -534,7 +536,8 @@ class DialecticalGrowthHandler(BaseStageHandler):
             growth_result = self.dialectical_growth.process(
                 cognitive_result=context.cognitive_result,
                 user_input=context.user_input,
-                desire_vectors=context.desire_vectors
+                desire_vectors=context.desire_vectors,
+                context_info=context.context_info
             )
 
             # 更新上下文
@@ -600,22 +603,22 @@ class ReplyGenerationHandler(BaseStageHandler):
 
         return context
 
-    def _build_generation_params(self, context: StageContext,chosen_mask:str) -> Dict:
+    def _build_generation_params(self, context: StageContext, chosen_mask: str) -> Dict:
         """构建回复生成参数"""
         return {
-            "user_input": context.user_input,
-            "action_plan": {
+            "final_action_plan": {
                 "chosen_mask": chosen_mask,
                 "primary_strategy": context.strategy
             },
-            "growth_result": context.growth_result,
-            "context_analysis": context.context_info,
-            "conversation_history": context.conversation_history,
-            "current_vectors": context.desire_vectors,
             "memory_context": {
                 "retrieved_memories": context.retrieved_memories,
                 "resonant_memory": context.resonant_memory
-            }
+            },
+            "user_input": context.user_input,
+            "conversation_history": context.conversation_history,
+            "growth_result": context.growth_result,
+            "context_analysis": context.context_info,
+            "current_vectors": context.desire_vectors
         }
 
     def _determine_mask(self, context: StageContext) -> str:
@@ -790,7 +793,12 @@ class InteractionRecordingHandler(BaseStageHandler):
                 interaction_data["action_plan"] = {}
 
             # 添加 emotional_intensity（从 context_info 中提取或使用默认值）
-            interaction_data["emotional_intensity"] = context.context_info.get("emotional_intensity", 0.5)
+            # 确保context_info是字典
+            if not isinstance(context.context_info, dict):
+                self.logger.warning(f"context_info不是字典类型: {type(context.context_info)}")
+                interaction_data["emotional_intensity"] = 0.5
+            else:
+                interaction_data["emotional_intensity"] = context.context_info.get("emotional_intensity", 0.5)
 
             # 添加 interaction_id
             import hashlib

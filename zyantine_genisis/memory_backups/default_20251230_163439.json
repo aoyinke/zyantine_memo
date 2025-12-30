@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "export_time": "2025-12-30T16:34:39.773972",
+    "user_id": "default_user",
+    "session_id": "default",
+    "total_memories": 1
+  },
+  "semantic_memory_map": {
+    "conversation_20251230163431_20516932": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20251230163431_20516932",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2025-12-30T16:34:31.417886",
+          "tags": [
+            "对话",
+            "交互",
+            "你好,請問你是誰?"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 126,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好,請問你是誰?\"}, {\"role\": \"assistant\", \"content\": \"你好，我是小叶同学，一位智能伙伴，专为你提供支持和建议。很高兴认识你！有什么我可以帮忙的吗？\"}]",
+          "user_id": "default_user",
+          "interaction_id": "bb32ed196c156d9f",
+          "context_keys": [
+            "raw_input_preview",
+            "input_length",
+            "word_count",
+            "contains_question",
+            "contains_exclamation",
+            "parse_timestamp",
+            "user_emotion",
+            "user_emotion_display",
+            "topic_complexity",
+            "topic_complexity_display",
+            "interaction_type",
+            "interaction_type_display",
+            "urgency_level",
+            "parse_completeness",
+            "summary"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好,請問你是誰?\"}, {\"role\": \"assistant\", \"content\": \"你好，我是小叶同学，一位智能伙伴，专为你提供支持和建议。很高兴认识你！有什么我可以帮忙的吗？\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好,請問你是誰?"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    }
+  },
+  "statistics": {
+    "total_memories": 1,
+    "by_type": {
+      "conversation": 1
+    },
+    "access_counts": {},
+    "tags_distribution": {
+      "对话": 1,
+      "交互": 1,
+      "你好,請問你是誰?": 1
+    }
+  },
+  "strategic_tags": [
+    "对话",
+    "交互",
+    "你好,請問你是誰?"
+  ]
+}

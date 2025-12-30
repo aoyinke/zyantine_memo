@@ -218,27 +218,7 @@ class CognitiveFlowManager:
 
         return deep_pattern
 
-    def _assess_pattern_confidence(self, deep_pattern: str, snapshot: Dict) -> float:
-        """评估模式识别置信度"""
-        confidence = 0.5  # 基础置信度
 
-        # 基于内省质量的调整
-        introspection_quality = snapshot.get("introspection_quality", "basic")
-        if introspection_quality == "high":
-            confidence += 0.2
-        elif introspection_quality == "medium":
-            confidence += 0.1
-
-        # 基于历史数据量的调整
-        history_available = snapshot.get("external_context", {}).get("history_analysis", {})
-        if history_available.get("sufficient_history", False):
-            confidence += 0.15
-
-        # 基于模式具体性的调整
-        if "深层模式可能是：" in deep_pattern:
-            confidence += 0.1
-
-        return min(0.95, max(0.3, confidence))
 
     def _formulate_strategy(self, goal: str, deep_pattern: str,
                             memory_package: Optional[Dict], snapshot: Dict,
@@ -346,28 +326,7 @@ class CognitiveFlowManager:
                                    memory_context: Optional[Dict] = None) -> List[Dict]:
         """生成策略选项"""
         options = []
-        # 添加基于记忆上下文的策略生成
-        if memory_context:
-            similar_conversations = memory_context.get("similar_conversations", [])
-            resonant_memory = memory_context.get("resonant_memory")
 
-            if resonant_memory:
-                # 基于共鸣记忆生成策略
-                memory_options = self._generate_memory_based_strategies(
-                    resonant_memory, goal, mask, mental_resources, vectors
-                )
-                options.extend(memory_options)
-            elif similar_conversations:
-                # 基于相似对话生成策略
-                options.append({
-                    "id": "history_based",
-                    "strategy": "基于历史对话的策略",
-                    "action_summary": f"参考 {len(similar_conversations)} 条相似对话历史",
-                    "expected_outcome": "保持对话一致性，建立连续性",
-                    "risk_level": "低",
-                    "resource_cost": "中",
-                    "suitability": 0.7
-                })
         # 选项1：直接高效策略
         options.append({
             "id": "direct_efficient",
@@ -430,6 +389,7 @@ class CognitiveFlowManager:
             resonant_memory = memory_context.get("resonant_memory")
 
             if resonant_memory:
+                # 基于共鸣记忆生成策略
                 memory_options = self._generate_memory_based_strategies(
                     resonant_memory, goal, mask, mental_resources, vectors
                 )

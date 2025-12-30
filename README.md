@@ -1,5 +1,6 @@
 # 自衍体-起源 (Zyantine Genesis) V2.0
 
+
 ## 项目概述
 **自衍体-起源** 是一个基于架构文档 v2.0 规范构建的、具备模拟人类认知与情感过程的对话AI系统。该系统通过**四大支柱架构**（核心本能、欲望引擎、辩证成长、认知与表达）实现了具备内在状态、情感向量、记忆炼金与自我成长能力的智能体，能够进行有深度、有策略、有记忆的连续性对话。
 
@@ -114,3 +115,74 @@
 ---
 
 **架构理念**：不是简单的对话生成，而是构建一个具有内在状态、记忆、情感和成长能力的“存在”，在每一次交互中实现认知闭环与自我演进。
+
+```python
+zyantine_architecture/
+├── main.py                          # 主入口
+├── zyantine_facade.py               # 外观模式入口
+├── requirements.txt                 # 依赖文件
+├── config/
+│   ├── __init__.py
+│   ├── config_manager.py           # 配置管理器
+│   ├── constants.py                # 常量定义
+│   └── config_schemas.py           # 配置验证模式
+├── core/
+│   ├── __init__.py
+│   ├── system_core.py              # 系统核心类
+│   ├── processing_pipeline.py       # 处理管道
+│   ├── stage_handlers.py           # 阶段处理器
+│   ├── component_manager.py        # 组件管理器（已更新）
+│   └── context_manager.py          # 上下文管理
+├── api/
+│   ├── __init__.py
+│   ├── service_provider.py         # API服务提供者
+│   ├── openai_service.py           # OpenAI服务
+│   ├── reply_generator.py          # 回复生成器
+│   ├── prompt_engine.py            # 提示词引擎
+│   ├── model_manager.py            # 模型管理器
+│   ├── rate_limiter.py             # 速率限制器
+│   └── fallback_strategy.py        # 降级策略
+├── memory/
+│   ├── __init__.py
+│   ├── memory_store.py             # 原有记忆存储（保留）
+│   ├── memory_manager.py           # 记忆管理器
+│   ├── memory_integrator.py        # 记忆集成器
+│   ├── memory_retriever.py         # 记忆检索器
+│   └── memory_analytics.py         # 记忆分析器
+├── cognition/
+│   ├── __init__.py
+│   ├── cognitive_flow_manager.py   # 认知流程管理器
+│   ├── core_identity.py            # 核心身份
+│   ├── meta_cognition.py           # 元认知模块
+│   ├── internal_state_dashboard.py # 内部状态仪表盘
+│   ├── context_analyzer.py         # 上下文分析器
+│   ├── desire_engine.py            # 欲望引擎
+│   └── context_analyzer.py         # 上下文分析器（原名重复，可能需要重命名）
+├── protocols/                      # 协议层（已更新）
+│   ├── __init__.py                 # 已更新
+│   ├── protocol_engine.py          # 协议引擎（新增）
+│   ├── fact_checker.py             # 事实检查器（已更新）
+│   ├── length_regulator.py         # 长度规整器（已更新）
+│   └── expression_validator.py     # 表达验证器（已更新）
+├── interfaces/
+│   ├── __init__.py
+│   ├── system_interface.py         # 系统接口
+│   └── component_factory.py        # 组件工厂
+├── utils/
+│   ├── __init__.py
+│   ├── logger.py                   # 日志工具
+│   ├── error_handler.py            # 错误处理器
+│   ├── validators.py               # 验证器
+│   ├── helpers.py                  # 辅助函数
+│   └── metrics.py                  # 指标收集器
+├── data/
+│   ├── templates/                  # 模板文件
+│   └── profiles/                   # 配置文件
+└── tests/                          # 测试目录
+    ├── __init__.py
+    ├── test_api.py
+    ├── test_memory.py
+    ├── test_cognition.py           # 测试认知模块
+    ├── test_protocols.py           # 测试协议模块
+    └── test_protocol_engine.py     # 新增：测试协议引擎
+```python
