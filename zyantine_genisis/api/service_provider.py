@@ -7,6 +7,9 @@ from enum import Enum
 import asyncio
 from datetime import datetime, timedelta
 import time
+import hashlib
+import threading
+from collections import defaultdict
 
 from .openai_service import OpenAIService
 from .reply_generator import APIBasedReplyGenerator, TemplateReplyGenerator
@@ -77,6 +80,17 @@ class APIServiceProvider:
         self.service_metrics: Dict[str, ServiceMetrics] = {}
         self.active_service: Optional[str] = None
 
+        # 请求缓存
+        self.request_cache: Dict[str, Tuple[str, datetime]] = {}
+        self.cache_ttl = timedelta(minutes=10)  # 缓存有效期10分钟
+        self.max_cache_size = 1000
+        self.cache_lock = threading.RLock()
+
+        # 负载均衡
+        self.load_balancer_enabled = True
+        self.service_weights: Dict[str, float] = {}
+        self.load_balancer_strategy = "performance_based"  # performance_based, round_robin, random
+
         # 初始化服务
         self._initialize_services()
 
@@ -84,6 +98,8 @@ class APIServiceProvider:
         self._initialize_components()
 
         self.logger.info("API服务提供者初始化完成")
+        self.logger.info(f"请求缓存: 已启用 (TTL: {self.cache_ttl.total_seconds()}秒)")
+        self.logger.info(f"负载均衡: 已启用 (策略: {self.load_balancer_strategy})")
 
     def _initialize_services(self):
         """初始化API服务"""
@@ -171,23 +187,39 @@ class APIServiceProvider:
         )
 
     def generate_reply(self, **kwargs) -> str:
-        """生成回复"""
+        """生成回复（带缓存和负载均衡）"""
         start_time = time.time()
 
         try:
+            # 生成缓存键
+            cache_key = self._generate_cache_key(**kwargs)
+
+            # 检查缓存
+            cached_reply = self._get_cached_reply(cache_key)
+            if cached_reply:
+                self.metrics.record_api_call(success=True, latency=time.time() - start_time, cached=True)
+                self.logger.debug(f"从缓存返回回复: {cache_key[:16]}...")
+                return cached_reply
+
             # 如果kwargs中包含core_identity，使用它
             if 'core_identity' not in kwargs and self.core_identity:
                 kwargs['core_identity'] = self.core_identity
+
+            # 负载均衡选择服务
+            selected_service = self._select_service()
 
             # 生成回复
             reply = self.reply_generator.generate_reply(**kwargs)
 
             # 记录指标
             latency = time.time() - start_time
-            if self.active_service:
-                self.service_metrics[self.active_service].record_request(True, latency)
+            if selected_service:
+                self.service_metrics[selected_service].record_request(True, latency)
 
             self.metrics.record_api_call(success=True, latency=latency)
+
+            # 缓存结果
+            self._cache_reply(cache_key, reply)
 
             return reply
 
@@ -341,3 +373,131 @@ class APIServiceProvider:
                     self.logger.error(f"关闭服务 {service_name} 失败: {e}")
 
         self.logger.info("API服务提供者已关闭")
+
+    def _generate_cache_key(self, **kwargs) -> str:
+        """生成缓存键"""
+        key_data = {
+            "user_input": kwargs.get("user_input", ""),
+            "action_plan": kwargs.get("action_plan", {}),
+            "conversation_history_length": len(kwargs.get("conversation_history", [])),
+            "current_vectors": kwargs.get("current_vectors", {}),
+            "mask": kwargs.get("action_plan", {}).get("chosen_mask", "")
+        }
+        key_str = str(key_data)
+        return hashlib.md5(key_str.encode()).hexdigest()
+
+    def _get_cached_reply(self, cache_key: str) -> Optional[str]:
+        """从缓存获取回复"""
+        with self.cache_lock:
+            if cache_key in self.request_cache:
+                reply, timestamp = self.request_cache[cache_key]
+                if datetime.now() - timestamp < self.cache_ttl:
+                    return reply
+                else:
+                    del self.request_cache[cache_key]
+        return None
+
+    def _cache_reply(self, cache_key: str, reply: str):
+        """缓存回复"""
+        with self.cache_lock:
+            if len(self.request_cache) >= self.max_cache_size:
+                oldest_key = min(self.request_cache.items(),
+                                 key=lambda x: x[1][1])[0]
+                del self.request_cache[oldest_key]
+            self.request_cache[cache_key] = (reply, datetime.now())
+
+    def _select_service(self) -> Optional[str]:
+        """负载均衡选择服务"""
+        if not self.load_balancer_enabled or not self.services:
+            return self.active_service
+
+        available_services = list(self.services.keys())
+        if not available_services:
+            return None
+
+        if len(available_services) == 1:
+            return available_services[0]
+
+        if self.load_balancer_strategy == "performance_based":
+            return self._select_by_performance(available_services)
+        elif self.load_balancer_strategy == "round_robin":
+            return self._select_by_round_robin(available_services)
+        elif self.load_balancer_strategy == "random":
+            return self._select_random(available_services)
+        else:
+            return self.active_service
+
+    def _select_by_performance(self, available_services: List[str]) -> str:
+        """基于性能选择服务"""
+        service_scores = {}
+
+        for service_name in available_services:
+            metrics = self.service_metrics.get(service_name)
+            if metrics and metrics.request_count > 0:
+                success_rate = metrics.success_count / metrics.request_count
+                avg_latency = metrics.avg_latency
+
+                # 计算综合得分（成功率权重0.6，延迟权重0.4）
+                score = success_rate * 0.6 + (1 / (avg_latency + 0.1)) * 0.4
+                service_scores[service_name] = score
+            else:
+                service_scores[service_name] = 0.5
+
+        # 选择得分最高的服务
+        return max(service_scores.items(), key=lambda x: x[1])[0]
+
+    def _select_by_round_robin(self, available_services: List[str]) -> str:
+        """轮询选择服务"""
+        if not hasattr(self, '_round_robin_index'):
+            self._round_robin_index = 0
+
+        service = available_services[self._round_robin_index % len(available_services)]
+        self._round_robin_index += 1
+        return service
+
+    def _select_random(self, available_services: List[str]) -> str:
+        """随机选择服务"""
+        import random
+        return random.choice(available_services)
+
+    def update_service_weights(self, weights: Dict[str, float]):
+        """更新服务权重"""
+        self.service_weights.update(weights)
+        self.logger.info(f"服务权重已更新: {weights}")
+
+    def set_load_balancer_strategy(self, strategy: str):
+        """设置负载均衡策略"""
+        valid_strategies = ["performance_based", "round_robin", "random"]
+        if strategy in valid_strategies:
+            self.load_balancer_strategy = strategy
+            self.logger.info(f"负载均衡策略已设置为: {strategy}")
+        else:
+            self.logger.error(f"无效的负载均衡策略: {strategy}")
+
+    def clear_cache(self):
+        """清空缓存"""
+        with self.cache_lock:
+            self.request_cache.clear()
+        self.logger.info("请求缓存已清空")
+
+    def get_cache_stats(self) -> Dict:
+        """获取缓存统计"""
+        with self.cache_lock:
+            return {
+                "cache_size": len(self.request_cache),
+                "max_cache_size": self.max_cache_size,
+                "cache_ttl_seconds": self.cache_ttl.total_seconds(),
+                "hit_rate": self._calculate_cache_hit_rate()
+            }
+
+    def _calculate_cache_hit_rate(self) -> float:
+        """计算缓存命中率"""
+        total_requests = sum(m.request_count for m in self.service_metrics.values())
+        if total_requests == 0:
+            return 0.0
+
+        cached_requests = sum(
+            m.request_count for m in self.service_metrics.values()
+            if hasattr(m, 'cached_count') and m.cached_count > 0
+        )
+        return cached_requests / total_requests

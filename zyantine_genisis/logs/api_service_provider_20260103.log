@@ -1,0 +1,9 @@
+2026-01-03 22:08:05 - api_service_provider - INFO - 初始化API服务，模型: gpt-4.1-nano-2025-04-14, URL: https://openkey.cloud/v1...
+2026-01-03 22:08:08 - api_service_provider - INFO - OpenAI服务初始化成功，模型: gpt-4.1-nano-2025-04-14
+2026-01-03 22:08:08 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-03 22:08:18 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-03 22:08:18 - api_service_provider - INFO - 已关闭服务: openai
+2026-01-03 22:08:18 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-03 22:08:18 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-03 22:08:18 - api_service_provider - INFO - 已关闭服务: openai
+2026-01-03 22:08:18 - api_service_provider - INFO - API服务提供者已关闭

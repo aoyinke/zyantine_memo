@@ -1,5 +1,8 @@
-from datetime import datetime
-from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
+import hashlib
+import threading
+from collections import defaultdict
 from cognition.core_identity import CoreIdentity
 from cognition.meta_cognition import MetaCognitionModule
 from memory.memory_manager import MemoryManager
@@ -23,6 +26,32 @@ class CognitiveFlowManager:
         self.deep_pattern = None
         self.resonant_memory = None
 
+        # 认知状态缓存
+        self.cognitive_state_cache: Dict[str, Tuple[Dict, datetime]] = {}
+        self.cache_ttl = timedelta(minutes=5)  # 缓存有效期5分钟
+        self.cache_lock = threading.RLock()
+
+        # 决策历史分析
+        self.decision_history: List[Dict] = []
+        self.decision_patterns: Dict[str, int] = defaultdict(int)
+        self.strategy_effectiveness: Dict[str, Dict] = defaultdict(lambda: {
+            "used_count": 0,
+            "success_count": 0,
+            "avg_suitability": 0.0
+        })
+
+        # 性能监控
+        self.performance_metrics: Dict[str, List[float]] = defaultdict(list)
+        self.step_timings: Dict[str, List[float]] = defaultdict(list)
+        self.total_thoughts_processed = 0
+        self.total_processing_time = 0.0
+
+        # 配置
+        self.enable_caching = True
+        self.enable_performance_tracking = True
+        self.max_cache_size = 1000
+        self.max_decision_history = 500
+
     def process_thought(self, user_input: str, history: List[Dict],
                         current_vectors: Dict, memory_context: Optional[Dict] = None) -> Dict:
         """
@@ -35,6 +64,16 @@ class CognitiveFlowManager:
             current_vectors: 当前向量状态
             memory_context: 记忆上下文（可选）
         """
+        start_time = datetime.now()
+
+        # 检查缓存
+        cache_key = self._generate_cache_key(user_input, history, current_vectors)
+        if self.enable_caching:
+            cached_result = self._get_cached_result(cache_key)
+            if cached_result:
+                self.performance_metrics["cache_hits"].append(1.0)
+                return cached_result
+
         thought_record = {
             "timestamp": datetime.now().isoformat(),
             "user_input_preview": user_input[:50] + "..." if len(user_input) > 50 else user_input,
@@ -42,30 +81,46 @@ class CognitiveFlowManager:
         }
 
         # === 步骤1: Introspection (内省) ===
+        step_start = datetime.now()
         snapshot = self.meta_cog.perform_introspection(user_input, history)
+        step_time = (datetime.now() - step_start).total_seconds()
+        self.step_timings["introspection"].append(step_time)
+        
         thought_record["steps"]["introspection"] = {
             "snapshot_summary": snapshot.get("summary", {}),
             "internal_monologue": snapshot.get("internal_monologue", ""),
-            "desire_focus": snapshot.get("initial_desire_focus", "")
+            "desire_focus": snapshot.get("initial_desire_focus", ""),
+            "processing_time": step_time
         }
 
         # === 步骤2: Goal_Generation (目标生成) ===
+        step_start = datetime.now()
         current_goal = self._generate_interaction_goal(snapshot, current_vectors)
         self.current_goal = current_goal
+        step_time = (datetime.now() - step_start).total_seconds()
+        self.step_timings["goal_generation"].append(step_time)
+        
         thought_record["steps"]["goal_generation"] = {
             "goal": current_goal,
-            "basis": "基于内省结果和当前向量状态"
+            "basis": "基于内省结果和当前向量状态",
+            "processing_time": step_time
         }
 
         # === 步骤3: Perception (感知) ===
+        step_start = datetime.now()
         deep_pattern = self._analyze_deep_pattern(user_input, snapshot, history)
         self.deep_pattern = deep_pattern
+        step_time = (datetime.now() - step_start).total_seconds()
+        self.step_timings["perception"].append(step_time)
+        
         thought_record["steps"]["perception"] = {
             "surface_pattern": snapshot.get("external_context", {}).get("summary", {}),
-            "deep_pattern": deep_pattern
+            "deep_pattern": deep_pattern,
+            "processing_time": step_time
         }
 
         # === 步骤4: Association (联想) ===
+        step_start = datetime.now()
         # 如果提供了记忆上下文，使用它
         if memory_context:
             resonant_memory_package = memory_context.get("resonant_memory")
@@ -98,7 +153,8 @@ class CognitiveFlowManager:
                 thought_record["steps"]["association"] = {
                     "status": "rejected_by_fact_anchor",
                     "feedback": feedback,
-                    "alternative": "基于更可靠的信息进行决策"
+                    "alternative": "基于更可靠的信息进行决策",
+                    "processing_time": (datetime.now() - step_start).total_seconds()
                 }
             else:
                 self.resonant_memory = resonant_memory_package
@@ -107,27 +163,50 @@ class CognitiveFlowManager:
                     "memory_triggered": resonant_memory_package.get("triggered_memory"),
                     "relevance_score": resonant_memory_package.get("relevance_score"),
                     "risk_assessment": resonant_memory_package.get("risk_assessment", {}),
-                    "recommendations": resonant_memory_package.get("recommended_actions", [])
+                    "recommendations": resonant_memory_package.get("recommended_actions", []),
+                    "processing_time": (datetime.now() - step_start).total_seconds()
                 }
         else:
             thought_record["steps"]["association"] = {
                 "status": "no_resonant_memory_found",
-                "reason": "无相关记忆匹配"
+                "reason": "无相关记忆匹配",
+                "processing_time": (datetime.now() - step_start).total_seconds()
             }
+        
+        self.step_timings["association"].append((datetime.now() - step_start).total_seconds())
 
         # === 步骤5: Strategy_Formulation (策略制定) ===
+        step_start = datetime.now()
         final_action_plan = self._formulate_strategy(
             current_goal, deep_pattern, resonant_memory_package,
             snapshot, current_vectors, memory_context
         )
-
+        step_time = (datetime.now() - step_start).total_seconds()
+        self.step_timings["strategy_formulation"].append(step_time)
+        
         thought_record["steps"]["strategy_formulation"] = final_action_plan
         thought_record["final_action_plan"] = final_action_plan
+        thought_record["total_processing_time"] = (datetime.now() - start_time).total_seconds()
 
         # 记录思考日志
         self.thought_log.append(thought_record)
         if len(self.thought_log) > 100:
             self.thought_log = self.thought_log[-100:]
+
+        # 记录决策历史
+        self._record_decision(final_action_plan, thought_record)
+
+        # 缓存结果
+        if self.enable_caching:
+            self._cache_result(cache_key, final_action_plan)
+
+        # 更新性能指标
+        if self.enable_performance_tracking:
+            total_time = (datetime.now() - start_time).total_seconds()
+            self.total_thoughts_processed += 1
+            self.total_processing_time += total_time
+            self.performance_metrics["total_time"].append(total_time)
+            self.performance_metrics["cache_hits"].append(0.0)
 
         return final_action_plan
 
@@ -655,3 +734,163 @@ class CognitiveFlowManager:
         rationale_parts.append(f"风险评估：{risk_level}风险")
 
         return "；".join(rationale_parts)
+
+    def _generate_cache_key(self, user_input: str, history: List[Dict],
+                            current_vectors: Dict) -> str:
+        """生成缓存键"""
+        key_data = {
+            "user_input": user_input,
+            "history_length": len(history),
+            "last_message": history[-1].get("content", "") if history else "",
+            "vectors": current_vectors
+        }
+        key_str = str(key_data)
+        return hashlib.md5(key_str.encode()).hexdigest()
+
+    def _get_cached_result(self, cache_key: str) -> Optional[Dict]:
+        """从缓存获取结果"""
+        with self.cache_lock:
+            if cache_key in self.cognitive_state_cache:
+                result, timestamp = self.cognitive_state_cache[cache_key]
+                if datetime.now() - timestamp < self.cache_ttl:
+                    return result
+                else:
+                    del self.cognitive_state_cache[cache_key]
+        return None
+
+    def _cache_result(self, cache_key: str, result: Dict):
+        """缓存结果"""
+        with self.cache_lock:
+            if len(self.cognitive_state_cache) >= self.max_cache_size:
+                oldest_key = min(self.cognitive_state_cache.items(),
+                                 key=lambda x: x[1][1])[0]
+                del self.cognitive_state_cache[oldest_key]
+            self.cognitive_state_cache[cache_key] = (result, datetime.now())
+
+    def _record_decision(self, action_plan: Dict, thought_record: Dict):
+        """记录决策历史"""
+        decision = {
+            "timestamp": thought_record["timestamp"],
+            "strategy": action_plan.get("primary_strategy", ""),
+            "mask": action_plan.get("chosen_mask", ""),
+            "tool": action_plan.get("chosen_tool", ""),
+            "risk_level": action_plan.get("risk_assessment", ""),
+            "resource_cost": action_plan.get("resource_requirement", ""),
+            "user_input_preview": thought_record.get("user_input_preview", ""),
+            "processing_time": thought_record.get("total_processing_time", 0.0)
+        }
+        self.decision_history.append(decision)
+        if len(self.decision_history) > self.max_decision_history:
+            self.decision_history = self.decision_history[-self.max_decision_history:]
+
+        strategy = action_plan.get("primary_strategy", "")
+        self.decision_patterns[strategy] += 1
+
+        tool = action_plan.get("chosen_tool", "")
+        if tool:
+            self.strategy_effectiveness[tool]["used_count"] += 1
+            if action_plan.get("risk_assessment") != "高":
+                self.strategy_effectiveness[tool]["success_count"] += 1
+
+    def _analyze_decision_patterns(self) -> Dict:
+        """分析决策模式"""
+        if not self.decision_history:
+            return {"status": "insufficient_data", "message": "决策历史不足"}
+
+        most_used_strategy = max(self.decision_patterns.items(),
+                                 key=lambda x: x[1])[0]
+        strategy_usage_rate = (self.decision_patterns[most_used_strategy] /
+                               len(self.decision_history))
+
+        avg_processing_time = sum(d["processing_time"]
+                                  for d in self.decision_history) / len(self.decision_history)
+
+        tool_effectiveness = {}
+        for tool, stats in self.strategy_effectiveness.items():
+            if stats["used_count"] > 0:
+                tool_effectiveness[tool] = {
+                    "usage_count": stats["used_count"],
+                    "success_rate": stats["success_count"] / stats["used_count"]
+                }
+
+        return {
+            "status": "success",
+            "total_decisions": len(self.decision_history),
+            "most_used_strategy": most_used_strategy,
+            "strategy_usage_rate": strategy_usage_rate,
+            "avg_processing_time": avg_processing_time,
+            "tool_effectiveness": tool_effectiveness,
+            "recommendations": self._generate_optimization_recommendations()
+        }
+
+    def _generate_optimization_recommendations(self) -> List[str]:
+        """生成优化建议"""
+        recommendations = []
+
+        if self.decision_patterns:
+            most_used = max(self.decision_patterns.items(), key=lambda x: x[1])
+            if most_used[1] / len(self.decision_history) > 0.7:
+                recommendations.append(
+                    f"策略使用过于集中（{most_used[0]} 占比{most_used[1]/len(self.decision_history):.1%}），建议尝试多样化策略"
+                )
+
+        if self.performance_metrics.get("total_time"):
+            avg_time = sum(self.performance_metrics["total_time"]) / len(self.performance_metrics["total_time"])
+            if avg_time > 2.0:
+                recommendations.append(
+                    f"平均处理时间较长（{avg_time:.2f}秒），建议启用缓存或优化算法"
+                )
+
+        if self.performance_metrics.get("cache_hits"):
+            cache_hit_rate = sum(self.performance_metrics["cache_hits"]) / len(self.performance_metrics["cache_hits"])
+            if cache_hit_rate < 0.3:
+                recommendations.append(
+                    f"缓存命中率较低（{cache_hit_rate:.1%}），建议调整缓存策略或增加TTL"
+                )
+
+        for tool, stats in self.strategy_effectiveness.items():
+            if stats["used_count"] > 5:
+                success_rate = stats["success_count"] / stats["used_count"]
+                if success_rate < 0.5:
+                    recommendations.append(
+                        f"认知工具『{tool}』成功率较低（{success_rate:.1%}），建议优化使用策略或降低使用频率"
+                    )
+
+        return recommendations if recommendations else ["系统运行良好，暂无优化建议"]
+
+    def get_performance_stats(self) -> Dict:
+        """获取性能统计"""
+        stats = {
+            "total_thoughts_processed": self.total_thoughts_processed,
+            "avg_processing_time": (self.total_processing_time / self.total_thoughts_processed
+                                    if self.total_thoughts_processed > 0 else 0),
+            "cache_size": len(self.cognitive_state_cache),
+            "decision_history_size": len(self.decision_history),
+            "step_timings": {}
+        }
+
+        for step, timings in self.step_timings.items():
+            if timings:
+                stats["step_timings"][step] = {
+                    "avg": sum(timings) / len(timings),
+                    "min": min(timings),
+                    "max": max(timings),
+                    "count": len(timings)
+                }
+
+        if self.performance_metrics.get("cache_hits"):
+            cache_hit_rate = sum(self.performance_metrics["cache_hits"]) / len(self.performance_metrics["cache_hits"])
+            stats["cache_hit_rate"] = cache_hit_rate
+
+        return stats
+
+    def clear_cache(self):
+        """清空缓存"""
+        with self.cache_lock:
+            self.cognitive_state_cache.clear()
+
+    def clear_decision_history(self):
+        """清空决策历史"""
+        self.decision_history.clear()
+        self.decision_patterns.clear()
+        self.strategy_effectiveness.clear()

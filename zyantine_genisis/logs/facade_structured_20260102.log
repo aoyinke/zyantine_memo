@@ -1,0 +1,2 @@
+2026-01-02 21:41:32 - facade_structured - INFO - {"timestamp": "2026-01-02T21:41:32.775512", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
+2026-01-02 21:43:19 - facade_structured - INFO - {"timestamp": "2026-01-02T21:43:19.316071", "level": "INFO", "message": "系统初始化开始", "config_path": null, "session_id": "default"}
