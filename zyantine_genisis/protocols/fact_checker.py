@@ -207,7 +207,7 @@ class FactChecker:
             seen_ids = set()
             unique_memories = []
             for memory in relevant_memories:
-                mem_id = memory.get("memory_id")
+                mem_id = memory.memory_id
                 if mem_id and mem_id not in seen_ids:
                     seen_ids.add(mem_id)
                     unique_memories.append(memory)
@@ -264,10 +264,9 @@ class FactChecker:
         relevant_memories = review_context.get("relevant_memories", [])
         if relevant_memories:
             for i, memory in enumerate(relevant_memories, 1):
-                content = memory.get("content", "")
-                metadata = memory.get("metadata", {})
-                memory_type = metadata.get("memory_type", "未知")
-                tags = metadata.get("tags", [])
+                content = memory.content if isinstance(memory.content, str) else str(memory.content)
+                memory_type = memory.memory_type.value if hasattr(memory.memory_type, 'value') else str(memory.memory_type)
+                tags = memory.tags if memory.tags else []
 
                 input_parts.append(f"{i}. 类型: {memory_type}")
                 input_parts.append(f"   内容: {content[:200]}...")
@@ -432,8 +431,9 @@ class FactChecker:
 
             if search_results:
                 best_match = search_results[0]
-                content_preview = best_match.get("content", "")[:100]
-                similarity = best_match.get("similarity_score", 0)
+                content_preview = best_match.content if isinstance(best_match.content, str) else str(best_match.content)
+                content_preview = content_preview[:100]
+                similarity = best_match.relevance_score if hasattr(best_match, 'relevance_score') else 0.8
 
                 return True, f"记忆匹配度: {similarity:.2f}, 内容: {content_preview}..."
             else:

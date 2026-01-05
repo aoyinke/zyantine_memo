@@ -211,6 +211,7 @@ class APIBasedReplyGenerator:
             max_tokens = self._determine_max_tokens(context.context_analysis)
             temperature = self._determine_temperature(context.current_vectors)
 
+            self.logger.info(f"system_prompt={system_prompt}")
             # 调用API
             reply, metadata = self.api.generate_reply(
                 system_prompt=system_prompt,

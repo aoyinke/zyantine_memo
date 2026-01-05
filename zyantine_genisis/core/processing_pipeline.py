@@ -47,6 +47,7 @@ class StageContext:
     retrieved_memories: List[Any] = field(default_factory=list)  # 新增：检索到的记忆
     resonant_memory: Optional[Dict] = None  # 新增：共鸣记忆
     desire_vectors: Dict[str, float] = field(default_factory=dict)  # 修改：欲望向量
+    cognitive_snapshot: Optional[Dict] = None  # 新增：认知快照
     cognitive_result: Optional[Dict] = None  # 新增：认知结果
     strategy: Optional[str] = None  # 新增：策略
     emotional_context: Dict[str, Any] = field(default_factory=dict)  # 新增：情感上下文

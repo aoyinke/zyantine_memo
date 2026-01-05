@@ -208,7 +208,11 @@ class CognitiveFlowManager:
             self.performance_metrics["total_time"].append(total_time)
             self.performance_metrics["cache_hits"].append(0.0)
 
-        return final_action_plan
+        return {
+            "final_action_plan": final_action_plan,
+            "cognitive_snapshot": snapshot,
+            "thought_record": thought_record
+        }
 
     def _generate_interaction_goal(self, snapshot: Dict, current_vectors: Dict) -> str:
         """生成交互目标"""

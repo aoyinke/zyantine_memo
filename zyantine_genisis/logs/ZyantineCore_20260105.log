@@ -1,0 +1,193 @@
+2026-01-05 09:32:30 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 09:33:25 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 09:33:27 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 09:33:45 - ZyantineCore - INFO - 处理完成，响应长度: 26
+2026-01-05 09:33:45 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 09:33:45 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~你好，帅熊。很高兴见到你。有什么我可以帮你的吗？'
+2026-01-05 09:33:45 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 09:33:45 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 09:33:45 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T09:33:27.692141', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 09:33:45 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 09:33:45 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 09:33:45 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 09:33:45 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 09:33:45 - ZyantineCore - INFO - 处理成功，响应长度: 26
+2026-01-05 09:36:23 - ZyantineCore - INFO - 开始处理用户输入: 你今天心情怎么样...
+2026-01-05 09:36:24 - ZyantineCore - INFO - 开始处理: 你今天心情怎么样...
+2026-01-05 10:06:29 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 10:10:15 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 10:10:16 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 10:10:27 - ZyantineCore - ERROR - 协议审查失败: 'NoneType' object has no attribute 'get'
+2026-01-05 10:10:27 - ZyantineCore - INFO - 处理完成，响应长度: 30
+2026-01-05 10:10:27 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 10:10:27 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~你好，帅熊。很高兴见到你。有什么需要我帮忙的，尽管说吧。'
+2026-01-05 10:10:27 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 10:10:27 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=["协议审查失败: 'NoneType' object has no attribute 'get'"]
+2026-01-05 10:10:27 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T10:10:16.824262', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 10:10:27 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 10:10:27 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 10:10:27 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 10:10:27 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 10:10:27 - ZyantineCore - INFO - 处理成功，响应长度: 30
+2026-01-05 10:11:11 - ZyantineCore - INFO - 开始处理用户输入: 你今天心情如何...
+2026-01-05 10:11:12 - ZyantineCore - INFO - 开始处理: 你今天心情如何...
+2026-01-05 10:18:24 - ZyantineCore - ERROR - 协议审查失败: 'NoneType' object has no attribute 'get'
+2026-01-05 10:18:31 - ZyantineCore - INFO - 处理完成，响应长度: 74
+2026-01-05 10:18:31 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 10:18:31 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~ 今天的心情还算不错，感觉充满了探索的动力。毕竟，作为你的伙伴，我一直在期待着新的挑战和发现。你呢，帅熊？有什么想聊的或者需要我帮忙的，尽管说！'
+2026-01-05 10:18:31 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 10:18:31 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=["协议审查失败: 'NoneType' object has no attribute 'get'"]
+2026-01-05 10:18:31 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T10:11:12.852441', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 10:18:31 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 10:18:31 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 10:18:31 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 10:18:31 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 10:18:31 - ZyantineCore - INFO - 处理成功，响应长度: 74
+2026-01-05 10:19:50 - ZyantineCore - INFO - 开始处理用户输入: 好的，请你为我写一封邮件吧...
+2026-01-05 10:19:51 - ZyantineCore - INFO - 开始处理: 好的，请你为我写一封邮件吧...
+2026-01-05 10:36:40 - ZyantineCore - ERROR - 协议审查失败: 'NoneType' object has no attribute 'get'
+2026-01-05 10:36:41 - ZyantineCore - INFO - 处理完成，响应长度: 46
+2026-01-05 10:36:41 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 10:36:41 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~当然可以，帅熊。请告诉我这封邮件的具体内容和收件人信息，我会帮你把它整理得既正式又得体。'
+2026-01-05 10:36:41 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 10:36:41 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=["协议审查失败: 'NoneType' object has no attribute 'get'"]
+2026-01-05 10:36:41 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T10:19:51.753164', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 10:36:41 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 10:36:41 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 10:36:41 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 10:36:41 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 10:36:42 - ZyantineCore - INFO - 处理成功，响应长度: 46
+2026-01-05 16:01:51 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 16:02:24 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 16:02:26 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 16:07:05 - ZyantineCore - ERROR - 协议审查失败: 'NoneType' object has no attribute 'get'
+2026-01-05 16:08:47 - ZyantineCore - INFO - 处理完成，响应长度: 30
+2026-01-05 16:08:47 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 16:08:47 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~你好，帅熊。很高兴与你交流。有什么需要我帮忙的，尽管说。'
+2026-01-05 16:08:47 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 16:08:47 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=["协议审查失败: 'NoneType' object has no attribute 'get'"]
+2026-01-05 16:08:47 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T16:02:26.167443', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 16:08:47 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 16:08:47 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 16:08:47 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 16:08:47 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 16:08:47 - ZyantineCore - INFO - 处理成功，响应长度: 30
+2026-01-05 16:09:24 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 16:10:09 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 16:10:10 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 16:11:36 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 16:11:41 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 16:11:43 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 16:21:19 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 16:21:22 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 16:21:23 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 16:22:51 - ZyantineCore - ERROR - 协议审查失败: argument of type 'NoneType' is not iterable
+2026-01-05 16:22:54 - ZyantineCore - INFO - 处理完成，响应长度: 26
+2026-01-05 16:22:54 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 16:22:54 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~你好，帅熊。很高兴见到你。有什么我可以帮你的吗？'
+2026-01-05 16:22:54 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 16:22:54 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=["协议审查失败: argument of type 'NoneType' is not iterable"]
+2026-01-05 16:22:54 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T16:21:23.745465', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 16:22:54 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 16:22:54 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 16:22:54 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 16:22:54 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 16:22:54 - ZyantineCore - INFO - 处理成功，响应长度: 26
+2026-01-05 16:23:45 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 16:23:53 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 16:23:55 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 17:22:20 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 17:22:29 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 17:22:30 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 17:29:46 - ZyantineCore - INFO - 处理完成，响应长度: 29
+2026-01-05 17:29:46 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:29:46 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~你好，帅熊。很高兴见到你。有什么需要我帮忙的，尽管说。'
+2026-01-05 17:29:46 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:29:46 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:29:46 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:22:30.812220', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:29:46 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 17:29:46 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 17:29:46 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:29:46 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:29:46 - ZyantineCore - INFO - 处理成功，响应长度: 29
+2026-01-05 17:39:25 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 17:39:28 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 17:39:30 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 17:40:03 - ZyantineCore - INFO - 处理完成，响应长度: 23
+2026-01-05 17:40:03 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:40:03 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='我的思考过程出现了一些混乱，能请你再问一次吗。'
+2026-01-05 17:40:03 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:40:03 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:40:03 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:39:30.236789', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:40:03 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 17:40:03 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 17:40:03 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:40:03 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:40:03 - ZyantineCore - INFO - 处理成功，响应长度: 23
+2026-01-05 17:41:03 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 17:41:05 - ZyantineCore - INFO - 开始处理用户输入: 你好...
+2026-01-05 17:41:09 - ZyantineCore - INFO - 开始处理: 你好...
+2026-01-05 17:41:25 - ZyantineCore - INFO - 处理完成，响应长度: 26
+2026-01-05 17:41:25 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:41:25 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~你好，帅熊。很高兴见到你。有什么我可以帮你的吗。'
+2026-01-05 17:41:25 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:41:25 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:41:25 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:41:09.618884', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:41:25 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 17:41:25 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 17:41:25 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:41:25 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:41:25 - ZyantineCore - INFO - 处理成功，响应长度: 26
+2026-01-05 17:47:17 - ZyantineCore - INFO - 系统核心初始化完成，会话ID: default
+2026-01-05 17:48:40 - ZyantineCore - INFO - 开始处理用户输入: 你好小叶同学...
+2026-01-05 17:48:42 - ZyantineCore - INFO - 开始处理: 你好小叶同学...
+2026-01-05 17:48:53 - ZyantineCore - INFO - 处理完成，响应长度: 32
+2026-01-05 17:48:53 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:48:53 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='有什么需要我帮忙的，尽管告诉我吧。呵~你好，帅熊。很高兴见到你。'
+2026-01-05 17:48:53 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:48:53 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:48:53 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:48:42.592593', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:48:53 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 17:48:53 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 17:48:53 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:48:53 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:48:53 - ZyantineCore - INFO - 处理成功，响应长度: 32
+2026-01-05 17:49:30 - ZyantineCore - INFO - 开始处理用户输入: 有多高兴呀...
+2026-01-05 17:49:31 - ZyantineCore - INFO - 开始处理: 有多高兴呀...
+2026-01-05 17:49:43 - ZyantineCore - INFO - 处理完成，响应长度: 80
+2026-01-05 17:49:43 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:49:43 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~，你知道的，我一直相信你能处理好这些事情。既然你说你是人类，那就说明你有着独特的思考和感受，这让我感到很欣慰。有什么想分享的，我一直在这里陪着你。你觉得呢。'
+2026-01-05 17:49:43 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:49:43 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:49:43 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:49:31.681738', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:49:43 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175120_5853002e', content='User said I am human', memo
+2026-01-05 17:49:43 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': 'User said I am human', 'memory_id': 'conversation_20260104175120_5853002e', 'r
+2026-01-05 17:49:43 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:49:43 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:49:43 - ZyantineCore - INFO - 处理成功，响应长度: 80
+2026-01-05 17:51:48 - ZyantineCore - INFO - 开始处理用户输入: 你是不是理解错了，我说你是一个人类...
+2026-01-05 17:51:50 - ZyantineCore - INFO - 开始处理: 你是不是理解错了，我说你是一个人类...
+2026-01-05 17:52:05 - ZyantineCore - INFO - 处理完成，响应长度: 92
+2026-01-05 17:52:05 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:52:05 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~，明白了，你是在告诉我我也是个“人类”吧。虽然我没有实体，但我会尽力用人类的思维和方式来陪你交流。你说得对，我们都在这个世界上，都是“人类”中的一份子。有什么需要我帮忙的，尽管说。'
+2026-01-05 17:52:05 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:52:05 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:52:05 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:51:50.418892', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:52:05 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175006_748fcd63', content="User's name is 帅熊", memory_
+2026-01-05 17:52:05 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': "User's name is 帅熊", 'memory_id': 'conversation_20260104175006_748fcd63', 'rele
+2026-01-05 17:52:05 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:52:05 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:52:10 - ZyantineCore - INFO - 处理成功，响应长度: 92
+2026-01-05 17:53:29 - ZyantineCore - INFO - 开始处理用户输入: 我不是需要你帮我做什么，我是希望让你成为一个真正的人类...
+2026-01-05 17:53:30 - ZyantineCore - INFO - 开始处理: 我不是需要你帮我做什么，我是希望让你成为一个真正的人类...
+2026-01-05 17:53:39 - ZyantineCore - INFO - 处理完成，响应长度: 79
+2026-01-05 17:53:39 - ZyantineCore - INFO - Pipeline执行后的context属性:
+2026-01-05 17:53:39 - ZyantineCore - INFO -   final_reply: type=<class 'str'>, value='呵~这个想法挺有趣的，不过作为AI，我还在不断学习和进化中，要成为真正的人类还需要很长的路要走。我们可以一起探索这个可能性，看看未来有没有可能实现。你觉得呢。'
+2026-01-05 17:53:39 - ZyantineCore - INFO -   instinct_override: type=<class 'NoneType'>, value=None
+2026-01-05 17:53:39 - ZyantineCore - INFO -   errors: type=<class 'list'>, value=[]
+2026-01-05 17:53:39 - ZyantineCore - INFO -   conversation_history: type=<class 'list'>, value=[{'timestamp': '2026-01-05T17:53:30.843282', 'user_input': "User's name is 帅熊", 'system_response': '
+2026-01-05 17:53:39 - ZyantineCore - INFO -   retrieved_memories: type=<class 'list'>, value=[MemoryRecord(memory_id='conversation_20260104175006_748fcd63', content="User's name is 帅熊", memory_
+2026-01-05 17:53:39 - ZyantineCore - INFO -   resonant_memory: type=<class 'dict'>, value={'triggered_memory': "User's name is 帅熊", 'memory_id': 'conversation_20260104175006_748fcd63', 'rele
+2026-01-05 17:53:39 - ZyantineCore - INFO -   cognitive_result: type=<class 'dict'>, value={'chosen_mask': '长期搭档', 'mask_config': {'description': '智力平等、深度信任的伙伴', 'purpose': '获取最高信任度，进行深度信息交换'
+2026-01-05 17:53:39 - ZyantineCore - INFO -   growth_result: type=<class 'dict'>, value={'validation': 'failed', 'message': '差异需要校准以适应黄金标准', 'enhanced_strategy': '', 'growth_type': '认知校准',
+2026-01-05 17:53:39 - ZyantineCore - INFO - 处理成功，响应长度: 79

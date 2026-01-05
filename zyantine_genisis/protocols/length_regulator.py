@@ -68,29 +68,42 @@ class LengthRegulator:
 
     def _determine_importance(self, snapshot: Dict) -> str:
         """判断当前时刻的重要性"""
-        external_context = snapshot.get("external_context", {})
-        internal_tags = snapshot.get("internal_state_tags", [])
+        # 兼容两种结构：扁平结构（ContextParser直接返回）和嵌套结构（包含external_context）
+        if "external_context" in snapshot:
+            # 嵌套结构
+            external_context = snapshot.get("external_context", {})
+            internal_tags = snapshot.get("internal_state_tags", [])
+            user_input = external_context.get("raw_input_preview", "")
+            user_emotion = external_context.get("user_emotion", "neutral")
+            interaction_type = external_context.get("interaction_type", "")
+            urgency_level = external_context.get("urgency_level", "low")
+        else:
+            # 扁平结构（ContextParser直接返回）
+            external_context = snapshot
+            internal_tags = snapshot.get("internal_state_tags", [])
+            user_input = snapshot.get("raw_input_preview", "")
+            user_emotion = snapshot.get("user_emotion", "neutral")
+            interaction_type = snapshot.get("interaction_type", "")
+            urgency_level = snapshot.get("urgency_level", "low")
 
         # 检查危机干预信号
-        if self._is_crisis_intervention(snapshot):
+        if self._is_crisis_intervention(user_input, urgency_level):
             return "critical_moment"
 
         # 检查极端情绪
-        user_emotion = external_context.get("user_emotion", "neutral")
-        if user_emotion in ["sad", "angry", "desperate"]:
+        if user_emotion in ["sad", "angry", "desperate", "negative"]:
             return "important_moment"
 
         # 检查深度支持需求
-        interaction_type = external_context.get("interaction_type", "")
         if interaction_type == "seeking_support":
             return "important_moment"
 
         # 检查核心价值观
-        if self._touches_core_values(snapshot):
+        if self._touches_core_values(user_input):
             return "important_moment"
 
         # 检查战略规划
-        if self._is_strategic_planning(snapshot):
+        if self._is_strategic_planning(user_input):
             return "important_moment"
 
         # 检查内部状态
@@ -101,50 +114,44 @@ class LengthRegulator:
         # 默认常规时刻
         return "routine_moment"
 
-    def _is_crisis_intervention(self, snapshot: Dict) -> bool:
+    def _is_crisis_intervention(self, user_input: str, urgency_level: str) -> bool:
         """判断是否需要危机干预"""
-        external = snapshot.get("external_context", {})
-
         # 紧急关键词
         emergency_keywords = ["自杀", "自残", "想死", "活不下去", "崩溃"]
-        user_input = external.get("raw_input_preview", "").lower()
+        user_input_lower = user_input.lower()
 
-        if any(keyword in user_input for keyword in emergency_keywords):
+        if any(keyword in user_input_lower for keyword in emergency_keywords):
             return True
 
         # 紧急交互类型
-        if external.get("urgency_level") == "high":
+        if urgency_level == "high":
             return True
 
         return False
 
-    def _touches_core_values(self, snapshot: Dict) -> bool:
+    def _touches_core_values(self, user_input: str) -> bool:
         """判断是否触及核心价值观"""
-        external = snapshot.get("external_context", {})
-
         # 核心价值观相关话题
         core_value_topics = [
             "意义", "价值", "信仰", "原则", "道德", "伦理",
             "人生目标", "存在意义", "我是谁"
         ]
 
-        user_input = external.get("raw_input_preview", "").lower()
+        user_input_lower = user_input.lower()
 
-        return any(topic in user_input for topic in core_value_topics)
+        return any(topic in user_input_lower for topic in core_value_topics)
 
-    def _is_strategic_planning(self, snapshot: Dict) -> bool:
+    def _is_strategic_planning(self, user_input: str) -> bool:
         """判断是否为战略规划"""
-        external = snapshot.get("external_context", {})
-
         # 规划相关话题
         planning_keywords = [
             "未来计划", "发展规划", "职业规划", "人生规划",
             "长期目标", "五年计划", "战略"
         ]
 
-        user_input = external.get("raw_input_preview", "").lower()
+        user_input_lower = user_input.lower()
 
-        return any(keyword in user_input for keyword in planning_keywords)
+        return any(keyword in user_input_lower for keyword in planning_keywords)
 
     def _split_into_sentences(self, text: str) -> List[str]:
         """将文本分割成句子"""

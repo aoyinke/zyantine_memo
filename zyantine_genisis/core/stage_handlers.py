@@ -485,18 +485,15 @@ class CognitiveFlowHandler(BaseStageHandler):
                 memory_context=memory_context
             )
 
-            # 更新上下文
-            context.cognitive_result = cognitive_result
+            # 更新上下文 - 存储认知快照和最终行动方案
+            context.cognitive_snapshot = cognitive_result.get("cognitive_snapshot")
+            final_action_plan = cognitive_result.get("final_action_plan")
+            context.cognitive_result = final_action_plan
 
             # 提取策略和情感
-            if cognitive_result:
-                context.strategy = cognitive_result.get("strategy")
-                context.emotional_context = cognitive_result.get("emotional_context", {})
-                # 如果是旧格式，可能需要转换
-                if "final_action_plan" in cognitive_result:
-                    action_plan = cognitive_result.get("final_action_plan", {})
-                    if "primary_strategy" in action_plan:
-                        context.strategy = action_plan.get("primary_strategy")
+            if final_action_plan:
+                context.strategy = final_action_plan.get("primary_strategy")
+                context.emotional_context = final_action_plan.get("emotional_context", {})
 
             if self.logger:
                 self.logger.debug(f"认知流程完成: 生成策略长度 {len(context.strategy) if context.strategy else 0}")
@@ -700,20 +697,60 @@ class ProtocolReviewHandler(BaseStageHandler):
 
             review_results = []
 
-            # 事实检查
-            if self.protocol_engine and hasattr(self.protocol_engine, 'check_facts'):
-                fact_check = self.protocol_engine.check_facts(context.final_reply, context.user_input)
-                review_results.append({"type": "fact_check", "result": fact_check})
+            # 使用 ProtocolEngine 的 apply_all_protocols 方法
+            if self.protocol_engine and hasattr(self.protocol_engine, 'apply_all_protocols'):
+                # 构建上下文信息
+                protocol_context = {
+                    "user_input": context.user_input,
+                    "conversation_history": context.conversation_history,
+                    "cognitive_snapshot": context.cognitive_snapshot if hasattr(context, 'cognitive_snapshot') else None,
+                    "core_identity": context.core_identity if hasattr(context, 'core_identity') else None
+                }
 
-            # 长度检查
-            if self.protocol_engine and hasattr(self.protocol_engine, 'check_length'):
-                length_check = self.protocol_engine.check_length(context.final_reply)
-                review_results.append({"type": "length_check", "result": length_check})
+                # 应用所有协议
+                final_text, protocol_summary = self.protocol_engine.apply_all_protocols(
+                    draft=context.final_reply,
+                    context=protocol_context
+                )
 
-            # 表达检查
-            if self.protocol_engine and hasattr(self.protocol_engine, 'check_expression'):
-                expression_check = self.protocol_engine.check_expression(context.final_reply)
-                review_results.append({"type": "expression_check", "result": expression_check})
+                # 更新最终回复
+                if final_text:
+                    context.final_reply = final_text
+
+                # 提取协议步骤结果
+                protocol_steps = protocol_summary.get("protocol_steps", {})
+                for step_name, step_result in protocol_steps.items():
+                    review_results.append({
+                        "type": step_name,
+                        "result": {
+                            "status": step_result.get("status"),
+                            "feedback": step_result.get("feedback"),
+                            "needs_fix": step_result.get("status") in ["failed", "violations_found"]
+                        }
+                    })
+
+                # 添加冲突信息
+                conflicts = protocol_summary.get("conflicts_detected", [])
+                if conflicts:
+                    review_results.append({
+                        "type": "conflicts",
+                        "result": {
+                            "conflicts": conflicts,
+                            "resolved": protocol_summary.get("conflicts_resolved", []),
+                            "needs_fix": len(conflicts) > 0
+                        }
+                    })
+
+                # 添加摘要信息
+                review_results.append({
+                    "type": "summary",
+                    "result": {
+                        "original_length": protocol_summary.get("original_draft_length"),
+                        "final_length": protocol_summary.get("final_text_length"),
+                        "reduction": protocol_summary.get("total_reduction"),
+                        "processing_time": protocol_summary.get("total_processing_time")
+                    }
+                })
 
             # 元认知评估
             if self.meta_cognition and hasattr(self.meta_cognition, 'evaluate'):
@@ -722,22 +759,6 @@ class ProtocolReviewHandler(BaseStageHandler):
                     context=context
                 )
                 review_results.append({"type": "meta_cognition", "result": meta_evaluation})
-
-            # 检查是否有需要修复的问题
-            needs_fix = False
-            for result in review_results:
-                if result["result"] and result["result"].get("needs_fix", False):
-                    needs_fix = True
-                    break
-
-            if needs_fix and self.protocol_engine and hasattr(self.protocol_engine, 'fix_issues'):
-                fixed_reply = self.protocol_engine.fix_issues(
-                    reply=context.final_reply,
-                    issues=[r["result"] for r in review_results if r["result"]]
-                )
-                # [修复] 只有在修复成功且有返回时才更新
-                if fixed_reply:
-                    context.final_reply = fixed_reply
 
             # 更新上下文
             context.review_results = review_results

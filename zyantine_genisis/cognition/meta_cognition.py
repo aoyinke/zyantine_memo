@@ -256,3 +256,196 @@ class MetaCognitionModule:
         monologue_parts.append(f"基于这个感觉，我目前最强烈的渴望是……{desire_focus}。")
 
         return " ".join(monologue_parts)
+
+    def evaluate(self, reply: str, context: Dict) -> Dict:
+        """
+        评估回复质量，从元认知角度进行自我审视
+
+        Args:
+            reply: 待评估的回复内容
+            context: 上下文信息，包含用户输入、对话历史等
+
+        Returns:
+            评估结果字典，包含一致性、适当性、完整性等维度
+        """
+        evaluation_result = {
+            "timestamp": datetime.now().isoformat(),
+            "overall_score": 0.0,
+            "dimensions": {},
+            "feedback": [],
+            "suggestions": []
+        }
+
+        try:
+            # 1. 获取当前内部状态
+            current_state = self.dashboard.get_current_state()
+
+            # 2. 评估回复与内部状态的一致性
+            consistency_score = self._evaluate_consistency(reply, current_state)
+            evaluation_result["dimensions"]["consistency"] = consistency_score
+
+            # 3. 评估回复的适当性（基于外部情境）
+            appropriateness_score = self._evaluate_appropriateness(reply, context)
+            evaluation_result["dimensions"]["appropriateness"] = appropriateness_score
+
+            # 4. 评估回复的完整性
+            completeness_score = self._evaluate_completeness(reply, context)
+            evaluation_result["dimensions"]["completeness"] = completeness_score
+
+            # 5. 评估回复的情感表达
+            emotional_quality_score = self._evaluate_emotional_quality(reply, current_state)
+            evaluation_result["dimensions"]["emotional_quality"] = emotional_quality_score
+
+            # 6. 计算综合得分
+            evaluation_result["overall_score"] = (
+                consistency_score * 0.3 +
+                appropriateness_score * 0.25 +
+                completeness_score * 0.25 +
+                emotional_quality_score * 0.2
+            )
+
+            # 7. 生成反馈和建议
+            evaluation_result["feedback"] = self._generate_feedback(evaluation_result)
+            evaluation_result["suggestions"] = self._generate_suggestions(evaluation_result)
+
+        except Exception as e:
+            evaluation_result["error"] = str(e)
+            evaluation_result["overall_score"] = 0.5
+
+        return evaluation_result
+
+    def _evaluate_consistency(self, reply: str, current_state: Dict) -> float:
+        """评估回复与内部状态的一致性"""
+        score = 0.8
+
+        # 检查回复语气与当前情绪的一致性
+        mood_level = current_state.get("mood_level", "心情平静")
+
+        if mood_level in ["心情极差", "心情低落"]:
+            if any(word in reply for word in ["开心", "高兴", "快乐"]):
+                score -= 0.3
+        elif mood_level in ["兴高采烈", "心情愉快"]:
+            if any(word in reply for word in ["难过", "伤心", "沮丧"]):
+                score -= 0.3
+
+        # 检查回复长度与耐心水平的一致性
+        patience_level = current_state.get("patience_level", "还算耐心")
+        reply_length = len(reply)
+
+        if patience_level in ["毫无耐心", "耐心有限"] and reply_length > 500:
+            score -= 0.2
+        elif patience_level in ["很有耐心", "极度耐心"] and reply_length < 50:
+            score -= 0.1
+
+        return max(0.0, min(1.0, score))
+
+    def _evaluate_appropriateness(self, reply: str, context: Dict) -> float:
+        """评估回复的适当性"""
+        score = 0.8
+
+        user_input = context.get("user_input", "")
+
+        # 检查回复是否回应了用户的问题
+        if "?" in user_input and not any(word in reply for word in ["是", "不是", "可以", "不可以", "应该", "不应该"]):
+            score -= 0.2
+
+        # 检查回复是否过于冗长
+        if len(reply) > 1000:
+            score -= 0.1
+
+        # 检查回复是否过于简短
+        if len(reply) < 20:
+            score -= 0.3
+
+        # 检查回复是否包含重复内容
+        if len(set(reply.split())) < len(reply.split()) * 0.5:
+            score -= 0.2
+
+        return max(0.0, min(1.0, score))
+
+    def _evaluate_completeness(self, reply: str, context: Dict) -> float:
+        """评估回复的完整性"""
+        score = 0.8
+
+        user_input = context.get("user_input", "")
+
+        # 检查是否回应了用户的主要关注点
+        if "为什么" in user_input:
+            if not any(word in reply for word in ["因为", "由于", "原因是"]):
+                score -= 0.3
+
+        if "怎么" in user_input or "如何" in user_input:
+            if not any(word in reply for word in ["首先", "然后", "步骤", "方法"]):
+                score -= 0.2
+
+        if "什么" in user_input:
+            if len(reply) < 30:
+                score -= 0.2
+
+        return max(0.0, min(1.0, score))
+
+    def _evaluate_emotional_quality(self, reply: str, current_state: Dict) -> float:
+        """评估回复的情感表达质量"""
+        score = 0.8
+
+        # 检查是否有适当的情感表达
+        emotional_words = ["理解", "明白", "抱歉", "谢谢", "高兴", "难过", "担心", "关心"]
+        if any(word in reply for word in emotional_words):
+            score += 0.1
+
+        # 检查是否过于冷漠
+        if not any(word in reply for word in ["我", "你", "我们"]):
+            score -= 0.2
+
+        # 检查是否有适当的语气词
+        tone_words = ["吧", "呢", "啊", "哦", "嗯", "哈"]
+        if any(word in reply for word in tone_words):
+            score += 0.05
+
+        return max(0.0, min(1.0, score))
+
+    def _generate_feedback(self, evaluation_result: Dict) -> List[str]:
+        """生成反馈意见"""
+        feedback = []
+
+        dimensions = evaluation_result.get("dimensions", {})
+
+        if dimensions.get("consistency", 0) < 0.6:
+            feedback.append("回复与当前内心状态存在不一致")
+
+        if dimensions.get("appropriateness", 0) < 0.6:
+            feedback.append("回复的适当性有待提升")
+
+        if dimensions.get("completeness", 0) < 0.6:
+            feedback.append("回复可能不够完整，遗漏了某些重要信息")
+
+        if dimensions.get("emotional_quality", 0) < 0.6:
+            feedback.append("情感表达可以更加丰富和自然")
+
+        if not feedback:
+            feedback.append("回复质量良好")
+
+        return feedback
+
+    def _generate_suggestions(self, evaluation_result: Dict) -> List[str]:
+        """生成改进建议"""
+        suggestions = []
+
+        dimensions = evaluation_result.get("dimensions", {})
+
+        if dimensions.get("consistency", 0) < 0.6:
+            suggestions.append("建议调整回复语气，使其与当前情绪状态保持一致")
+
+        if dimensions.get("appropriateness", 0) < 0.6:
+            suggestions.append("建议根据用户输入调整回复长度和内容深度")
+
+        if dimensions.get("completeness", 0) < 0.6:
+            suggestions.append("建议确保回复涵盖用户问题的主要方面")
+
+        if dimensions.get("emotional_quality", 0) < 0.6:
+            suggestions.append("建议在回复中增加适当的情感表达和语气词")
+
+        if not suggestions:
+            suggestions.append("继续保持当前回复风格")
+
+        return suggestions

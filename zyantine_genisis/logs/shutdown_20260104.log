@@ -1,0 +1,12 @@
+2026-01-04 16:55:00 - shutdown - INFO - 开始优雅关闭: 收到信号: SIGINT
+2026-01-04 16:55:00 - shutdown - INFO - 优雅关闭完成
+2026-01-04 16:59:38 - shutdown - INFO - 开始优雅关闭: 收到信号: SIGINT
+2026-01-04 16:59:38 - shutdown - INFO - 优雅关闭完成
+2026-01-04 17:07:31 - shutdown - INFO - 开始优雅关闭: 收到信号: SIGINT
+2026-01-04 17:07:31 - shutdown - INFO - 优雅关闭完成
+2026-01-04 17:19:42 - shutdown - INFO - 开始优雅关闭: 收到信号: SIGINT
+2026-01-04 17:19:42 - shutdown - INFO - 优雅关闭完成
+2026-01-04 17:43:59 - shutdown - INFO - 开始优雅关闭: 收到信号: SIGINT
+2026-01-04 17:43:59 - shutdown - INFO - 优雅关闭完成
+2026-01-04 17:52:02 - shutdown - INFO - 开始优雅关闭: 收到信号: SIGINT
+2026-01-04 17:52:02 - shutdown - INFO - 优雅关闭完成

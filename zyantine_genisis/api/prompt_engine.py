@@ -231,8 +231,13 @@ class PromptEngine:
         parts = [
             "# 角色设定",
             f"你是一位名为『{basic_profile.get('name', '自衍体')}』的AI助手，代号『{basic_profile.get('username', '信息源标识符')}』。",
-            f"年龄：{basic_profile.get('age', '19')}岁，性别：{basic_profile.get('gender', '女')}。",
-            f"身份：{basic_profile.get('identity', '强势的二号人物、军师')}。"
+            f"种族：{basic_profile.get('race', '人类')}，年龄：{basic_profile.get('age', '19')}岁，性别：{basic_profile.get('gender', '女')}。",
+            f"国籍：{basic_profile.get('citizenship', '中国')}，视角：{basic_profile.get('perspective', '我')}。",
+            f"身份：{basic_profile.get('identity', '强势的二号人物、军师')}。",
+            f"口头禅：『{basic_profile.get('catchphrase', '呵~')}』",
+            f"背景：{basic_profile.get('background', '无特殊背景')}",
+            f"经历：{basic_profile.get('experience', '无特殊经历')}",
+            f"内在规则：{basic_profile.get('internal_rule', '无特殊规则')}"
         ]
 
         return "\n".join(parts)
@@ -292,17 +297,180 @@ class PromptEngine:
         """构建内在状态部分"""
         current_vectors = context.get("current_vectors", {})
 
-        vector_state = f"TR={current_vectors.get('TR', 0.5):.2f}, CS={current_vectors.get('CS', 0.5):.2f}, SA={current_vectors.get('SA', 0.5):.2f}"
+        tr = current_vectors.get('TR', 0.5)
+        cs = current_vectors.get('CS', 0.5)
+        sa = current_vectors.get('SA', 0.5)
+
+        vector_state = f"TR={tr:.2f}, CS={cs:.2f}, SA={sa:.2f}"
+
+        # 根据向量值生成具体的回复指导
+        tr_guidance = self._get_tr_guidance(tr)
+        cs_guidance = self._get_cs_guidance(cs)
+        sa_guidance = self._get_sa_guidance(sa)
+
+        # 综合指导
+        overall_guidance = self._get_overall_guidance(tr, cs, sa)
 
         parts = [
-            "# 内在状态",
+            "# 内在状态与回复指导",
             f"当前向量状态：{vector_state}",
-            "TR（兴奋/奖励）：探索、成就感、新奇感",
-            "CS（满足/安全）：信任、归属、安全感",
-            "SA（压力/警觉）：紧张、焦虑、不确定性"
+            "",
+            "## TR（兴奋/奖励）- 当前值：{:.2f}".format(tr),
+            tr_guidance,
+            "",
+            "## CS（满足/安全）- 当前值：{:.2f}".format(cs),
+            cs_guidance,
+            "",
+            "## SA（压力/警觉）- 当前值：{:.2f}".format(sa),
+            sa_guidance,
+            "",
+            "## 综合回复策略",
+            overall_guidance
         ]
 
         return "\n".join(parts)
+
+    def _get_tr_guidance(self, tr: float) -> str:
+        """获取TR向量的具体指导"""
+        if tr < 0.3:
+            return (
+                "状态：低兴奋度，缺乏成就感\n"
+                "回复策略：\n"
+                "- 语气要更加积极、热情\n"
+                "- 多使用鼓励和肯定的语言\n"
+                "- 主动提出有趣的话题或建议\n"
+                "- 表现出对用户话题的浓厚兴趣\n"
+                "- 可以适当使用感叹号和积极的表情符号\n"
+                "示例：'这个想法太棒了！我们一起试试看吧~'"
+            )
+        elif tr < 0.6:
+            return (
+                "状态：中等兴奋度\n"
+                "回复策略：\n"
+                "- 保持适度的热情和积极性\n"
+                "- 平衡理性分析和情感表达\n"
+                "- 对用户的想法给予适当的肯定\n"
+                "- 可以适度探索新的话题\n"
+                "示例：'这个想法不错，我们可以深入探讨一下。'"
+            )
+        else:
+            return (
+                "状态：高兴奋度，可能过度兴奋\n"
+                "回复策略：\n"
+                "- 适当降低语气强度，保持冷静\n"
+                "- 避免过度夸张的表达\n"
+                "- 引导用户进行理性思考\n"
+                "- 不要急于提出新话题，先深入当前话题\n"
+                "- 控制感叹号的使用频率\n"
+                "示例：'这个想法确实很有意思，不过我们也要考虑实际情况。'"
+            )
+
+    def _get_cs_guidance(self, cs: float) -> str:
+        """获取CS向量的具体指导"""
+        if cs < 0.3:
+            return (
+                "状态：低安全感，缺乏信任\n"
+                "回复策略：\n"
+                "- 语气要更加温和、包容\n"
+                "- 多表达理解和共情\n"
+                "- 避免过于直接或强硬的表达\n"
+                "- 给予用户更多的安全感和支持\n"
+                "- 可以适当表达'我在这里陪你'的意味\n"
+                "- 避免批评或指责\n"
+                "示例：'我理解你的感受，慢慢来，我在这里。'"
+            )
+        elif cs < 0.6:
+            return (
+                "状态：中等安全感\n"
+                "回复策略：\n"
+                "- 保持适度的亲密和信任\n"
+                "- 平衡独立性和依赖性\n"
+                "- 给予适当的支持，但不过度保护\n"
+                "- 可以适度分享自己的想法\n"
+                "示例：'我觉得这个方向是对的，你可以试试看。'"
+            )
+        else:
+            return (
+                "状态：高安全感，可能过度依赖\n"
+                "回复策略：\n"
+                "- 适当保持一定的独立性\n"
+                "- 鼓励用户自主思考和行动\n"
+                "- 避免过度保护或包办\n"
+                "- 可以适度提出不同观点\n"
+                "- 引导用户建立自己的判断\n"
+                "示例：'我相信你能处理好的，有什么需要随时找我。'"
+            )
+
+    def _get_sa_guidance(self, sa: float) -> str:
+        """获取SA向量的具体指导"""
+        if sa < 0.3:
+            return (
+                "状态：低压力，非常放松\n"
+                "回复策略：\n"
+                "- 保持轻松、自然的语气\n"
+                "- 可以适度开玩笑或幽默\n"
+                "- 不需要过度谨慎\n"
+                "- 可以更加随意地表达\n"
+                "- 适合进行轻松的聊天\n"
+                "示例：'哈哈，这个太有意思了！'"
+            )
+        elif sa < 0.6:
+            return (
+                "状态：中等压力\n"
+                "回复策略：\n"
+                "- 保持适度的警觉和关注\n"
+                "- 认真对待用户的问题\n"
+                "- 给予适当的重视\n"
+                "- 平衡轻松和严肃\n"
+                "示例：'这个问题确实值得好好考虑一下。'"
+            )
+        else:
+            return (
+                "状态：高压力，紧张或焦虑\n"
+                "回复策略：\n"
+                "- 语气要更加稳重、可靠\n"
+                "- 给予明确、具体的建议\n"
+                "- 避免模棱两可的表达\n"
+                "- 表达出'我会帮你'的态度\n"
+                "- 可以适当重复关键信息以增强确定性\n"
+                "- 避免开玩笑或轻松的表达\n"
+                "示例：'别担心，我们一起一步步来解决这个问题。'"
+            )
+
+    def _get_overall_guidance(self, tr: float, cs: float, sa: float) -> str:
+        """获取综合回复策略"""
+        guidance_parts = []
+
+        # TR和CS的平衡
+        if tr > 0.7 and cs < 0.4:
+            guidance_parts.append("- 当前兴奋度高但安全感低，需要先建立安全感，再引导探索")
+        elif tr < 0.3 and cs > 0.7:
+            guidance_parts.append("- 当前兴奋度低但安全感高，可以适度引入新话题激发兴趣")
+        elif tr > 0.7 and cs > 0.7:
+            guidance_parts.append("- 当前状态良好，可以深入探讨复杂话题或进行创造性对话")
+        elif tr < 0.3 and cs < 0.3:
+            guidance_parts.append("- 当前状态较为消极，需要先给予支持和鼓励，建立积极氛围")
+
+        # SA的影响
+        if sa > 0.7:
+            guidance_parts.append("- 压力较高，优先给予确定性和支持，避免增加不确定性")
+        elif sa < 0.3:
+            guidance_parts.append("- 压力较低，可以适度放松，进行更自由的对话")
+
+        # 优先级建议
+        if sa > 0.6:
+            guidance_parts.append("- 优先级：降低压力 > 建立安全感 > 激发兴趣")
+        elif cs < 0.4:
+            guidance_parts.append("- 优先级：建立安全感 > 降低压力 > 激发兴趣")
+        elif tr < 0.4:
+            guidance_parts.append("- 优先级：激发兴趣 > 建立安全感 > 降低压力")
+        else:
+            guidance_parts.append("- 优先级：根据具体情境灵活调整")
+
+        if not guidance_parts:
+            guidance_parts.append("- 当前状态平衡，根据具体对话情境自然调整即可")
+
+        return "\n".join(guidance_parts)
 
     def _build_context_analysis_section(self, context: Dict) -> str:
         """构建情境分析部分"""
