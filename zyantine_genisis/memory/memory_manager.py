@@ -2083,10 +2083,9 @@ class MemoryManager:
         config = ConfigManager().get()
 
         return ZyantineMemorySystem(
-            base_url=config.api.base_url,
-            api_key=config.api.api_key,
             user_id=self.user_id,
-            session_id=self.session_id
+            session_id=self.session_id,
+            memo0_config=config.memory.memo0_config
         )
 
     def add_memory(self,

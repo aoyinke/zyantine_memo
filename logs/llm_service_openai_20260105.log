@@ -1,0 +1,45 @@
+2026-01-05 21:15:17 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-05 21:15:17 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:15:18 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': '无效的令牌 (request id: 2026010521151994546526703286702)', 'type': 'one_api_error'}}
+2026-01-05 21:15:18 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:16:17 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-05 21:16:17 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:16:18 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': '无效的令牌 (request id: 2026010521161948354295289255488)', 'type': 'one_api_error'}}
+2026-01-05 21:16:18 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:19:07 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-05 21:19:07 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:19:09 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': '无效的令牌 (request id: 2026010521191042366298954791338)', 'type': 'one_api_error'}}
+2026-01-05 21:19:09 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:23:17 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-05 21:23:17 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:23:19 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': '无效的令牌 (request id: 2026010521232043514270358551972)', 'type': 'one_api_error'}}
+2026-01-05 21:23:19 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-05 21:35:06 - llm_service_openai - INFO - 初始连接测试成功
+2026-01-05 21:35:06 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4.1-nano-2025-04-14
+2026-01-05 21:56:11 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010521561029891862621464525)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 21:56:11 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 21:57:43 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010521574282126902285168307)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 21:57:43 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 21:59:24 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010521592444318012067213866)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 21:59:24 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 22:07:09 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522070955692954192913715)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:07:09 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 22:17:45 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522174531357156103835330)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:17:45 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 22:18:05 - llm_service_openai - ERROR - 生成回复失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522180546251194470591542)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:51:49 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522514923608331436454270)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:51:49 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 22:52:01 - llm_service_openai - ERROR - 生成回复失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522520126963062106500238)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:56:02 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522560239685996987870165)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:56:02 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 22:56:12 - llm_service_openai - ERROR - 生成回复失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522561238195607806813835)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:56:42 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 202601052256424386137631087073)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 22:56:42 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 22:56:57 - llm_service_openai - ERROR - 生成回复失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010522565675079835371685805)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 23:00:13 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010523001313238591252755816)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 23:00:13 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-05 23:11:40 - llm_service_openai - ERROR - 生成回复失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010523114035280967351949160)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-05 23:12:17 - llm_service_openai - INFO - 正在关闭openai服务...
+2026-01-05 23:12:17 - llm_service_openai - INFO - openai服务已关闭
+2026-01-05 23:12:17 - llm_service_openai - INFO - 正在关闭openai服务...
+2026-01-05 23:12:17 - llm_service_openai - INFO - openai服务已关闭

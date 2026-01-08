@@ -1,19 +1,42 @@
 """
 回复生成器 - 智能回复生成
 """
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Protocol, Tuple
 from datetime import datetime
 import random
 import traceback
 from dataclasses import dataclass
 
 from .openai_service import OpenAIService
+from .llm_service import BaseLLMService
 from .prompt_engine import PromptEngine
 from .fallback_strategy import FallbackStrategy
 # 修改导入路径
 from cognition.core_identity import CoreIdentity
 from utils.logger import SystemLogger
 from utils.metrics import MetricsCollector
+
+
+class LLMServiceInterface(Protocol):
+    """LLM服务接口协议"""
+
+    def generate_reply(self,
+                       system_prompt: str,
+                       user_input: str,
+                       conversation_history: Optional[List[Dict]] = None,
+                       max_tokens: int = 500,
+                       temperature: float = 1.0,
+                       stream: bool = False) -> Tuple[Optional[str], Optional[Dict]]:
+        """生成回复"""
+        ...
+
+    def is_available(self) -> bool:
+        """检查服务是否可用"""
+        ...
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """获取统计信息"""
+        ...
 
 
 @dataclass
@@ -40,7 +63,7 @@ class APIBasedReplyGenerator:
     """基于API的智能回复生成器（增强版）"""
 
     def __init__(self,
-                 api_service: Optional[OpenAIService],
+                 api_service: Optional[LLMServiceInterface],
                  prompt_engine: PromptEngine,
                  fallback_strategy: FallbackStrategy,
                  metrics_collector: Optional[MetricsCollector] = None,
@@ -304,27 +327,33 @@ class APIBasedReplyGenerator:
         cs = current_vectors.get("CS", 0.5)
         sa = current_vectors.get("SA", 0.5)
 
-        # 使用更平滑的温度曲线
-        base_temp = 0.7
+        # 使用更高的基础温度以减少AI味
+        base_temp = 0.8
 
         # TR影响：高兴奋需要更多创造性
-        tr_adjustment = (tr - 0.5) * 0.4  # ±0.2
+        tr_adjustment = (tr - 0.5) * 0.3  # ±0.15
 
         # CS影响：高亲密感可以更自然
-        cs_adjustment = (cs - 0.5) * 0.3  # ±0.15
+        cs_adjustment = (cs - 0.5) * 0.25  # ±0.125
 
         # SA影响：高压需要更稳定
-        sa_adjustment = -sa * 0.3  # 最高降低0.3
+        sa_adjustment = -sa * 0.2  # 最高降低0.2
 
         temperature = base_temp + tr_adjustment + cs_adjustment + sa_adjustment
 
-        # 确保温度在合理范围内
-        temperature = max(0.3, min(1.0, temperature))
+        # 确保温度在合理范围内，提高下限以保持自然性
+        temperature = max(0.5, min(1.0, temperature))
 
         # 特殊情况的微调
         if sa > 0.8 and tr > 0.7:
             # 高压高兴奋：稍微降低温度避免过激
-            temperature *= 0.9
+            temperature *= 0.95
+        elif sa < 0.3 and cs > 0.7:
+            # 低压力高亲密：提高温度增加自然性
+            temperature *= 1.05
+        elif tr < 0.3 and cs < 0.3:
+            # 低兴奋低亲密：提高温度避免过于机械
+            temperature *= 1.1
 
         # 四舍五入到小数点后一位
         temperature = round(temperature, 1)
@@ -458,6 +487,7 @@ class APIBasedReplyGenerator:
     def clear_cache(self):
         """清空缓存"""
         self.prompt_cache.clear()
+        self.prompt_engine.clear_cache()
         self.logger.info("已清空提示词缓存")
 
 class TemplateReplyGenerator:

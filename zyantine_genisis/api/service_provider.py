@@ -12,12 +12,13 @@ import threading
 from collections import defaultdict
 
 from .openai_service import OpenAIService
+from .llm_service_factory import LLMServiceFactory
 from .reply_generator import APIBasedReplyGenerator, TemplateReplyGenerator
 from .prompt_engine import PromptEngine
 from .fallback_strategy import FallbackStrategy
-from config.config_manager import ConfigManager
-from utils.logger import SystemLogger
-from utils.metrics import MetricsCollector
+from zyantine_genisis.config.config_manager import ConfigManager
+from zyantine_genisis.utils.logger import SystemLogger
+from zyantine_genisis.utils.metrics import MetricsCollector
 from cognition.core_identity import CoreIdentity
 
 
@@ -104,31 +105,64 @@ class APIServiceProvider:
     def _initialize_services(self):
         """初始化API服务"""
         api_config = self.config.api
-        # 安全打印配置，不暴露敏感信息
-        self.logger.info(f"初始化API服务，模型: {api_config.chat_model}, URL: {api_config.base_url[:30]}...")
 
-        if api_config.enabled and api_config.api_key:
-            # 创建OpenAI服务
-            openai_service = OpenAIService(
-                api_key=api_config.api_key,
-                base_url=api_config.base_url,
-                model=api_config.chat_model,
-                timeout=api_config.timeout,
-                max_retries=api_config.max_retries
-            )
+        # 获取当前选择的提供商
+        provider = api_config.provider or "openai"
 
-            # 测试连接
-            success, message = openai_service.test_connection()
-            if success:
-                self.services["openai"] = openai_service
-                self.service_metrics["openai"] = ServiceMetrics()
-                self.active_service = "openai"
-                self.logger.info(f"OpenAI服务初始化成功，模型: {api_config.chat_model}")
+        # 检查提供商配置
+        providers_config = api_config.providers or {}
+        provider_config = providers_config.get(provider, {})
+
+        # 如果提供商配置为空，使用旧的配置方式（向后兼容）
+        if not provider_config or not provider_config.get("api_key"):
+            if api_config.enabled and api_config.api_key:
+                # 判断是否需要使用max_completion_tokens（DeepSeek需要）
+                use_max_completion_tokens = (provider == "deepseek")
+
+                provider_config = {
+                    "enabled": True,
+                    "api_key": api_config.api_key,
+                    "base_url": api_config.base_url,
+                    "chat_model": api_config.chat_model,
+                    "timeout": api_config.timeout,
+                    "max_retries": api_config.max_retries,
+                    "use_max_completion_tokens": use_max_completion_tokens
+                }
+                # 保持原有的provider值，不要覆盖
             else:
-                self.logger.warning(f"OpenAI服务连接测试失败: {message}，将使用降级策略")
-                self._setup_fallback_strategy()
+                self.logger.warning("API服务未启用或未配置API密钥，使用本地模式")
+                self._setup_local_mode()
+                return
         else:
-            self.logger.warning("API服务未启用或未配置API密钥，使用本地模式")
+            # 确保use_max_completion_tokens字段被设置
+            if "use_max_completion_tokens" not in provider_config:
+                provider_config["use_max_completion_tokens"] = (provider == "deepseek")
+
+        # 检查提供商是否启用
+        if not provider_config.get("enabled", False):
+            self.logger.warning(f"提供商 {provider} 未启用，使用本地模式")
+            self._setup_local_mode()
+            return
+
+        # 使用工厂创建服务
+        service = LLMServiceFactory.create_service(provider, provider_config)
+
+        if service:
+            # 测试连接
+            success, message = service.test_connection()
+            if success:
+                self.services[provider] = service
+                self.service_metrics[provider] = ServiceMetrics()
+                self.active_service = provider
+                self.logger.info(f"{provider}服务初始化成功，模型: {provider_config.get('chat_model')}")
+            else:
+                # 即使测试失败，也尝试使用该服务（可能是临时网络问题）
+                self.services[provider] = service
+                self.service_metrics[provider] = ServiceMetrics()
+                self.active_service = provider
+                self.logger.warning(f"{provider}服务连接测试失败: {message}，但仍尝试使用该服务")
+        else:
+            self.logger.error(f"创建{provider}服务失败，使用本地模式")
             self._setup_local_mode()
 
     def _initialize_components(self):
@@ -152,12 +186,16 @@ class APIServiceProvider:
         """设置降级策略"""
         self.logger.info("设置降级策略")
 
+        # 创建提示词引擎（如果还没有创建）
+        if not hasattr(self, 'prompt_engine'):
+            self.prompt_engine = PromptEngine(self.config)
+
         # 创建模板生成器作为备用
         template_generator = TemplateReplyGenerator()
 
         # 创建降级策略
         self.fallback_strategy = FallbackStrategy(
-
+            core_identity=self.core_identity
         )
 
         # 创建回复生成器（降级模式）
@@ -172,17 +210,18 @@ class APIServiceProvider:
         """设置本地模式"""
         self.logger.info("设置本地模式")
 
+        # 创建提示词引擎（如果还没有创建）
+        if not hasattr(self, 'prompt_engine'):
+            self.prompt_engine = PromptEngine(self.config)
+
         # 创建模板生成器
         template_generator = TemplateReplyGenerator()
-
-        # 创建提示词引擎
-        self.prompt_engine = PromptEngine(self.config)
 
         # 创建回复生成器（本地模式）
         self.reply_generator = APIBasedReplyGenerator(
             api_service=None,
             prompt_engine=self.prompt_engine,
-            fallback_strategy=FallbackStrategy(),
+            fallback_strategy=FallbackStrategy(core_identity=self.core_identity),
             metrics_collector=self.metrics
         )
 
@@ -362,6 +401,9 @@ class APIServiceProvider:
     def shutdown(self):
         """关闭服务"""
         self.logger.info("正在关闭API服务提供者...")
+
+        # 清空工厂缓存
+        LLMServiceFactory.clear_cache()
 
         # 关闭所有服务
         for service_name, service in self.services.items():

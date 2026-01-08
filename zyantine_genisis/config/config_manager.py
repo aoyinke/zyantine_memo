@@ -36,7 +36,7 @@ class MemoryConfig:
     backup_interval: int = 3600  # 秒
     backup_path: str = "./memory_backups"
 
-    # Mem0特定配置
+    # Mem0特定配置 - 从配置文件读取
     memo0_config: Dict = field(default_factory=lambda: {
         "vector_store": {
             "provider": "milvus",
@@ -49,13 +49,17 @@ class MemoryConfig:
         "llm": {
             "provider": "openai",
             "config": {
-                "model": "gpt-4.1-nano-2025-04-14"
+                "model": "gpt-5-nano-2025-08-07",
+                "api_key": "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9",
+                "openai_base_url": "https://openkey.cloud/v1"
             }
         },
         "embedder": {
             "provider": "openai",
             "config": {
-                "model": "text-embedding-3-large"
+                "model": "text-embedding-3-large",
+                "api_key": "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9",
+                "openai_base_url": "https://openkey.cloud/v1"
             }
         }
     })
@@ -65,13 +69,74 @@ class MemoryConfig:
 class APIConfig:
     """API配置"""
     enabled: bool = True
+    provider: str = "openai"
     api_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9"))
     base_url: str = "https://openkey.cloud/v1"
-    chat_model: str = "gpt-4.1-nano-2025-04-14"
+    chat_model: str = "gpt-5-nano-2025-08-07"
     embedding_model: str = "text-embedding-3-large"
     timeout: int = 30
     max_retries: int = 3
     rate_limit: int = 60  # 每分钟请求数
+
+    # 多厂商配置
+    providers: Dict = field(default_factory=lambda: {
+        "openai": {
+            "enabled": True,
+            "api_key": "",
+            "base_url": "https://api.openai.com/v1",
+            "chat_model": "gpt-5-nano-2025-08-07",
+            "timeout": 30,
+            "max_retries": 3
+        },
+        "deepseek": {
+            "enabled": True,
+            "api_key": "",
+            "base_url": "https://api.deepseek.com",
+            "chat_model": "deepseek-chat",
+            "timeout": 30,
+            "max_retries": 3
+        },
+        "anthropic": {
+            "enabled": False,
+            "api_key": "",
+            "base_url": "https://api.anthropic.com",
+            "chat_model": "claude-3-5-sonnet-20241022",
+            "timeout": 30,
+            "max_retries": 3
+        },
+        "zhipu": {
+            "enabled": False,
+            "api_key": "",
+            "base_url": "https://open.bigmodel.cn/api/paas/v4",
+            "chat_model": "glm-4",
+            "timeout": 30,
+            "max_retries": 3
+        },
+        "moonshot": {
+            "enabled": False,
+            "api_key": "",
+            "base_url": "https://api.moonshot.cn/v1",
+            "chat_model": "moonshot-v1-8k",
+            "timeout": 30,
+            "max_retries": 3
+        },
+        "alibaba": {
+            "enabled": False,
+            "api_key": "",
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "chat_model": "qwen-turbo",
+            "timeout": 30,
+            "max_retries": 3
+        },
+        "baidu": {
+            "enabled": False,
+            "api_key": "",
+            "base_url": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat",
+            "chat_model": "ernie-bot-4",
+            "timeout": 30,
+            "max_retries": 3
+        }
+    })
 
 
 @dataclass
@@ -160,6 +225,11 @@ class SystemConfig:
             if key in config_dict:
                 setattr(config, key, config_dict[key])
 
+        # 更新顶层配置
+        for key in ['enable_monitoring', 'enable_logging', 'log_level', 'log_file', 'enable_encryption', 'enable_backup', 'enable_validation']:
+            if key in config_dict:
+                setattr(config, key, config_dict[key])
+
         # 递归更新嵌套配置
         for section in ['memory', 'api', 'processing', 'protocols']:
             if section in config_dict:
@@ -168,9 +238,52 @@ class SystemConfig:
 
                 for key, value in section_dict.items():
                     if hasattr(section_config, key):
-                        setattr(section_config, key, value)
+                        # 特殊处理：将字符串转换为枚举类型
+                        if key == 'mode' and section == 'processing':
+                            if isinstance(value, str):
+                                setattr(section_config, key, ProcessingMode(value))
+                            else:
+                                setattr(section_config, key, value)
+                        # 特殊处理：将字符串转换为MemorySystemType枚举类型
+                        elif key == 'system_type' and section == 'memory':
+                            if isinstance(value, str):
+                                setattr(section_config, key, MemorySystemType(value))
+                            else:
+                                setattr(section_config, key, value)
+                        # 如果是字典类型，需要特殊处理
+                        elif isinstance(value, dict) and isinstance(getattr(section_config, key), dict):
+                            # 深度合并字典
+                            current_dict = getattr(section_config, key)
+                            SystemConfig._deep_merge_dicts(current_dict, value)
+                        else:
+                            setattr(section_config, key, value)
+        
+        # 处理API provider：当选择了特定provider时，自动应用该provider的配置到顶层API字段
+        if 'api' in config_dict and hasattr(config, 'api') and hasattr(config.api, 'provider') and hasattr(config.api, 'providers'):
+            provider = config.api.provider
+            if provider in config.api.providers:
+                api_dict = config_dict['api']
+                provider_config = config.api.providers[provider]
+                # 将provider的配置应用到APIConfig的顶层字段，但不覆盖已有的显式配置
+                for key in ['api_key', 'base_url', 'chat_model', 'timeout', 'max_retries']:
+                    if key in provider_config and key not in api_dict:  # 只在顶层没有显式配置时才应用
+                        setattr(config.api, key, provider_config[key])
+                # 特殊处理：如果provider有use_max_completion_tokens配置，也应用它
+                if 'use_max_completion_tokens' in provider_config:
+                    setattr(config.api, 'use_max_completion_tokens', provider_config['use_max_completion_tokens'])
 
         return config
+
+    @staticmethod
+    def _deep_merge_dicts(base_dict: Dict, update_dict: Dict):
+        """深度合并字典"""
+        for key, value in update_dict.items():
+            if key in base_dict and isinstance(base_dict[key], dict) and isinstance(value, dict):
+                # 递归合并嵌套字典
+                SystemConfig._deep_merge_dicts(base_dict[key], value)
+            else:
+                # 直接更新值
+                base_dict[key] = value
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
@@ -219,9 +332,9 @@ class ConfigManager:
         else:
             # 从默认位置加载
             default_paths = [
-                "./config/zyantine_config.json",
-                "./config/zyantine_config.yaml",
-                "./config/config.json"
+                "./config/llm_config.json",
+                "./zyantine_genisis/config/llm_config.json",
+                os.path.join(os.path.dirname(__file__), "llm_config.json"),
             ]
 
             for path in default_paths:

@@ -12,7 +12,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 import backoff
 
-from utils.logger import SystemLogger
+from zyantine_genisis.utils.logger import SystemLogger
 
 
 class OpenAIModel(Enum):
@@ -55,15 +55,17 @@ class OpenAIService:
     def __init__(self,
                  api_key: str,
                  base_url: str = "https://openkey.cloud/v1",
-                 model: str = "gpt-4o-mini",
+                 model: str = "gpt-5-nano-2025-08-07",
                  timeout: int = 30,
-                 max_retries: int = 3):
+                 max_retries: int = 3,
+                 use_max_completion_tokens: bool = False):
 
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
+        self.use_max_completion_tokens = use_max_completion_tokens
 
         self.client = None
         self.logger = SystemLogger().get_logger("openai_service")
@@ -266,13 +268,23 @@ class OpenAIService:
                 f"请求ID: {request_id}"
             )
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                stream=stream
-            )
+            # 根据配置选择使用 max_tokens 或 max_completion_tokens
+            if self.use_max_completion_tokens:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_completion_tokens=max_tokens,
+                    temperature=temperature,
+                    stream=stream
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stream=stream
+                )
 
             return response
 
@@ -365,7 +377,7 @@ class OpenAIService:
 
     def is_available(self) -> bool:
         """检查服务是否可用"""
-        return self.client is not None and self.success_count > 0
+        return self.client is not None
 
     def test_connection(self) -> Tuple[bool, Optional[str]]:
         """测试连接"""

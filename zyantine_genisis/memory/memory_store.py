@@ -37,13 +37,30 @@ class ZyantineMemorySystem:
     """基于memo0的自衍体记忆系统"""
 
     def __init__(self,
-                 base_url: str = DEFAULT_BASE_URL,
-                 api_key: str = DEFAULT_API_KEY,
+                 base_url: Optional[str] = None,
+                 api_key: Optional[str] = None,
                  user_id: str = "default",
-                 session_id: str = "default") -> None:
+                 session_id: str = "default",
+                 memo0_config: Optional[Dict[str, Any]] = None) -> None:
         """初始化记忆系统"""
-        self.base_url: str = base_url
-        self.api_key: str = api_key
+        # 从配置管理器获取配置
+        from config.config_manager import ConfigManager
+        config_manager = ConfigManager()
+        config = config_manager.get()
+
+        # 使用传入的配置或从配置文件读取
+        if memo0_config:
+            self.memo0_config = memo0_config
+        else:
+            self.memo0_config = config.memory.memo0_config
+
+        # 从配置中获取 LLM 和 Embedder 配置
+        llm_config = self.memo0_config.get("llm", {}).get("config", {})
+        embedder_config = self.memo0_config.get("embedder", {}).get("config", {})
+
+        # 优先使用传入参数，否则使用配置文件中的值
+        self.base_url: str = base_url or llm_config.get("base_url", DEFAULT_BASE_URL)
+        self.api_key: str = api_key or llm_config.get("api_key", DEFAULT_API_KEY)
         self.user_id: str = user_id
         self.session_id: str = session_id
 
@@ -61,34 +78,48 @@ class ZyantineMemorySystem:
         }
 
         print(f"[记忆系统] 初始化完成，用户ID: {user_id}，会话ID: {session_id}")
+        print(f"[记忆系统] LLM配置: provider={self.memo0_config.get('llm', {}).get('provider')}, model={llm_config.get('model')}")
+        print(f"[记忆系统] Embedder配置: provider={self.memo0_config.get('embedder', {}).get('provider')}, model={embedder_config.get('model')}")
 
     def _initialize_memo0(self) -> Memory:
         """初始化memo0框架"""
-        config: Dict[str, Any] = {
-            "vector_store": {
-                "provider": "milvus",
-                "config": {
-                    "collection_name": "zyantine_memories",
-                    "url": "http://localhost:19530",
-                    "token": "",
-                }
-            },
-            "llm": {
+        # 使用从配置文件读取的配置
+        config: Dict[str, Any] = self.memo0_config
+
+        # 确保配置格式正确
+        if "llm" not in config:
+            config["llm"] = {
                 "provider": "openai",
                 "config": {
-                    "openai_base_url": self.base_url,
-                    "api_key": self.api_key
+                    "model": "gpt-5-nano-2025-08-07",
+                    "api_key": self.api_key,
+                    "openai_base_url": self.base_url
                 }
-            },
-            "embedder": {
+            }
+        else:
+            # 确保 LLM 配置中有必要的字段
+            llm_config = config["llm"]["config"]
+            if "api_key" not in llm_config:
+                llm_config["api_key"] = self.api_key
+            if "openai_base_url" not in llm_config:
+                llm_config["openai_base_url"] = self.base_url
+
+        if "embedder" not in config:
+            config["embedder"] = {
                 "provider": "openai",
                 "config": {
                     "model": "text-embedding-3-large",
-                    "openai_base_url": self.base_url,
-                    "api_key": self.api_key
+                    "api_key": self.api_key,
+                    "openai_base_url": self.base_url
                 }
             }
-        }
+        else:
+            # 确保 Embedder 配置中有必要的字段
+            embedder_config = config["embedder"]["config"]
+            if "api_key" not in embedder_config:
+                embedder_config["api_key"] = self.api_key
+            if "openai_base_url" not in embedder_config:
+                embedder_config["openai_base_url"] = self.base_url
 
         return Memory.from_config(config)
 

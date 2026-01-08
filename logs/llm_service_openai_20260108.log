@@ -1,0 +1,2 @@
+2026-01-08 10:10:59 - llm_service_openai - WARNING - 初始连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010810105851391833462711099)", 'type': 'invalid_request_error', 'param': '', 'code': None}}
+2026-01-08 10:10:59 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-5-nano-2025-08-07

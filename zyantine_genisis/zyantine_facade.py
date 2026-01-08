@@ -355,7 +355,7 @@ class SimpleZyantine:
 
 
 # 快速使用示例
-def create_zyantine(api_key: str,
+def create_zyantine(api_key: Optional[str] = None,
                     config_file: Optional[str] = None,
                     session_id: str = "default",
                     use_enhanced_flow: bool = False) -> ZyantineFacade:
@@ -363,7 +363,7 @@ def create_zyantine(api_key: str,
     快速创建自衍体实例
 
     Args:
-        api_key: OpenAI API密钥
+        api_key: OpenAI API密钥（可选，如果不提供则使用配置文件）
         config_file: 配置文件路径（可选）
         session_id: 会话ID
         use_enhanced_flow: 是否使用增强版认知流程
@@ -376,36 +376,39 @@ def create_zyantine(api_key: str,
         return ZyantineFacade(
             config_path=config_file,
             session_id=session_id,
-            use_new_cognitive_flow=use_enhanced_flow  # 新增参数
+            use_new_cognitive_flow=use_enhanced_flow
         )
 
     # 否则使用API密钥创建
-    config = {
-        "api": {
-            "api_key": api_key
-        },
-        "session_id": session_id
-    }
+    if api_key:
+        config = {
+            "api": {
+                "api_key": api_key
+            },
+            "session_id": session_id
+        }
 
-    # 创建临时配置文件
-    import tempfile
-    import json
+        # 创建临时配置文件
+        import tempfile
+        import json
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-        json.dump(config, f)
-        temp_config = f.name
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(config, f)
+            temp_config = f.name
 
-    facade = ZyantineFacade(
-        config_path=temp_config,
-        session_id=session_id,
-        use_new_cognitive_flow=use_enhanced_flow  # 新增参数
-    )
+        facade = ZyantineFacade(
+            config_path=temp_config,
+            session_id=session_id,
+            use_new_cognitive_flow=use_enhanced_flow
+        )
 
-    # 删除临时文件
-    import os
-    os.unlink(temp_config)
+        # 删除临时文件
+        import os
+        os.unlink(temp_config)
 
-    return facade
+        return facade
+    else:
+        raise ValueError("必须提供 api_key 或 config_file 参数")
 
 # if __name__ == "__main__":
 #     # 使用标准流程

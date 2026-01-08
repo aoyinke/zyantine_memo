@@ -1,0 +1,36 @@
+2026-01-06 11:08:27 - api_service_provider - WARNING - openai服务连接测试失败: 连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010611082654781959346982159)", 'type': 'invalid_request_error', 'param': '', 'code': None}}，但仍尝试使用该服务
+2026-01-06 11:08:27 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-06 11:08:27 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-06 11:08:27 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-06 11:10:06 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-06 11:10:06 - api_service_provider - INFO - 已关闭服务: openai
+2026-01-06 11:10:06 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-06 11:10:06 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-06 11:10:06 - api_service_provider - INFO - 已关闭服务: openai
+2026-01-06 11:10:06 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-06 11:11:12 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-06 11:11:12 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-06 11:11:12 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-06 11:11:12 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-06 20:44:58 - api_service_provider - WARNING - openai服务连接测试失败: 连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010620445784602429426255419)", 'type': 'invalid_request_error', 'param': '', 'code': None}}，但仍尝试使用该服务
+2026-01-06 20:44:58 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-06 20:44:58 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-06 20:44:58 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-06 20:47:43 - api_service_provider - WARNING - openai服务连接测试失败: 连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010620474250624068251556659)", 'type': 'invalid_request_error', 'param': '', 'code': None}}，但仍尝试使用该服务
+2026-01-06 20:47:43 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-06 20:47:43 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-06 20:47:43 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-06 22:02:56 - api_service_provider - WARNING - openai服务连接测试失败: 连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010622025587805538356361301)", 'type': 'invalid_request_error', 'param': '', 'code': None}}，但仍尝试使用该服务
+2026-01-06 22:02:56 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-06 22:02:56 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-06 22:02:56 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-06 22:03:19 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-06 22:03:19 - api_service_provider - INFO - 已关闭服务: openai
+2026-01-06 22:03:19 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-06 22:03:19 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-06 22:03:19 - api_service_provider - INFO - 已关闭服务: openai
+2026-01-06 22:03:19 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-06 23:05:57 - api_service_provider - WARNING - openai服务连接测试失败: 连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010623055721520291112433309)", 'type': 'invalid_request_error', 'param': '', 'code': None}}，但仍尝试使用该服务
+2026-01-06 23:05:57 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-06 23:05:57 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-06 23:05:57 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)

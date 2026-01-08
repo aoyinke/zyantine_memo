@@ -1,0 +1,18 @@
+2026-01-06 11:08:24 - facade_structured - INFO - {"timestamp": "2026-01-06T11:08:24.691477", "level": "INFO", "message": "系统初始化开始", "config_path": "./zyantine_genisis/config/llm_config.json", "session_id": "default"}
+2026-01-06 11:08:59 - facade_structured - INFO - {"timestamp": "2026-01-06T11:08:59.725870", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2026-01-06 11:09:08 - facade_structured - INFO - {"timestamp": "2026-01-06T11:09:08.584881", "level": "INFO", "message": "响应生成完成", "response_preview": "呵~根据我的记忆，之前我们提到过这个...。", "response_length": 22, "response_time": 8.85790205001831}
+2026-01-06 11:11:05 - facade_structured - INFO - {"timestamp": "2026-01-06T11:11:05.852661", "level": "INFO", "message": "系统初始化开始", "config_path": "./config/llm_config.json", "session_id": "test"}
+2026-01-06 20:44:55 - facade_structured - INFO - {"timestamp": "2026-01-06T20:44:55.342721", "level": "INFO", "message": "系统初始化开始", "config_path": "./zyantine_genisis/config/llm_config.json", "session_id": "default"}
+2026-01-06 20:45:00 - facade_structured - INFO - {"timestamp": "2026-01-06T20:45:00.288410", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2026-01-06 20:47:39 - facade_structured - INFO - {"timestamp": "2026-01-06T20:47:39.938202", "level": "INFO", "message": "系统初始化开始", "config_path": "./zyantine_genisis/config/llm_config.json", "session_id": "default"}
+2026-01-06 20:47:45 - facade_structured - INFO - {"timestamp": "2026-01-06T20:47:45.259256", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2026-01-06 20:48:06 - facade_structured - INFO - {"timestamp": "2026-01-06T20:48:06.096930", "level": "INFO", "message": "响应生成完成", "response_preview": "关于这个话题，我记得我们之前讨论过...。", "response_length": 21, "response_time": 20.837249994277954}
+2026-01-06 22:02:53 - facade_structured - INFO - {"timestamp": "2026-01-06T22:02:53.585010", "level": "INFO", "message": "系统初始化开始", "config_path": "./zyantine_genisis/config/llm_config.json", "session_id": "default"}
+2026-01-06 22:02:59 - facade_structured - INFO - {"timestamp": "2026-01-06T22:02:59.310102", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2026-01-06 22:03:16 - facade_structured - INFO - {"timestamp": "2026-01-06T22:03:16.956838", "level": "INFO", "message": "响应生成完成", "response_preview": "我记得我们之前聊过类似的话题...。", "response_length": 18, "response_time": 17.645355939865112}
+2026-01-06 23:05:55 - facade_structured - INFO - {"timestamp": "2026-01-06T23:05:55.492312", "level": "INFO", "message": "系统初始化开始", "config_path": "./zyantine_genisis/config/llm_config.json", "session_id": "default"}
+2026-01-06 23:06:03 - facade_structured - INFO - {"timestamp": "2026-01-06T23:06:03.621514", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2026-01-06 23:06:13 - facade_structured - INFO - {"timestamp": "2026-01-06T23:06:13.606978", "level": "INFO", "message": "响应生成完成", "response_preview": "根据我的记忆，之前我们提到过这个...。", "response_length": 20, "response_time": 9.984831809997559}
+2026-01-08 09:46:23 - facade_structured - INFO - {"timestamp": "2026-01-08T09:46:23.240396", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}
+2026-01-08 09:52:47 - facade_structured - INFO - {"timestamp": "2026-01-08T09:52:47.400384", "level": "INFO", "message": "响应生成完成", "response_preview": "从过去的对话来看，这个情况有点熟悉...呵~。", "response_length": 23, "response_time": 384.14389300346375}
+2026-01-08 09:52:52 - facade_structured - INFO - {"timestamp": "2026-01-08T09:52:52.239874", "level": "INFO", "message": "处理用户输入", "input_preview": "你好", "input_length": 2}

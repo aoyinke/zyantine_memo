@@ -1,0 +1,8 @@
+2026-01-08 10:11:00 - api_service_provider - WARNING - openai服务连接测试失败: 连接测试失败: Error code: 400 - {'error': {'message': "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead. (request id: 2026010810105937881200551738376)", 'type': 'invalid_request_error', 'param': '', 'code': None}}，但仍尝试使用该服务
+2026-01-08 10:11:00 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 10:11:00 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 10:11:00 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 11:14:37 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 11:14:37 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 11:14:37 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 11:14:37 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)

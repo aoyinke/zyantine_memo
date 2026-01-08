@@ -1,0 +1,76 @@
+2026-01-05 21:15:14 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:15:14 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:15:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:15:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:15:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:15:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:15:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:15:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:15:20 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:15:20 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:15:22 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:15:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:15:24 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:15:24 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:15:24 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:15:24 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:15:24 - llm_service_deepseek - INFO - 初始连接测试成功
+2026-01-05 21:15:24 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:16:13 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:16:13 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:16:15 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:16:15 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:16:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:16:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:16:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:16:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:16:19 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:16:19 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:16:22 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:16:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:16:22 - llm_service_deepseek - INFO - 正在关闭deepseek服务...
+2026-01-05 21:16:22 - llm_service_deepseek - INFO - deepseek服务已关闭
+2026-01-05 21:16:22 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:16:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:16:22 - llm_service_deepseek - INFO - 初始连接测试成功
+2026-01-05 21:16:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:19:04 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:19:04 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:19:07 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:19:07 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:19:07 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:19:07 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:19:07 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:19:07 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:19:10 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:19:10 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:19:12 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:19:12 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:19:12 - llm_service_deepseek - INFO - 正在关闭deepseek服务...
+2026-01-05 21:19:12 - llm_service_deepseek - INFO - deepseek服务已关闭
+2026-01-05 21:19:12 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:19:12 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:19:12 - llm_service_deepseek - INFO - 初始连接测试成功
+2026-01-05 21:19:12 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:23:14 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:23:14 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:23:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:23:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:23:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:23:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:23:16 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:23:16 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:23:20 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:23:20 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:23:22 - llm_service_deepseek - WARNING - 初始连接测试失败: Connection error.
+2026-01-05 21:23:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: test-model
+2026-01-05 21:23:22 - llm_service_deepseek - INFO - 正在关闭deepseek服务...
+2026-01-05 21:23:22 - llm_service_deepseek - INFO - deepseek服务已关闭
+2026-01-05 21:23:22 - llm_service_deepseek - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****-key is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-01-05 21:23:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 21:23:22 - llm_service_deepseek - INFO - 初始连接测试成功
+2026-01-05 21:23:22 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 22:58:57 - llm_service_deepseek - INFO - 初始连接测试成功
+2026-01-05 22:58:57 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat
+2026-01-05 22:59:04 - llm_service_deepseek - INFO - 初始连接测试成功
+2026-01-05 22:59:04 - llm_service_deepseek - INFO - deepseek服务初始化完成，模型: deepseek-chat

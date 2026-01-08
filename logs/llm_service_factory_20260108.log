@@ -1,0 +1,2 @@
+2026-01-08 10:10:59 - llm_service_factory - INFO - 成功创建 openai 服务实例
+2026-01-08 11:14:35 - llm_service_factory - INFO - 成功创建 deepseek 服务实例

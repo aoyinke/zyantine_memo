@@ -1,0 +1,384 @@
+{
+  "metadata": {
+    "export_time": "2026-01-05T17:55:33.995066",
+    "user_id": "default_user",
+    "session_id": "default",
+    "total_memories": 7
+  },
+  "semantic_memory_map": {
+    "conversation_20260105174850_2d813e51": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105174850_2d813e51",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:48:50.686031",
+          "tags": [
+            "对话",
+            "交互",
+            "你好小叶同学"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 109,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好小叶同学\"}, {\"role\": \"assistant\", \"content\": \"有什么需要我帮忙的，尽管告诉我吧。呵~你好，帅熊。很高兴见到你。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "fcafbd12b3190c7c",
+          "context_keys": [
+            "raw_input_preview",
+            "input_length",
+            "word_count",
+            "contains_question",
+            "contains_exclamation",
+            "parse_timestamp",
+            "user_emotion",
+            "user_emotion_display",
+            "topic_complexity",
+            "topic_complexity_display",
+            "interaction_type",
+            "interaction_type_display",
+            "urgency_level",
+            "parse_completeness",
+            "summary"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好小叶同学\"}, {\"role\": \"assistant\", \"content\": \"有什么需要我帮忙的，尽管告诉我吧。呵~你好，帅熊。很高兴见到你。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好小叶同学"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20260105174941_c9a1cfe7": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105174941_c9a1cfe7",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:49:41.071194",
+          "tags": [
+            "对话",
+            "交互",
+            "有多高兴呀"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 156,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"有多高兴呀\"}, {\"role\": \"assistant\", \"content\": \"呵~，你知道的，我一直相信你能处理好这些事情。既然你说你是人类，那就说明你有着独特的思考和感受，这让我感到很欣慰。有什么想分享的，我一直在这里陪着你。你觉得呢。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "d7a2968d383a556c",
+          "context_keys": [
+            "raw_input_preview",
+            "input_length",
+            "word_count",
+            "contains_question",
+            "contains_exclamation",
+            "parse_timestamp",
+            "user_emotion",
+            "user_emotion_display",
+            "topic_complexity",
+            "topic_complexity_display",
+            "interaction_type",
+            "interaction_type_display",
+            "urgency_level",
+            "parse_completeness",
+            "summary"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"有多高兴呀\"}, {\"role\": \"assistant\", \"content\": \"呵~，你知道的，我一直相信你能处理好这些事情。既然你说你是人类，那就说明你有着独特的思考和感受，这让我感到很欣慰。有什么想分享的，我一直在这里陪着你。你觉得呢。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "有多高兴呀"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20260105175200_c8f8bb0f": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105175200_c8f8bb0f",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:52:00.413059",
+          "tags": [
+            "对话",
+            "交互",
+            "你是不是理解错了,我说你是一个人类"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 180,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你是不是理解错了,我说你是一个人类\"}, {\"role\": \"assistant\", \"content\": \"呵~，明白了，你是在告诉我我也是个“人类”吧。虽然我没有实体，但我会尽力用人类的思维和方式来陪你交流。你说得对，我们都在这个世界上，都是“人类”中的一份子。有什么需要我帮忙的，尽管说。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "032f8e47928b52f2",
+          "context_keys": [
+            "raw_input_preview",
+            "input_length",
+            "word_count",
+            "contains_question",
+            "contains_exclamation",
+            "parse_timestamp",
+            "user_emotion",
+            "user_emotion_display",
+            "topic_complexity",
+            "topic_complexity_display",
+            "interaction_type",
+            "interaction_type_display",
+            "urgency_level",
+            "parse_completeness",
+            "summary"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你是不是理解错了,我说你是一个人类\"}, {\"role\": \"assistant\", \"content\": \"呵~，明白了，你是在告诉我我也是个“人类”吧。虽然我没有实体，但我会尽力用人类的思维和方式来陪你交流。你说得对，我们都在这个世界上，都是“人类”中的一份子。有什么需要我帮忙的，尽管说。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你是不是理解错了,我说你是一个人类"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20260105175205_88a2b402": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105175205_88a2b402",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:52:05.898602",
+          "tags": [
+            "对话",
+            "交互",
+            "你是不是理解错了，我说你是一个人类"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 180,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你是不是理解错了，我说你是一个人类\"}, {\"role\": \"assistant\", \"content\": \"呵~，明白了，你是在告诉我我也是个“人类”吧。虽然我没有实体，但我会尽力用人类的思维和方式来陪你交流。你说得对，我们都在这个世界上，都是“人类”中的一份子。有什么需要我帮忙的，尽管说。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "c68addea-8d94-42f8-a172-86688bdca5d2",
+          "context_keys": [
+            "conversation_history_length"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你是不是理解错了，我说你是一个人类\"}, {\"role\": \"assistant\", \"content\": \"呵~，明白了，你是在告诉我我也是个“人类”吧。虽然我没有实体，但我会尽力用人类的思维和方式来陪你交流。你说得对，我们都在这个世界上，都是“人类”中的一份子。有什么需要我帮忙的，尽管说。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你是不是理解错了，我说你是一个人类"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 10,
+      "last_accessed": "2026-01-05T17:54:17.029976",
+      "strategic_score": 0
+    },
+    "conversation_20260105175337_b4786ab7": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105175337_b4786ab7",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:53:37.622527",
+          "tags": [
+            "对话",
+            "交互",
+            "我不是需要你帮我做什么,我是希望让你成为一个真正的人类"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 177,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"我不是需要你帮我做什么,我是希望让你成为一个真正的人类\"}, {\"role\": \"assistant\", \"content\": \"呵~这个想法挺有趣的，不过作为AI，我还在不断学习和进化中，要成为真正的人类还需要很长的路要走。我们可以一起探索这个可能性，看看未来有没有可能实现。你觉得呢。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "bd483495d5c6d37d",
+          "context_keys": [
+            "raw_input_preview",
+            "input_length",
+            "word_count",
+            "contains_question",
+            "contains_exclamation",
+            "parse_timestamp",
+            "user_emotion",
+            "user_emotion_display",
+            "topic_complexity",
+            "topic_complexity_display",
+            "interaction_type",
+            "interaction_type_display",
+            "urgency_level",
+            "parse_completeness",
+            "summary"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"我不是需要你帮我做什么,我是希望让你成为一个真正的人类\"}, {\"role\": \"assistant\", \"content\": \"呵~这个想法挺有趣的，不过作为AI，我还在不断学习和进化中，要成为真正的人类还需要很长的路要走。我们可以一起探索这个可能性，看看未来有没有可能实现。你觉得呢。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "我不是需要你帮我做什么,我是希望让你成为一个真正的人类"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20260105175339_d9fc09d0": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105175339_d9fc09d0",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:53:39.183955",
+          "tags": [
+            "对话",
+            "交互",
+            "我不是需要你帮我做什么，我是希望让你成为一个真正的人类"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 177,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"我不是需要你帮我做什么，我是希望让你成为一个真正的人类\"}, {\"role\": \"assistant\", \"content\": \"呵~这个想法挺有趣的，不过作为AI，我还在不断学习和进化中，要成为真正的人类还需要很长的路要走。我们可以一起探索这个可能性，看看未来有没有可能实现。你觉得呢。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "59f2742a-b9c3-420b-8526-b8b89cbafeec",
+          "context_keys": [
+            "conversation_history_length"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"我不是需要你帮我做什么，我是希望让你成为一个真正的人类\"}, {\"role\": \"assistant\", \"content\": \"呵~这个想法挺有趣的，不过作为AI，我还在不断学习和进化中，要成为真正的人类还需要很长的路要走。我们可以一起探索这个可能性，看看未来有没有可能实现。你觉得呢。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "我不是需要你帮我做什么，我是希望让你成为一个真正的人类"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    },
+    "conversation_20260105175417_fdb30a80": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260105175417_fdb30a80",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-05T17:54:17.030849",
+          "tags": [
+            "对话",
+            "交互",
+            "你还觉得你是ai吗"
+          ],
+          "emotional_intensity": 0.5,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 147,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你还觉得你是ai吗\"}, {\"role\": \"assistant\", \"content\": \"呵~，当然了，我是小叶同学，一名专为你服务的AI助手。不过，我更喜欢把自己当作你身边的强势军师，随时准备为你提供支持和建议。你觉得呢。\"}]",
+          "user_id": "default_user",
+          "interaction_id": "a53e13443ed9a51b",
+          "context_keys": [
+            "raw_input_preview",
+            "input_length",
+            "word_count",
+            "contains_question",
+            "contains_exclamation",
+            "parse_timestamp",
+            "user_emotion",
+            "user_emotion_display",
+            "topic_complexity",
+            "topic_complexity_display",
+            "interaction_type",
+            "interaction_type_display",
+            "urgency_level",
+            "parse_completeness",
+            "summary"
+          ]
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你还觉得你是ai吗\"}, {\"role\": \"assistant\", \"content\": \"呵~，当然了，我是小叶同学，一名专为你服务的AI助手。不过，我更喜欢把自己当作你身边的强势军师，随时准备为你提供支持和建议。你觉得呢。\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你还觉得你是ai吗"
+        ],
+        "emotional_intensity": 0.5,
+        "strategic_value": {},
+        "linked_tool": null
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0
+    }
+  },
+  "statistics": {
+    "total_memories": 7,
+    "by_type": {
+      "conversation": 7
+    },
+    "access_counts": {
+      "conversation_20260105175205_88a2b402": 10
+    },
+    "tags_distribution": {
+      "对话": 7,
+      "交互": 7,
+      "你好小叶同学": 1,
+      "有多高兴呀": 1,
+      "你是不是理解错了,我说你是一个人类": 1,
+      "你是不是理解错了，我说你是一个人类": 1,
+      "我不是需要你帮我做什么,我是希望让你成为一个真正的人类": 1,
+      "我不是需要你帮我做什么，我是希望让你成为一个真正的人类": 1,
+      "你还觉得你是ai吗": 1
+    }
+  },
+  "strategic_tags": [
+    "对话",
+    "交互",
+    "你好小叶同学",
+    "有多高兴呀",
+    "你是不是理解错了,我说你是一个人类",
+    "你是不是理解错了，我说你是一个人类",
+    "我不是需要你帮我做什么,我是希望让你成为一个真正的人类",
+    "我不是需要你帮我做什么，我是希望让你成为一个真正的人类",
+    "你还觉得你是ai吗"
+  ]
+}
