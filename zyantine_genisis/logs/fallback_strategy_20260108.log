@@ -1,0 +1,30 @@
+2026-01-08 15:02:25 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 15:05:00 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 15:07:13 - fallback_strategy - INFO - 使用降级策略: 记忆基础策略, 耗时: 0.000秒
+2026-01-08 15:08:12 - fallback_strategy - INFO - 使用降级策略: 记忆基础策略, 耗时: 0.000秒
+2026-01-08 15:17:20 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 15:36:33 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 16:46:21 - fallback_strategy - INFO - 使用降级策略: 记忆基础策略, 耗时: 0.003秒
+2026-01-08 16:47:06 - fallback_strategy - INFO - 使用降级策略: 记忆基础策略, 耗时: 0.000秒
+2026-01-08 17:03:50 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 17:03:50 - fallback_strategy - INFO - 使用降级策略: 问题澄清策略, 耗时: 0.000秒
+2026-01-08 17:10:49 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 17:14:58 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 17:14:58 - fallback_strategy - INFO - 使用降级策略: 共情承认策略, 耗时: 0.000秒
+2026-01-08 17:14:58 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 17:14:58 - fallback_strategy - INFO - 使用降级策略: 问题澄清策略, 耗时: 0.000秒
+2026-01-08 17:16:17 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 21:54:05 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 21:54:05 - fallback_strategy - INFO - 使用降级策略: 共情承认策略, 耗时: 0.000秒
+2026-01-08 21:54:05 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 21:54:05 - fallback_strategy - INFO - 使用降级策略: 问题澄清策略, 耗时: 0.000秒
+2026-01-08 21:54:52 - fallback_strategy - INFO - 使用降级策略: 记忆基础策略, 耗时: 0.003秒
+2026-01-08 21:58:50 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:03:58 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:05:20 - fallback_strategy - INFO - 使用降级策略: 记忆基础策略, 耗时: 0.000秒
+2026-01-08 22:06:02 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:06:30 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:12:29 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:15:04 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:15:59 - fallback_strategy - INFO - 降级策略管理器初始化完成
+2026-01-08 22:16:23 - fallback_strategy - INFO - 降级策略管理器初始化完成

@@ -1,0 +1,58 @@
+2026-01-08 15:02:25 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 15:02:25 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 15:02:25 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 15:02:25 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 15:05:00 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 15:05:00 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 15:05:00 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 15:05:00 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 15:17:20 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 15:17:20 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 15:17:20 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 15:17:20 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 15:36:33 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 15:36:33 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 15:36:33 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 15:36:33 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 17:16:17 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 17:16:17 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 17:16:17 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 17:16:17 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 21:58:50 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 21:58:50 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 21:58:50 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 21:58:50 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:03:58 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:03:58 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:03:58 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:03:58 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:06:02 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:06:02 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:06:02 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:06:02 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:06:30 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:06:30 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:06:30 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:06:30 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:12:29 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:12:29 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:12:29 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:12:29 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:15:04 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:15:04 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:15:04 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:15:04 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:15:59 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:15:59 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:15:59 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:15:59 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-08 22:16:23 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-08 22:16:23 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-08 22:16:23 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-08 22:16:23 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-09 17:18:42 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-09 17:18:42 - api_service_provider - INFO - 已关闭服务: deepseek
+2026-01-09 17:18:42 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-09 17:18:42 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-09 17:18:42 - api_service_provider - INFO - 已关闭服务: deepseek
+2026-01-09 17:18:42 - api_service_provider - INFO - API服务提供者已关闭

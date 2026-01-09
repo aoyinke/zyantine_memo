@@ -13,7 +13,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 import backoff
 
-from zyantine_genisis.utils.logger import SystemLogger
+from utils.logger import SystemLogger
 from .llm_provider import LLMProvider, LLMModelConfig
 
 
@@ -220,28 +220,129 @@ class BaseLLMService(ABC):
                 "request_id": request_id
             }
 
+    def _estimate_tokens(self, text: str) -> int:
+        """估算文本的token数（简化版）"""
+        # 简化的token估算：1个token ≈ 4个字符
+        return len(text) // 4
+
     def _build_messages(self,
                         system_prompt: str,
                         user_input: str,
                         conversation_history: Optional[List[Dict]]) -> List[Dict]:
         """构建消息列表"""
+        # 初始化消息列表
         messages = []
+        total_tokens = 0
+        
+        # 从配置获取最大token数，默认3000
+        max_total_tokens = getattr(self.config, 'max_context_tokens', 3000)
+        original_history_length = len(conversation_history) if conversation_history else 0
+        filtered_history_count = 0
+        empty_message_count = 0
 
         # 系统提示词
-        messages.append({"role": "system", "content": system_prompt})
-
-        # 添加历史对话
-        if conversation_history:
-            for item in conversation_history[-10:]:  # 只取最近10条历史
-                if "user_input" in item:
-                    messages.append({"role": "user", "content": item["user_input"]})
-                if "system_response" in item:
-                    messages.append({"role": "assistant", "content": item["system_response"]})
-
+        system_message = {"role": "system", "content": system_prompt}
+        system_tokens = self._estimate_tokens(system_prompt)
+        
         # 当前用户输入
-        messages.append({"role": "user", "content": user_input})
+        current_user_message = {"role": "user", "content": user_input}
+        user_input_tokens = self._estimate_tokens(user_input)
 
-        return messages
+        # 检查是否有足够的token空间
+        if system_tokens + user_input_tokens > max_total_tokens:
+            # 如果只有系统提示词和当前用户输入就超过了token限制，我们需要调整
+            return [system_message, current_user_message]
+
+        # 添加系统提示词
+        messages.append(system_message)
+        total_tokens += system_tokens
+
+        # 处理历史对话
+        if conversation_history:
+            # 收集所有有效的历史轮次
+            valid_turns = []
+            for item in conversation_history:
+                user_msg = None
+                assistant_msg = None
+                
+                # 只处理非空消息
+                if "user_input" in item and item["user_input"]:
+                    user_msg = {"role": "user", "content": item["user_input"]}
+                elif "user_input" in item:
+                    empty_message_count += 1
+
+                if "system_response" in item and item["system_response"]:
+                    assistant_msg = {"role": "assistant", "content": item["system_response"]}
+                elif "system_response" in item:
+                    empty_message_count += 1
+                
+                # 检查是否有实际内容
+                if user_msg or assistant_msg:
+                    valid_turns.append((user_msg, assistant_msg))
+            
+            # 反向遍历有效的轮次，优先保留最近的对话
+            for user_msg, assistant_msg in reversed(valid_turns):
+                # 计算当前轮次的token数
+                turn_tokens = 0
+                if user_msg:
+                    turn_tokens += self._estimate_tokens(user_msg["content"])
+                if assistant_msg:
+                    turn_tokens += self._estimate_tokens(assistant_msg["content"])
+                
+                # 检查是否超过token限制
+                if total_tokens + turn_tokens + user_input_tokens > max_total_tokens:
+                    break
+                
+                # 构建当前轮次的消息，确保正确的顺序
+                turn_messages = []
+                if user_msg:
+                    turn_messages.append(user_msg)
+                if assistant_msg:
+                    turn_messages.append(assistant_msg)
+                
+                # 在系统提示词之后插入历史消息，保持对话顺序
+                messages[1:1] = turn_messages
+                total_tokens += turn_tokens
+                filtered_history_count += 1
+
+        # 检查是否可以添加当前用户输入
+        if total_tokens + user_input_tokens <= max_total_tokens:
+            # 添加当前用户输入前检查角色，避免连续相同角色
+            if messages and messages[-1]['role'] == "user":
+                # 如果最后一条是user消息，我们需要确保不会连续添加user消息
+                # 我们检查是否有token空间添加一个简短的默认assistant消息
+                default_assistant_msg = {"role": "assistant", "content": "..."}
+                default_tokens = self._estimate_tokens(default_assistant_msg["content"])
+                
+                if total_tokens + default_tokens + user_input_tokens <= max_total_tokens:
+                    messages.append(default_assistant_msg)
+                    total_tokens += default_tokens
+            
+            # 添加当前用户输入
+            messages.append(current_user_message)
+            total_tokens += user_input_tokens
+
+        # 最后检查整个消息列表，确保没有连续的相同角色
+        cleaned_messages = []
+        for msg in messages:
+            if not cleaned_messages or cleaned_messages[-1]['role'] != msg['role']:
+                cleaned_messages.append(msg)
+        
+        # 重新计算总token数
+        final_total_tokens = sum(self._estimate_tokens(msg["content"]) for msg in cleaned_messages)
+
+        # 记录优化日志
+        self.logger.debug(
+            f"消息构建完成: 原始历史长度={original_history_length}, "
+            f"保留历史轮次={filtered_history_count}, "
+            f"过滤空消息数={empty_message_count}, "
+            f"总token数={final_total_tokens}, "
+            f"系统提示词token={system_tokens}, "
+            f"当前输入token={user_input_tokens}, "
+            f"历史对话token={final_total_tokens - system_tokens - user_input_tokens}"
+        )
+
+        return cleaned_messages
 
     def _process_stream_response(self, response) -> str:
         """处理流式响应"""

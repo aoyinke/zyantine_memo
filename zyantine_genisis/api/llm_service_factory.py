@@ -4,7 +4,7 @@ LLM服务工厂 - 根据配置创建不同的LLM服务实例
 from typing import Optional, Dict, Any, Tuple
 from .llm_service import BaseLLMService, OpenAICompatibleService
 from .llm_provider import LLMProvider, LLMModelConfig, LLMProviderPresets
-from zyantine_genisis.utils.logger import SystemLogger
+from utils.logger import SystemLogger
 
 
 class LLMServiceFactory:
@@ -41,7 +41,8 @@ class LLMServiceFactory:
                 max_tokens=config.get("max_tokens", 2000),
                 enabled=config.get("enabled", True),
                 extra_params=config.get("extra_params", {}),
-                use_max_completion_tokens=config.get("use_max_completion_tokens", provider_enum == LLMProvider.DEEPSEEK)
+                use_max_completion_tokens=config.get("use_max_completion_tokens", provider_enum == LLMProvider.DEEPSEEK),
+                max_context_tokens=config.get("max_context_tokens", 3000)
             )
 
             # 根据提供商创建对应的服务

@@ -1,0 +1,29 @@
+2026-01-09 17:12:58 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:12:58 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:12:58 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:12:58 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:12:58 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:17:49 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:17:49 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:17:49 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:17:49 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:17:49 - llm_service_openai - INFO - openai服务初始化完成，模型: deepseek-chat
+2026-01-09 17:33:31 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:33:31 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:34:40 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:34:40 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:35:28 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:35:28 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:37:37 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:37:37 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:38:33 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:38:33 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:39:05 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:39:05 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:42:47 - llm_service_openai - WARNING - 初始连接测试失败: Connection error.
+2026-01-09 17:42:47 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-3.5-turbo
+2026-01-09 17:49:58 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-09 17:59:02 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-09 17:59:44 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-09 18:04:13 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini
+2026-01-09 18:06:26 - llm_service_openai - INFO - openai服务初始化完成，模型: gpt-4o-mini

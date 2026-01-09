@@ -1,0 +1,12 @@
+2026-01-08 17:03:50 - openai_service - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': '无效的令牌 (request id: 2026010817035046909280988149618)', 'type': 'one_api_error'}}
+2026-01-08 17:03:50 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-5-nano-2025-08-07
+2026-01-08 17:03:50 - openai_service - WARNING - API返回空响应内容
+2026-01-08 17:10:49 - openai_service - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test_key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-08 17:10:49 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-3.5-turbo
+2026-01-08 17:10:49 - openai_service - WARNING - API返回空响应内容
+2026-01-08 17:14:58 - openai_service - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test_key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-08 17:14:58 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-3.5-turbo
+2026-01-08 17:14:58 - openai_service - WARNING - API返回空响应内容
+2026-01-08 21:54:05 - openai_service - WARNING - 初始连接测试失败: Error code: 401 - {'error': {'message': 'Incorrect API key provided: test_key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-08 21:54:05 - openai_service - INFO - OpenAI服务初始化完成，模型: gpt-3.5-turbo
+2026-01-08 21:54:05 - openai_service - WARNING - API返回空响应内容

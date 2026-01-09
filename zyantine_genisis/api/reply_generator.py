@@ -255,7 +255,7 @@ class APIBasedReplyGenerator:
                     })
 
                 self.logger.debug(
-                    f"API生成成功，tokens: {metadata.get('tokens_used', 0)}, latency: {metadata.get('latency', 0):.2f}s")
+                    f"API生成成功，tokens: {metadata.get('tokens_used', 0) if metadata else 0}, latency: {metadata.get('latency', 0):.2f}s if metadata else 0.0s")
                 return reply
             else:
                 self.logger.warning("API返回空回复")

@@ -7,7 +7,7 @@ import sys
 import os
 
 # 添加项目根目录到Python路径
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from zyantine_genisis.config.config_manager import ConfigManager
 from zyantine_genisis.api.service_provider import APIServiceProvider

@@ -32,6 +32,7 @@ class LLMModelConfig:
     enabled: bool = True
     extra_params: Dict = field(default_factory=dict)
     use_max_completion_tokens: bool = False  # 是否使用max_completion_tokens参数
+    max_context_tokens: int = 3000  # 最大上下文token数
 
 
 class LLMProviderPresets:

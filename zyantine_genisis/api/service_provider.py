@@ -16,9 +16,9 @@ from .llm_service_factory import LLMServiceFactory
 from .reply_generator import APIBasedReplyGenerator, TemplateReplyGenerator
 from .prompt_engine import PromptEngine
 from .fallback_strategy import FallbackStrategy
-from zyantine_genisis.config.config_manager import ConfigManager
-from zyantine_genisis.utils.logger import SystemLogger
-from zyantine_genisis.utils.metrics import MetricsCollector
+from config.config_manager import ConfigManager
+from utils.logger import SystemLogger
+from utils.metrics import MetricsCollector
 from cognition.core_identity import CoreIdentity
 
 
