@@ -1,7 +1,7 @@
 """
 通用LLM服务 - 支持多个API提供商
 """
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Callable, Union
 from datetime import datetime
 import time
 import traceback
@@ -130,7 +130,7 @@ class BaseLLMService(ABC):
                        conversation_history: Optional[List[Dict]] = None,
                        max_tokens: int = 500,
                        temperature: float = 1.0,
-                       stream: bool = False) -> Tuple[Optional[str], Optional[Dict]]:
+                       stream: bool = False) -> Union[Tuple[Optional[str], Optional[Dict]], Any]:
         """
         调用API生成回复
 
@@ -170,34 +170,66 @@ class BaseLLMService(ABC):
             if response:
                 # 处理响应
                 if stream:
-                    reply = self._process_stream_response(response)
+                    # 直接返回流式响应生成器
+                    def stream_generator():
+                        reply_parts = []
+                        for chunk in response:
+                            content = self._extract_content(chunk)
+                            if content:
+                                reply_parts.append(content)
+                                yield content
+                        
+                        # 响应完成后记录统计信息
+                        latency = time.time() - start_time
+                        prompt_tokens, completion_tokens, total_tokens = self._extract_usage(response)
+                        
+                        self._record_success(
+                            request_id=request_id,
+                            model=self.model,
+                            provider=self.provider.value,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            total_tokens=total_tokens,
+                            latency=latency
+                        )
+                        
+                        metadata = {
+                            "request_id": request_id,
+                            "provider": self.provider.value,
+                            "model": self.model,
+                            "tokens_used": total_tokens,
+                            "latency": latency,
+                            "finish_reason": self._extract_finish_reason(response)
+                        }
+                    
+                    return stream_generator(), None
                 else:
                     reply = self._extract_content(response)
 
-                # 记录成功
-                latency = time.time() - start_time
-                prompt_tokens, completion_tokens, total_tokens = self._extract_usage(response)
+                    # 记录成功
+                    latency = time.time() - start_time
+                    prompt_tokens, completion_tokens, total_tokens = self._extract_usage(response)
 
-                self._record_success(
-                    request_id=request_id,
-                    model=self.model,
-                    provider=self.provider.value,
-                    prompt_tokens=prompt_tokens,
-                    completion_tokens=completion_tokens,
-                    total_tokens=total_tokens,
-                    latency=latency
-                )
+                    self._record_success(
+                        request_id=request_id,
+                        model=self.model,
+                        provider=self.provider.value,
+                        prompt_tokens=prompt_tokens,
+                        completion_tokens=completion_tokens,
+                        total_tokens=total_tokens,
+                        latency=latency
+                    )
 
-                metadata = {
-                    "request_id": request_id,
-                    "provider": self.provider.value,
-                    "model": self.model,
-                    "tokens_used": total_tokens,
-                    "latency": latency,
-                    "finish_reason": self._extract_finish_reason(response)
-                }
+                    metadata = {
+                        "request_id": request_id,
+                        "provider": self.provider.value,
+                        "model": self.model,
+                        "tokens_used": total_tokens,
+                        "latency": latency,
+                        "finish_reason": self._extract_finish_reason(response)
+                    }
 
-                return reply, metadata
+                    return reply, metadata
             else:
                 error_msg = "API响应为空"
                 self.logger.error(error_msg)

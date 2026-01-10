@@ -16,21 +16,17 @@ class TestInfoCollector:
     """测试信息收集器"""
 
     def __init__(self):
-        self.project_root = Path(__file__).parent
+        self.project_root = Path(__file__).parent.parent.parent
         self.test_files = self._discover_test_files()
 
     def _discover_test_files(self) -> List[Path]:
         """发现所有测试文件"""
         test_files = []
-
-        # 查找 zyantine_genisis 目录下的测试文件
-        for test_file in self.project_root.glob("test_*.py"):
-            test_files.append(test_file)
-
-        # 查找 tests 目录下的测试文件
         tests_dir = self.project_root / "tests"
-        if tests_dir.exists():
-            for test_file in tests_dir.glob("test_*.py"):
+
+        # 查找 tests 目录下的所有测试文件
+        for test_file in tests_dir.rglob("test_*.py"):
+            if "__pycache__" not in str(test_file):
                 test_files.append(test_file)
 
         return sorted(test_files)

@@ -6,6 +6,7 @@ import time
 import uuid
 import asyncio
 import json
+import os
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -121,11 +122,13 @@ class APIServer:
     """API 服务器"""
 
     def __init__(self, host: str = "0.0.0.0", port: int = 8000,
-                 api_key: Optional[str] = None, session_id: str = "default"):
+                 api_key: Optional[str] = None, session_id: str = "default",
+                 config_file: str = "config/llm_config.json"):
         self.host = host
         self.port = port
         self.api_key = api_key
         self.session_id = session_id
+        self.config_file = config_file
         self.facade: Optional[ZyantineFacade] = None
         self.app: Optional[FastAPI] = None
         self.startup_time: Optional[int] = None
@@ -136,12 +139,20 @@ class APIServer:
         print("正在初始化自衍体 AI 系统...")
         
         try:
-            if self.api_key:
+            # 优先使用配置文件
+            if os.path.exists(self.config_file):
+                self.facade = create_zyantine(
+                    config_file=self.config_file,
+                    session_id=self.session_id
+                )
+            elif self.api_key:
+                # 如果配置文件不存在但提供了api_key，则使用api_key
                 self.facade = create_zyantine(
                     api_key=self.api_key,
                     session_id=self.session_id
                 )
             else:
+                # 否则使用默认方式创建
                 self.facade = ZyantineFacade(session_id=self.session_id)
             
             self.startup_time = int(time.time())
@@ -224,19 +235,13 @@ class APIServer:
                 owned_by="zyantine"
             )
 
-        @self.app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
+        @self.app.post("/v1/chat/completions")
         async def create_chat_completion(request: ChatCompletionRequest):
-            """创建聊天完成（非流式）"""
+            """创建聊天完成（支持流式和非流式）"""
             if not self.facade:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Service not initialized"
-                )
-
-            if request.stream:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Streaming is not supported yet"
                 )
 
             try:
@@ -258,40 +263,123 @@ class APIServer:
                 use_enhanced = request.model == "zyantine-enhanced"
 
                 # 调用自衍体系统
-                response_text = self.facade.chat(
+                result = self.facade.chat(
                     user_input=user_message,
-                    use_enhanced_flow=use_enhanced
+                    use_enhanced_flow=use_enhanced,
+                    stream=request.stream
                 )
 
-                # 估算 token 数（简化版：1 token ≈ 4 字符）
-                prompt_tokens = sum(len(msg.content) // 4 for msg in request.messages)
-                completion_tokens = len(response_text) // 4
-                total_tokens = prompt_tokens + completion_tokens
+                if request.stream:
+                    # 流式响应生成器
+                    async def generate_stream():
+                        completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
+                        created_time = int(time.time())
+                        response_parts = []
 
-                # 构建响应
-                completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
-                created_time = int(time.time())
+                        # 发送第一个 chunk
+                        chunk = {
+                            "id": completion_id,
+                            "object": "chat.completion.chunk",
+                            "created": created_time,
+                            "model": request.model,
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {"role": "assistant"},
+                                    "finish_reason": None
+                                }
+                            ]
+                        }
+                        yield f"data: {self._to_json(chunk)}\n\n"
 
-                return ChatCompletionResponse(
-                    id=completion_id,
-                    created=created_time,
-                    model=request.model,
-                    choices=[
-                        ChatCompletionChoice(
-                            index=0,
-                            message=ChatMessage(
-                                role="assistant",
-                                content=response_text
-                            ),
-                            finish_reason="stop"
-                        )
-                    ],
-                    usage=Usage(
-                        prompt_tokens=prompt_tokens,
-                        completion_tokens=completion_tokens,
-                        total_tokens=total_tokens
+                        # 分块发送内容
+                        for part in result:
+                            response_parts.append(part)
+                            chunk = {
+                                "id": completion_id,
+                                "object": "chat.completion.chunk",
+                                "created": created_time,
+                                "model": request.model,
+                                "choices": [
+                                    {
+                                        "index": 0,
+                                        "delta": {"content": part},
+                                        "finish_reason": None
+                                    }
+                                ]
+                            }
+                            yield f"data: {self._to_json(chunk)}\n\n"
+                            await asyncio.sleep(0.01)
+
+                        # 估算 token 数
+                        response_text = "".join(response_parts)
+                        prompt_tokens = sum(len(msg.content) // 4 for msg in request.messages)
+                        completion_tokens = len(response_text) // 4
+                        total_tokens = prompt_tokens + completion_tokens
+
+                        # 发送完成 chunk
+                        chunk = {
+                            "id": completion_id,
+                            "object": "chat.completion.chunk",
+                            "created": created_time,
+                            "model": request.model,
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {},
+                                    "finish_reason": "stop"
+                                }
+                            ],
+                            "usage": {
+                                "prompt_tokens": prompt_tokens,
+                                "completion_tokens": completion_tokens,
+                                "total_tokens": total_tokens
+                            }
+                        }
+                        yield f"data: {self._to_json(chunk)}\n\n"
+                        yield "data: [DONE]\n\n"
+
+                    return StreamingResponse(
+                        generate_stream(),
+                        media_type="text/event-stream",
+                        headers={
+                            "Cache-Control": "no-cache",
+                            "Connection": "keep-alive",
+                        }
                     )
-                )
+                else:
+                    # 非流式响应
+                    response_text = result
+                    
+                    # 估算 token 数（简化版：1 token ≈ 4 字符）
+                    prompt_tokens = sum(len(msg.content) // 4 for msg in request.messages)
+                    completion_tokens = len(response_text) // 4
+                    total_tokens = prompt_tokens + completion_tokens
+
+                    # 构建响应
+                    completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
+                    created_time = int(time.time())
+
+                    return ChatCompletionResponse(
+                        id=completion_id,
+                        created=created_time,
+                        model=request.model,
+                        choices=[
+                            ChatCompletionChoice(
+                                index=0,
+                                message=ChatMessage(
+                                    role="assistant",
+                                    content=response_text
+                                ),
+                                finish_reason="stop"
+                            )
+                        ],
+                        usage=Usage(
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            total_tokens=total_tokens
+                        )
+                    )
 
             except Exception as e:
                 print(f"处理聊天完成时出错: {e}")
@@ -303,118 +391,9 @@ class APIServer:
         @self.app.post("/v1/chat/completions/stream")
         async def create_chat_completion_stream(request: ChatCompletionRequest):
             """创建聊天完成（流式）"""
-            if not self.facade:
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="Service not initialized"
-                )
-
-            try:
-                # 提取用户消息
-                user_message = ""
-                for msg in request.messages:
-                    if msg.role == "user":
-                        user_message = msg.content
-                        break
-
-                if not user_message:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="No user message found"
-                    )
-
-                # 判断是否使用增强版认知流程
-                use_enhanced = request.model == "zyantine-enhanced"
-
-                # 调用自衍体系统
-                response_text = self.facade.chat(
-                    user_input=user_message,
-                    use_enhanced_flow=use_enhanced
-                )
-
-                # 估算 token 数
-                prompt_tokens = sum(len(msg.content) // 4 for msg in request.messages)
-                completion_tokens = len(response_text) // 4
-                total_tokens = prompt_tokens + completion_tokens
-
-                # 流式响应生成器
-                async def generate_stream():
-                    completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
-                    created_time = int(time.time())
-
-                    # 发送第一个 chunk
-                    chunk = {
-                        "id": completion_id,
-                        "object": "chat.completion.chunk",
-                        "created": created_time,
-                        "model": request.model,
-                        "choices": [
-                            {
-                                "index": 0,
-                                "delta": {"role": "assistant"},
-                                "finish_reason": None
-                            }
-                        ]
-                    }
-                    yield f"data: {self._to_json(chunk)}\n\n"
-
-                    # 分块发送内容
-                    chunk_size = 10
-                    for i in range(0, len(response_text), chunk_size):
-                        chunk_text = response_text[i:i + chunk_size]
-                        chunk = {
-                            "id": completion_id,
-                            "object": "chat.completion.chunk",
-                            "created": created_time,
-                            "model": request.model,
-                            "choices": [
-                                {
-                                    "index": 0,
-                                    "delta": {"content": chunk_text},
-                                    "finish_reason": None
-                                }
-                            ]
-                        }
-                        yield f"data: {self._to_json(chunk)}\n\n"
-                        await asyncio.sleep(0.01)
-
-                    # 发送完成 chunk
-                    chunk = {
-                        "id": completion_id,
-                        "object": "chat.completion.chunk",
-                        "created": created_time,
-                        "model": request.model,
-                        "choices": [
-                            {
-                                "index": 0,
-                                "delta": {},
-                                "finish_reason": "stop"
-                            }
-                        ],
-                        "usage": {
-                            "prompt_tokens": prompt_tokens,
-                            "completion_tokens": completion_tokens,
-                            "total_tokens": total_tokens
-                        }
-                    }
-                    yield f"data: {self._to_json(chunk)}\n\n"
-                    yield "data: [DONE]\n\n"
-
-                return StreamingResponse(
-                    generate_stream(),
-                    media_type="text/event-stream",
-                    headers={
-                        "Cache-Control": "no-cache",
-                        "Connection": "keep-alive",
-                    }
-                )
-
-            except Exception as e:
-                print(f"处理流式聊天完成时出错: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Internal server error: {str(e)}"
-                )
+            # 重定向到支持流式的主端点
+            request.stream = True
+            return await create_chat_completion(request)
 
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket, client_id: str = "default"):
@@ -699,6 +678,7 @@ class APIServer:
 def main():
     """主函数"""
     import argparse
+    import json
 
     parser = argparse.ArgumentParser(description="自衍体 AI API 服务")
 
@@ -706,14 +686,42 @@ def main():
     parser.add_argument("--port", "-p", type=int, default=8001, help="监听端口")
     parser.add_argument("--api-key", "-k", help="OpenAI API 密钥")
     parser.add_argument("--session", "-s", default="default", help="会话ID")
+    parser.add_argument("--config", "-c", default="config/llm_config.json", help="配置文件路径")
 
     args = parser.parse_args()
+
+    # 从配置文件读取API密钥和base_url
+    api_key = None
+    base_url = None
+    config_path = args.config
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+                
+            # 获取当前启用的provider
+            current_provider = config["api"]["provider"]
+            if current_provider in config["api"]["providers"]:
+                provider_config = config["api"]["providers"][current_provider]
+                api_key = provider_config["api_key"]
+                base_url = provider_config["base_url"]
+                print(f"从配置文件 {config_path} 加载了 {current_provider} 服务的配置")
+        except Exception as e:
+            print(f"读取配置文件失败: {e}")
+    else:
+        print(f"配置文件 {config_path} 不存在")
+
+    # 命令行参数优先
+    if args.api_key:
+        api_key = args.api_key
 
     server = APIServer(
         host=args.host,
         port=args.port,
-        api_key=args.api_key,
-        session_id=args.session
+        api_key=api_key,
+        session_id=args.session,
+        config_file=args.config
     )
 
     server.run()

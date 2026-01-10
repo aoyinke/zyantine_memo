@@ -10,7 +10,7 @@
     "providers": {
       "openai": {
         "enabled": false,
-        "api_key": "sk-wiHpoarpNTHaep0t54852a32A75a4d6986108b3f6eF7B7B9",
+        "api_key": "",
         "base_url": "https://openkey.cloud/v1",
         "chat_model": "gpt-5-nano-2025-08-07",
         "timeout": 30,
@@ -18,7 +18,7 @@
       },
       "deepseek": {
         "enabled": true,
-        "api_key": "sk-cd83b6411207408e8539b7623a1c5f35",
+        "api_key": "",
         "base_url": "https://api.deepseek.com",
         "chat_model": "deepseek-chat",
         "timeout": 30,
@@ -90,7 +90,7 @@
         "provider": "openai",
         "config": {
           "model": "deepseek-chat",
-          "api_key": "sk-cd83b6411207408e8539b7623a1c5f35",
+          "api_key": "",
           "openai_base_url": "https://api.deepseek.com"
         }
       },
@@ -98,7 +98,7 @@
         "provider": "openai",
         "config": {
           "model": "text-embedding-3-large",
-          "api_key": "sk-34uPXEo6mY1PB1J65d5f80810cDc48F28032DdEc62E49fC6",
+          "api_key": "",
           "openai_base_url": "https://openkey.cloud/v1"
         }
       }

@@ -1,7 +1,7 @@
 """
 回复生成器 - 智能回复生成
 """
-from typing import Dict, List, Optional, Any, Protocol, Tuple
+from typing import Dict, List, Optional, Any, Protocol, Tuple, Union
 from datetime import datetime
 import random
 import traceback
@@ -85,25 +85,26 @@ class APIBasedReplyGenerator:
 
         self.logger.info("回复生成器初始化完成")
 
-    def generate_reply(self, cognitive_result: Dict = None, **kwargs) -> str:
+    def generate_reply(self, cognitive_result: Dict = None, stream: bool = False, **kwargs) -> Union[str, Any]:
         """
         生成回复
 
         Args:
             cognitive_result: 认知流程结果（新版本）
+            stream: 是否流式输出
             **kwargs: 其他参数，向后兼容旧版本
 
         Returns:
-            生成的回复文本
+            生成的回复文本或流式生成器
         """
         if cognitive_result:
             # 新版本调用方式
-            return self.generate_from_cognitive_flow(cognitive_result)
+            return self.generate_from_cognitive_flow(cognitive_result, stream=stream)
         else:
             # 旧版本兼容
-            return self._generate_with_legacy_api(**kwargs)
+            return self._generate_with_legacy_api(stream=stream, **kwargs)
 
-    def _generate_with_legacy_api(self, **kwargs) -> str:
+    def _generate_with_legacy_api(self, stream: bool = False, **kwargs) -> Union[str, Any]:
         """旧版本生成方式，保持兼容"""
         start_time = datetime.now()
 
@@ -115,22 +116,25 @@ class APIBasedReplyGenerator:
 
             # 检查API是否可用
             if self.api and self.api.is_available():
-                reply = self._generate_with_api(context)
+                result = self._generate_with_api(context, stream=stream)
             else:
                 self.logger.warning("API不可用，使用降级策略")
-                reply = self._generate_with_fallback(context)
+                result = self._generate_with_fallback(context)
 
-            # 记录生成日志
-            self._log_generation(context, reply, start_time)
-
-            self.logger.info(f"回复生成成功，长度: {len(reply)}")
-            return reply
+            if stream and hasattr(result, '__iter__') and not isinstance(result, str):
+                # 流式模式：返回生成器，不记录日志直到生成完成
+                return result
+            else:
+                # 非流式模式：记录生成日志
+                self._log_generation(context, result, start_time)
+                self.logger.info(f"回复生成成功，长度: {len(result)}")
+                return result
 
         except Exception as e:
             self._log_error(context if 'context' in locals() else None, e, start_time)
             return self._generate_emergency_reply(context if 'context' in locals() else None)
 
-    def generate_from_cognitive_flow(self, cognitive_result: Dict) -> str:
+    def generate_from_cognitive_flow(self, cognitive_result: Dict, stream: bool = False) -> Union[str, Any]:
         """直接从认知流程结果生成回复"""
         start_time = datetime.now()
 
@@ -181,14 +185,17 @@ class APIBasedReplyGenerator:
 
             # 生成回复
             if self.api and self.api.is_available():
-                reply = self._generate_with_api(context)
+                result = self._generate_with_api(context, stream=stream)
             else:
-                reply = self._generate_with_fallback(context)
+                result = self._generate_with_fallback(context)
 
-            # 记录日志
-            self._log_generation(context, reply, start_time)
-
-            return reply
+            if stream and hasattr(result, '__iter__') and not isinstance(result, str):
+                # 流式模式：返回生成器，不记录日志直到生成完成
+                return result
+            else:
+                # 非流式模式：记录生成日志
+                self._log_generation(context, result, start_time)
+                return result
 
         except Exception as e:
             self.logger.error(f"认知流程生成失败: {e}")
@@ -224,7 +231,7 @@ class APIBasedReplyGenerator:
 
         return prompt
 
-    def _generate_with_api(self, context: GenerationContext) -> str:
+    def _generate_with_api(self, context: GenerationContext, stream: bool = False) -> Union[str, Any]:
         """使用API生成回复"""
         try:
             # 构建系统提示词
@@ -236,31 +243,39 @@ class APIBasedReplyGenerator:
 
             self.logger.info(f"system_prompt={system_prompt}")
             # 调用API
-            reply, metadata = self.api.generate_reply(
+            result = self.api.generate_reply(
                 system_prompt=system_prompt,
                 user_input=context.user_input,
                 conversation_history=context.conversation_history,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                stream=False
+                stream=stream
             )
 
-            if reply:
-                # 存储API使用元数据到上下文
-                if hasattr(context, 'metadata'):
-                    context.metadata = context.metadata or {}
-                    context.metadata.update({
-                        'api_used': True,
-                        'api_metadata': metadata
-                    })
-
-                self.logger.debug(
-                    f"API生成成功，tokens: {metadata.get('tokens_used', 0) if metadata else 0}, latency: {metadata.get('latency', 0):.2f}s if metadata else 0.0s")
-                return reply
+            # 处理返回结果
+            if stream:
+                # 流式模式：返回生成器
+                reply_generator, _ = result
+                return reply_generator
             else:
-                self.logger.warning("API返回空回复")
-                # 如果API返回空，使用降级策略
-                return self._generate_with_fallback(context)
+                # 非流式模式：返回完整字符串
+                reply, metadata = result
+                if reply:
+                    # 存储API使用元数据到上下文
+                    if hasattr(context, 'metadata'):
+                        context.metadata = context.metadata or {}
+                        context.metadata.update({
+                            'api_used': True,
+                            'api_metadata': metadata
+                        })
+
+                    self.logger.debug(
+                        f"API生成成功，tokens: {metadata.get('tokens_used', 0) if metadata else 0}, latency: {metadata.get('latency', 0):.2f}s if metadata else 0.0s")
+                    return reply
+                else:
+                    self.logger.warning("API返回空回复")
+                    # 如果API返回空，使用降级策略
+                    return self._generate_with_fallback(context)
 
         except Exception as e:
             self.logger.error(f"API生成失败: {e}")

@@ -1,8 +1,9 @@
 """
 外观模式入口 - 提供简化的系统接口
 """
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 import json
+import os
 from datetime import datetime
 
 from core.system_core import ZyantineCore
@@ -111,16 +112,17 @@ class ZyantineFacade:
             self.use_new_cognitive_flow = False
             increment_counter("cognitive_flow.init_failed")
 
-    def chat(self, user_input: str, use_enhanced_flow: Optional[bool] = None) -> str:
+    def chat(self, user_input: str, use_enhanced_flow: Optional[bool] = None, stream: bool = False) -> Union[str, Any]:
         """
         与系统对话
 
         Args:
             user_input: 用户输入
             use_enhanced_flow: 是否使用增强版认知流程（None时使用系统默认设置）
+            stream: 是否流式输出
 
         Returns:
-            系统响应
+            系统响应（字符串或流式生成器）
         """
         if not user_input or not user_input.strip():
             return "我收到了空消息，有什么我可以帮助你的吗？"
@@ -141,27 +143,31 @@ class ZyantineFacade:
 
             if use_enhanced_flow and hasattr(self, 'cognitive_flow_manager'):
                 self.logger.debug("使用增强版认知流程")
-                response = self._chat_with_enhanced_flow(user_input)
+                response = self._chat_with_enhanced_flow(user_input, stream=stream)
                 increment_counter("chat.enhanced_flow_used")
             else:
                 self.logger.debug("使用标准流程")
                 response = self.core.process_input(user_input)
                 increment_counter("chat.standard_flow_used")
 
-            # 记录响应时间和长度
-            response_time = stop_timer()
-            response_length = len(response)
+            if stream and hasattr(response, '__iter__') and not isinstance(response, str):
+                # 流式模式：返回生成器，不记录日志直到生成完成
+                return response
+            else:
+                # 记录响应时间和长度
+                response_time = stop_timer()
+                response_length = len(response)
 
-            self.metrics.record_histogram("chat.response_length", response_length)
-            self.metrics.set_gauge("chat.last_response_time", response_time)
+                self.metrics.record_histogram("chat.response_length", response_length)
+                self.metrics.set_gauge("chat.last_response_time", response_time)
 
-            self.logger.info(f"响应生成成功，长度: {response_length}, 耗时: {response_time:.3f}秒")
-            self.structured_logger.info("响应生成完成",
-                                        response_preview=response[:50],
-                                        response_length=response_length,
-                                        response_time=response_time)
+                self.logger.info(f"响应生成成功，长度: {response_length}, 耗时: {response_time:.3f}秒")
+                self.structured_logger.info("响应生成完成",
+                                            response_preview=response[:50],
+                                            response_length=response_length,
+                                            response_time=response_time)
 
-            return response
+                return response
 
         except Exception as e:
             self.logger.error(f"处理消息时发生错误: {str(e)}")
@@ -172,7 +178,7 @@ class ZyantineFacade:
 
             return "抱歉，我刚才遇到了一些技术问题，能请你再问一次吗？"
 
-    def _chat_with_enhanced_flow(self, user_input: str) -> str:
+    def _chat_with_enhanced_flow(self, user_input: str, stream: bool = False) -> Union[str, Any]:
         """使用增强版认知流程进行对话"""
         try:
             # 获取对话历史
@@ -196,7 +202,7 @@ class ZyantineFacade:
             reply_generator = self.core.get_reply_generator()
 
             # 生成回复
-            response = reply_generator.generate_from_cognitive_flow(cognitive_result)
+            response = reply_generator.generate_from_cognitive_flow(cognitive_result, stream=stream)
 
             # 更新系统状态（如果需要）
             self.core.update_from_cognitive_result(cognitive_result)
@@ -326,8 +332,14 @@ class ZyantineFacade:
 class SimpleZyantine:
     """简化版自衍体（适合快速集成）"""
 
-    def __init__(self, api_key: str, session_id: str = "default", use_enhanced_flow: bool = False):
+    def __init__(self, api_key: Optional[str] = None, session_id: str = "default", use_enhanced_flow: bool = False):
         """快速初始化"""
+        # 优先从环境变量获取API密钥
+        api_key = api_key or os.getenv("ZYANTINE_API_KEY")
+        
+        if not api_key:
+            raise ValueError("必须提供 api_key 参数或设置 ZYANTINE_API_KEY 环境变量")
+            
         config = {
             "session_id": session_id,
             "api": {
@@ -345,9 +357,9 @@ class SimpleZyantine:
             use_new_cognitive_flow=use_enhanced_flow  # 新增参数
         )
 
-    def reply(self, message: str, use_enhanced: Optional[bool] = None) -> str:
+    def reply(self, message: str, use_enhanced: Optional[bool] = None, stream: bool = False) -> Union[str, Any]:
         """简单回复"""
-        return self.facade.chat(message, use_enhanced_flow=use_enhanced)
+        return self.facade.chat(message, use_enhanced_flow=use_enhanced, stream=stream)
 
     def get_stats(self) -> Dict:
         """获取统计信息"""
@@ -364,7 +376,7 @@ def create_zyantine(api_key: Optional[str] = None,
 
     Args:
         api_key: OpenAI API密钥（可选，如果不提供则使用配置文件）
-        config_file: 配置文件路径（可选）
+        config_file: 配置文件路径（可选，默认使用config/llm_config.json）
         session_id: 会话ID
         use_enhanced_flow: 是否使用增强版认知流程
 
@@ -379,7 +391,7 @@ def create_zyantine(api_key: Optional[str] = None,
             use_new_cognitive_flow=use_enhanced_flow
         )
 
-    # 否则使用API密钥创建
+    # 如果没有提供配置文件，但提供了API密钥，则使用API密钥创建
     if api_key:
         config = {
             "api": {
@@ -403,12 +415,20 @@ def create_zyantine(api_key: Optional[str] = None,
         )
 
         # 删除临时文件
-        import os
         os.unlink(temp_config)
 
         return facade
     else:
-        raise ValueError("必须提供 api_key 或 config_file 参数")
+        # 如果既没有提供配置文件也没有提供API密钥，尝试使用默认配置文件
+        default_config_file = "config/llm_config.json"
+        if os.path.exists(default_config_file):
+            return ZyantineFacade(
+                config_path=default_config_file,
+                session_id=session_id,
+                use_new_cognitive_flow=use_enhanced_flow
+            )
+        else:
+            raise ValueError("必须提供 api_key 参数或配置文件")
 
 # if __name__ == "__main__":
 #     # 使用标准流程

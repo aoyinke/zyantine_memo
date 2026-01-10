@@ -22,3 +22,13 @@
 2026-01-09 18:10:18 - api_service_provider - INFO - 正在关闭API服务提供者...
 2026-01-09 18:10:18 - api_service_provider - INFO - 已关闭服务: deepseek
 2026-01-09 18:10:18 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-09 22:34:39 - api_service_provider - INFO - deepseek服务初始化成功，模型: deepseek-chat
+2026-01-09 22:34:39 - api_service_provider - INFO - API服务提供者初始化完成
+2026-01-09 22:34:39 - api_service_provider - INFO - 请求缓存: 已启用 (TTL: 600.0秒)
+2026-01-09 22:34:39 - api_service_provider - INFO - 负载均衡: 已启用 (策略: performance_based)
+2026-01-10 21:25:26 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-10 21:25:26 - api_service_provider - INFO - 已关闭服务: deepseek
+2026-01-10 21:25:26 - api_service_provider - INFO - API服务提供者已关闭
+2026-01-10 21:25:26 - api_service_provider - INFO - 正在关闭API服务提供者...
+2026-01-10 21:25:26 - api_service_provider - INFO - 已关闭服务: deepseek
+2026-01-10 21:25:26 - api_service_provider - INFO - API服务提供者已关闭
