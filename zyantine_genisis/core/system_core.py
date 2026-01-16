@@ -1,8 +1,9 @@
 """
-系统核心 - 整合所有模块的主系统（更新API集成部分）
+系统核心 - 整合所有模块的主系统
 """
 import os
 import uuid
+import hashlib
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
@@ -16,14 +17,12 @@ from cognition.cognitive_flow_manager import CognitiveFlowManager
 from utils.logger import SystemLogger
 from utils.error_handler import ErrorHandler
 from core.stage_handlers import (
-            PreprocessHandler, InstinctCheckHandler, MemoryRetrievalHandler,
-            DesireUpdateHandler, CognitiveFlowHandler, DialecticalGrowthHandler,
-            ReplyGenerationHandler, ProtocolReviewHandler, InteractionRecordingHandler,
-            WhiteDoveCheckHandler
+            PreprocessHandler, MemoryRetrievalHandler,
+            ReplyGenerationHandler, ProtocolReviewHandler
         )
 
 class ZyantineCore:
-    """自衍体系统核心（增强版）"""
+    """自衍体系统核心"""
 
     def __init__(self,
                  config_file: Optional[str] = None,
@@ -62,6 +61,9 @@ class ZyantineCore:
 
         # 系统状态
         self.system_status = self._create_system_status()
+        
+        # 初始化当前人格
+        self.current_personality = "哲思伙伴"  # 默认人格
 
         self.logger.info(f"系统核心初始化完成，会话ID: {self.config.session_id}")
 
@@ -72,6 +74,8 @@ class ZyantineCore:
 
         # 使用组件管理器中的内存管理器
         self.memory_manager = self.components['memory_manager']
+        # 使用组件管理器中的缓存管理器
+        self.cache_manager = self.components['cache_manager']
         # 创建协议引擎
         self.protocol_engine = ProtocolEngine(
             fact_checker=self.components.get("fact_checker"),
@@ -92,95 +96,65 @@ class ZyantineCore:
 
         pipeline = ProcessingPipeline(
             enable_parallelism=self.config.processing.enable_stage_parallelism,
+            enable_fast_path=self.config.processing.enable_fast_path,
             max_workers=4
         )
 
-        # 注册阶段处理器
+        # 注册核心阶段处理器
+        # 1. 预处理阶段
         pipeline.register_stage(PreprocessHandler(
             context_parser=self.components.get("context_parser"),
             logger=self.logger
         ))
 
-        pipeline.register_stage(InstinctCheckHandler(
-            instinct_core=self.components.get("instinct_core"),
-            logger=self.logger
-        ))
-
+        # 2. 记忆检索阶段
         pipeline.register_stage(MemoryRetrievalHandler(
             memory_manager=self.memory_manager,
             logger=self.logger
         ))
 
-        pipeline.register_stage(DesireUpdateHandler(
-            desire_engine=self.components.get("desire_engine"),
-            dashboard=self.components.get("dashboard"),
-            logger=self.logger
-        ))
-
-        pipeline.register_stage(CognitiveFlowHandler(
-            cognitive_flow_manager=self.cognitive_flow_manager,
-            logger=self.logger
-        ))
-
-        pipeline.register_stage(DialecticalGrowthHandler(
-            dialectical_growth=self.components.get("dialectical_growth"),
-            logger=self.logger
-        ))
-
+        # 3. 回复生成阶段
         pipeline.register_stage(ReplyGenerationHandler(
             reply_generator=self.components.get("reply_generator"),
             mask_templates=self._load_mask_templates(),
             logger=self.logger
         ))
 
+        # 4. 协议审查阶段
         pipeline.register_stage(ProtocolReviewHandler(
             protocol_engine=self.protocol_engine,
             meta_cognition=self.components.get("meta_cognition"),
             logger=self.logger
         ))
 
-        pipeline.register_stage(InteractionRecordingHandler(
-            memory_manager=self.memory_manager,
-            logger=self.logger
-        ))
-
-        pipeline.register_stage(WhiteDoveCheckHandler(
-            desire_engine=self.components.get("desire_engine"),
-            instinct_core=self.components.get("instinct_core"),
-            logger=self.logger
-        ))
-
-        # 添加监控钩子
-        pipeline.add_pre_hook(ProcessingStage.PREPROCESS,
-                              lambda ctx: self.logger.info(f"开始处理: {ctx.user_input[:50]}..."))
-
-        pipeline.add_post_hook(ProcessingStage.INTERACTION_RECORDING,
-                               lambda ctx: self.logger.info(f"处理完成，响应长度: {len(ctx.final_reply or '')}"))
-
         return pipeline
 
     def _load_mask_templates(self) -> Dict[str, List[str]]:
         """加载面具模板"""
         return {
-            "长期搭档": [
-                "关于这个问题，我的分析是：{strategy}。你怎么看？",
-                "从我的角度考虑，建议：{strategy}。",
-                "根据我们之前的讨论，我认为：{strategy}。"
+            "哲思伙伴": [
+                "关于这个问题，我的思考是：{strategy}。你怎么看？",
+                "从多个角度分析，我认为：{strategy}。",
+                "这个问题让我想到：{strategy}。",
+                "我一方面觉得{strategy}，但另一方面也考虑到..."
             ],
-            "知己": [
-                "我理解你的感受。{strategy}",
-                "其实我也有过类似的经历。{strategy}",
-                "跟你说说我的想法：{strategy}"
+            "创意同行": [
+                "哇，这个想法太棒了！{strategy}",
+                "我突然联想到：{strategy}",
+                "让我们大胆设想一下：{strategy}",
+                "这个问题可以从这样的角度切入：{strategy}"
             ],
-            "青梅竹马": [
-                "哈哈，这让我想起以前...{strategy}",
-                "你总是能提出有趣的问题！{strategy}",
-                "记得你之前也说过类似的话...{strategy}"
+            "务实挚友": [
+                "我理解你的感受，{strategy}",
+                "根据我的经验，{strategy}",
+                "让我们一起想想办法：{strategy}",
+                "记得你之前提到过，{strategy}"
             ],
-            "伴侣": [
-                "我深深感受到...{strategy}",
-                "这对我很重要，因为...{strategy}",
-                "我想和你分享的是...{strategy}"
+            "幽默知己": [
+                "哈哈，这个问题很有意思！{strategy}",
+                "我有个有趣的想法：{strategy}",
+                "别担心，{strategy}",
+                "这让我想起一件趣事：{strategy}"
             ]
         }
 
@@ -273,23 +247,35 @@ class ZyantineCore:
         self.logger.info(f"开始处理用户输入: {user_input[:100]}...")
 
         try:
+            # 检查是否是人格选择指令
+            personality_selector = self._check_personality_selection(user_input)
+            if personality_selector:
+                return personality_selector
+            
+            # 检查是否是动态调节指令
+            dynamic_adjustment = self._check_dynamic_adjustment(user_input)
+            if dynamic_adjustment:
+                return dynamic_adjustment
+            
+            # 检查是否是对话回顾请求
+            conversation_review = self._check_conversation_review(user_input)
+            if conversation_review:
+                return conversation_review
+
+            # 生成上下文哈希，用于处理流程
+            conversation_history = self.memory_manager.get_conversation_history(limit=10)
+            context_hash = hashlib.md5(str(conversation_history).encode()).hexdigest() if conversation_history else "empty"
+
             # 创建处理上下文
             context = StageContext(
                 user_input=user_input,
-                conversation_history=self.memory_manager.get_conversation_history(limit=100),
+                conversation_history=conversation_history,
                 system_components=self.components,
-                api_service_provider=self.api_service_provider  # 传递API服务提供者
+                api_service_provider=self.api_service_provider
             )
 
             # 执行处理管道
             context = self.pipeline.execute(context)
-
-            # 调试：记录context对象的所有属性
-            self.logger.info(f"Pipeline执行后的context属性:")
-            for attr in ['final_reply', 'instinct_override', 'errors', 'conversation_history', 'retrieved_memories', 'resonant_memory', 'cognitive_result', 'growth_result']:
-                if hasattr(context, attr):
-                    value = getattr(context, attr)
-                    self.logger.info(f"  {attr}: type={type(value)}, value={repr(value)[:100] if isinstance(value, (str, dict, list)) else value}")
 
             # 处理结果
             if context.final_reply:
@@ -305,23 +291,14 @@ class ZyantineCore:
                         "interaction_id": str(uuid.uuid4()),
                         "context": {
                             "conversation_history_length": len(context.conversation_history) if isinstance(context.conversation_history, list) else 0
-                        },
-                        "retrieved_memories_count": len(context.retrieved_memories) if hasattr(context, 'retrieved_memories') and isinstance(context.retrieved_memories, list) else 0,
-                        "resonant_memory": bool(context.resonant_memory) if hasattr(context, 'resonant_memory') and isinstance(context.resonant_memory, dict) else False,
-                        "cognitive_result": bool(context.cognitive_result) if hasattr(context, 'cognitive_result') and isinstance(context.cognitive_result, dict) else False,
-                        "growth_result": context.growth_result if hasattr(context, 'growth_result') and isinstance(context.growth_result, dict) else None
+                        }
                     }
                     self.memory_manager.record_interaction(interaction_data)
                 except Exception as e:
                     self.logger.error(f"记录交互失败: {e}")
-                    import traceback
-                    self.logger.error(traceback.format_exc())
 
                 self.logger.info(f"处理成功，响应长度: {len(context.final_reply)}")
                 return context.final_reply
-            elif context.instinct_override and context.instinct_override.get("response"):
-                self.logger.warning("处理被本能接管")
-                return context.instinct_override["response"]
             else:
                 # 生成错误响应
                 error_response = self._generate_error_response(
@@ -337,6 +314,108 @@ class ZyantineCore:
             self.logger.error(traceback.format_exc())
             return self._generate_error_response(e, user_input)
 
+    def _check_personality_selection(self, user_input: str) -> Optional[str]:
+        """检查并处理人格选择指令"""
+        # 支持的人格列表
+        available_personalities = list(self.components['core_identity'].interaction_masks.keys())
+        
+        # 指令模式
+        command_patterns = [
+            r"^(请以|切换到|使用|变成)(.+)(模式|人格|身份|风格)对话$",
+            r"^(.+)(模式|人格|身份|风格)$",
+            r"^切换(至|到)(.+)$",
+            r"^请做我的(.+)$"
+        ]
+        
+        import re
+        for pattern in command_patterns:
+            match = re.match(pattern, user_input.strip())
+            if match:
+                # 提取人格名称
+                for group in match.groups():
+                    if group in available_personalities:
+                        # 设置当前人格
+                        self.current_personality = group
+                        return f"已切换到{group}模式，我们开始对话吧！"
+        
+        # 支持直接称呼人格名称
+        for personality in available_personalities:
+            if personality in user_input:
+                self.current_personality = personality
+                return f"{personality}在此，有什么我可以帮助你的吗？"
+        
+        return None
+    
+    def _check_dynamic_adjustment(self, user_input: str) -> Optional[str]:
+        """检查并处理动态调节指令"""
+        # 动态调节指令模式
+        adjustment_patterns = {
+            r"^太(抽象|理论化|复杂)了，请更(接地气|具体|简单)$": "我会减少抽象概念，多举具体例子，让内容更通俗易懂。",
+            r"^情感表达可以再(浓|强|多)一些$": "好的，我会增加情感表达，让回应更加温暖贴心。",
+            r"^情感表达可以再(淡|弱|少)一些$": "我会减少情感表达，更加理性客观地回应。",
+            r"^请(加快|减慢)回应速度$": "好的，我会调整回应节奏，按照你的偏好进行交流。",
+            r"^请(增加|减少)思考过程的展示$": "我会调整思考过程的展示程度，按照你的要求进行优化。",
+            r"^请(更|多|少)用(比喻|例子|反问)$": "好的，我会调整表达方式，按照你的偏好使用修辞手法。",
+            r"^请(更加|少一点)(严肃|活泼|幽默|正式|随意)$": "我会调整语气风格，按照你的要求进行优化。"
+        }
+        
+        import re
+        for pattern, response in adjustment_patterns.items():
+            if re.match(pattern, user_input.strip()):
+                return response
+        
+        return None
+    
+    def _check_conversation_review(self, user_input: str) -> Optional[str]:
+        """检查并处理对话回顾请求"""
+        # 对话回顾指令模式
+        review_patterns = [
+            r"^查看对话亮点$",
+            r"^对话亮点$",
+            r"^回顾对话$",
+            r"^查看之前的对话$",
+            r"^对话摘要$",
+            r"^查看最近的对话$"
+        ]
+        
+        import re
+        for pattern in review_patterns:
+            if re.match(pattern, user_input.strip()):
+                return self._generate_conversation_highlights()
+        
+        return None
+    
+    def _generate_conversation_highlights(self) -> str:
+        """生成对话亮点摘要"""
+        # 获取最近的对话历史
+        conversation_history = self.memory_manager.get_conversation_history(limit=20)
+        
+        if not conversation_history:
+            return "我们还没有开始对话呢，让我们开始吧！"
+        
+        # 提取对话亮点
+        highlights = []
+        for i, conv in enumerate(reversed(conversation_history)):
+            user_input = conv.get("user_input", "")
+            system_response = conv.get("system_response", "")
+            
+            # 只提取有实质内容的对话
+            if len(user_input) > 10 and len(system_response) > 10:
+                highlights.append(f"{len(conversation_history) - i}. {user_input[:50]}... → {system_response[:50]}...")
+            
+            if len(highlights) >= 5:  # 最多显示5个亮点
+                break
+        
+        if not highlights:
+            return "我们的对话还没有足够的内容，让我们继续深入交流吧！"
+        
+        # 构建亮点摘要
+        response = "对话亮点摘要：\n\n"
+        response += "\n".join(highlights)
+        response += "\n\n你可以继续我们的对话，或者查看更多具体内容。"
+        
+        return response
+    
     def _record_api_usage(self, metadata: Dict):
         """记录API使用情况"""
         # 这里可以记录API使用指标，用于监控和计费
@@ -363,6 +442,11 @@ class ZyantineCore:
         if desire_engine and hasattr(desire_engine, 'get_vectors'):
             desire_vectors = desire_engine.get_vectors()
 
+        # 获取缓存统计
+        cache_stats = {}
+        if hasattr(self, 'cache_manager') and hasattr(self.cache_manager, 'get_stats'):
+            cache_stats = self.cache_manager.get_stats()
+
         return {
             **self.system_status,
             "current_time": datetime.now().isoformat(),
@@ -372,17 +456,8 @@ class ZyantineCore:
             if hasattr(self.components.get("dashboard"), 'get_current_state') else {},
             "component_status": component_status,
             "memory_system_stats": memory_stats,
-            "api_service_status": api_status,  # 新增API状态
-            "pipeline_performance": self._get_pipeline_performance()
-        }
-
-    def _get_pipeline_performance(self) -> Dict[str, Any]:
-        """获取管道性能数据"""
-        # 这里可以记录和返回管道的性能指标
-        return {
-            "stages_executed": len(self.pipeline.stage_order),
-            "parallelism_enabled": self.pipeline.enable_parallelism,
-            "max_workers": self.pipeline.max_workers
+            "api_service_status": api_status,
+            "cache_stats": cache_stats
         }
 
     def save_memory_system(self, file_path: Optional[str] = None) -> bool:
@@ -391,9 +466,9 @@ class ZyantineCore:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             file_path = f"./memory_backups/{self.config.session_id}_{timestamp}.json"
 
-        # 确保目录存在，如果不存在则创建（安全方式）
+        # 确保目录存在，如果不存在则创建
         directory = os.path.dirname(file_path)
-        os.makedirs(directory, exist_ok=True)  # exist_ok=True 确保目录不存在时创建，存在时不会报错 [[7]]
+        os.makedirs(directory, exist_ok=True)
 
         self.logger.info(f"正在保存记忆系统到: {file_path}")
         return self.memory_manager.export_memories(file_path)
@@ -418,6 +493,13 @@ class ZyantineCore:
 
         # 关闭API服务提供者
         self.api_service_provider.shutdown()
+
+        # 关闭缓存管理器
+        if hasattr(self, 'cache_manager') and hasattr(self.cache_manager, 'shutdown'):
+            try:
+                self.cache_manager.shutdown()
+            except Exception as e:
+                self.logger.error(f"关闭缓存管理器失败: {e}")
 
         # 保存记忆
         self.save_memory_system()

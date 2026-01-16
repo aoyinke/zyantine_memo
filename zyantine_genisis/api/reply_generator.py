@@ -85,7 +85,7 @@ class APIBasedReplyGenerator:
 
         self.logger.info("回复生成器初始化完成")
 
-    def generate_reply(self, cognitive_result: Dict = None, stream: bool = False, **kwargs) -> Union[str, Any]:
+    def generate_reply(self, cognitive_result: Dict = None, stream: bool = False, **kwargs) -> Union[Tuple[str, Optional[str]], Any]:
         """
         生成回复
 
@@ -95,7 +95,8 @@ class APIBasedReplyGenerator:
             **kwargs: 其他参数，向后兼容旧版本
 
         Returns:
-            生成的回复文本或流式生成器
+            非流式模式：返回(回复文本, 情绪信息)的元组
+            流式模式：返回流式生成器
         """
         if cognitive_result:
             # 新版本调用方式
@@ -104,7 +105,7 @@ class APIBasedReplyGenerator:
             # 旧版本兼容
             return self._generate_with_legacy_api(stream=stream, **kwargs)
 
-    def _generate_with_legacy_api(self, stream: bool = False, **kwargs) -> Union[str, Any]:
+    def _generate_with_legacy_api(self, stream: bool = False, **kwargs) -> Union[Tuple[str, Optional[str]], Any]:
         """旧版本生成方式，保持兼容"""
         start_time = datetime.now()
 
@@ -127,14 +128,20 @@ class APIBasedReplyGenerator:
             else:
                 # 非流式模式：记录生成日志
                 self._log_generation(context, result, start_time)
-                self.logger.info(f"回复生成成功，长度: {len(result)}")
-                return result
+                # 获取情绪信息
+                emotion = "neutral"
+                if hasattr(context, 'metadata') and context.metadata:
+                    api_metadata = context.metadata.get('api_metadata')
+                    if api_metadata:
+                        emotion = api_metadata.get('emotion', 'neutral')
+                self.logger.info(f"回复生成成功，长度: {len(result)}, emotion: {emotion}")
+                return result, emotion
 
         except Exception as e:
             self._log_error(context if 'context' in locals() else None, e, start_time)
-            return self._generate_emergency_reply(context if 'context' in locals() else None)
+            return self._generate_emergency_reply(context if 'context' in locals() else None), "neutral"
 
-    def generate_from_cognitive_flow(self, cognitive_result: Dict, stream: bool = False) -> Union[str, Any]:
+    def generate_from_cognitive_flow(self, cognitive_result: Dict, stream: bool = False) -> Union[Tuple[str, Optional[str]], Any]:
         """直接从认知流程结果生成回复"""
         start_time = datetime.now()
 
@@ -195,11 +202,18 @@ class APIBasedReplyGenerator:
             else:
                 # 非流式模式：记录生成日志
                 self._log_generation(context, result, start_time)
-                return result
+                # 获取情绪信息
+                emotion = "neutral"
+                if hasattr(context, 'metadata') and context.metadata:
+                    api_metadata = context.metadata.get('api_metadata')
+                    if api_metadata:
+                        emotion = api_metadata.get('emotion', 'neutral')
+                self.logger.info(f"回复生成成功，长度: {len(result)}, emotion: {emotion}")
+                return result, emotion
 
         except Exception as e:
             self.logger.error(f"认知流程生成失败: {e}")
-            return self._generate_emergency_reply(None)
+            return self._generate_emergency_reply(None), "neutral"
 
     def _build_system_prompt(self, context: GenerationContext) -> str:
         """构建系统提示词"""
@@ -232,16 +246,33 @@ class APIBasedReplyGenerator:
         return prompt
 
     def _generate_with_api(self, context: GenerationContext, stream: bool = False) -> Union[str, Any]:
-        """使用API生成回复"""
+        """
+        使用API生成回复
+        """
         try:
+            # 增强API服务可用性检查
+            if not self.api or not hasattr(self.api, 'generate_reply'):
+                self.logger.error("API服务不可用或缺少generate_reply方法")
+                return self._generate_with_fallback(context)
+
+            # 检查API服务是否可用
+            if hasattr(self.api, 'is_available') and not self.api.is_available():
+                self.logger.error("API服务不可用")
+                return self._generate_with_fallback(context)
+
             # 构建系统提示词
             system_prompt = self._build_system_prompt(context)
+            if not system_prompt or not isinstance(system_prompt, str):
+                self.logger.error("系统提示词构建失败")
+                return self._generate_with_fallback(context)
 
             # 确定最大token数和温度
             max_tokens = self._determine_max_tokens(context.context_analysis)
             temperature = self._determine_temperature(context.current_vectors)
 
-            self.logger.info(f"system_prompt={system_prompt}")
+            self.logger.info(f"开始API调用，用户输入: {context.user_input[:50]}...")
+            self.logger.debug(f"API调用参数: 模型={self.api.model if hasattr(self.api, 'model') else '未知'}, max_tokens={max_tokens}, temperature={temperature}, 流模式={stream}")
+            
             # 调用API
             result = self.api.generate_reply(
                 system_prompt=system_prompt,
@@ -255,12 +286,28 @@ class APIBasedReplyGenerator:
             # 处理返回结果
             if stream:
                 # 流式模式：返回生成器
-                reply_generator, _ = result
+                if not result or not isinstance(result, tuple) or len(result) != 2:
+                    self.logger.error("API返回的流式结果格式错误")
+                    return self._generate_with_fallback(context)
+                
+                reply_generator, metadata = result
+                # 存储API使用元数据到上下文
+                if hasattr(context, 'metadata'):
+                    context.metadata = context.metadata or {}
+                    context.metadata.update({
+                        'api_used': True,
+                        'api_metadata': metadata
+                    })
+                self.logger.debug("API流式调用成功，开始生成回复")
                 return reply_generator
             else:
                 # 非流式模式：返回完整字符串
+                if not result or not isinstance(result, tuple) or len(result) != 2:
+                    self.logger.error("API返回的非流式结果格式错误")
+                    return self._generate_with_fallback(context)
+                
                 reply, metadata = result
-                if reply:
+                if reply and isinstance(reply, str):
                     # 存储API使用元数据到上下文
                     if hasattr(context, 'metadata'):
                         context.metadata = context.metadata or {}
@@ -270,16 +317,43 @@ class APIBasedReplyGenerator:
                         })
 
                     self.logger.debug(
-                        f"API生成成功，tokens: {metadata.get('tokens_used', 0) if metadata else 0}, latency: {metadata.get('latency', 0):.2f}s if metadata else 0.0s")
+                        f"API生成成功，tokens: {metadata.get('tokens_used', 0) if metadata else 0}, latency: {metadata.get('latency', 0):.2f}s, emotion: {metadata.get('emotion', 'neutral') if metadata else 'neutral'}")
                     return reply
                 else:
-                    self.logger.warning("API返回空回复")
-                    # 如果API返回空，使用降级策略
+                    self.logger.warning("API返回空回复或格式错误，使用降级策略")
+                    # 如果API返回空或格式错误，使用降级策略
                     return self._generate_with_fallback(context)
 
         except Exception as e:
-            self.logger.error(f"API生成失败: {e}")
+            # 详细记录API调用失败信息
+            import traceback
+            error_msg = f"API生成失败: {str(e)}"
+            self.logger.error(error_msg)
+            self.logger.debug(f"API调用详细错误堆栈:\n{traceback.format_exc()}")
+            
+            # 记录API故障诊断信息
+            if hasattr(self.api, 'get_statistics'):
+                try:
+                    api_stats = self.api.get_statistics()
+                    self.logger.debug(f"API服务统计信息: {api_stats}")
+                except Exception as stats_error:
+                    self.logger.error(f"获取API统计信息失败: {str(stats_error)}")
+            
+            # 检查是否是特定类型的错误
+            error_str = str(e).lower()
+            if "invalid_api_key" in error_str or "authentication" in error_str:
+                self.logger.error("API认证失败，请检查API密钥配置")
+            elif "model_not_found" in error_str or "invalid_model" in error_str:
+                self.logger.error(f"模型 {self.api.model if hasattr(self.api, 'model') else '未知'} 不存在或不可用")
+            elif "connection" in error_str or "timeout" in error_str:
+                self.logger.error("网络连接失败，请检查网络环境或API服务状态")
+            elif "rate_limit" in error_str:
+                self.logger.error("API请求频率过高，请检查配额或调整请求频率")
+            elif "api_service_provider" in error_str:
+                self.logger.error("API服务提供者不可用")
+            
             # API调用失败时，使用降级策略
+            self.logger.info("API调用失败，切换到降级策略")
             return self._generate_with_fallback(context)
 
     def _generate_prompt_cache_key(self, context: GenerationContext) -> str:
@@ -317,12 +391,18 @@ class APIBasedReplyGenerator:
             'cognitive_flow_id': kwargs.get('cognitive_flow_id', None)
         }
 
-        # 更新 kwargs 中的缺失参数
-        for key, value in defaults.items():
-            if key not in kwargs:
-                kwargs[key] = value
+        # 过滤掉 GenerationContext 不接受的参数
+        valid_keys = set(['user_input', 'action_plan', 'growth_result', 'context_analysis', 
+                         'conversation_history', 'core_identity', 'current_vectors', 
+                         'memory_context', 'metadata', 'cognitive_flow_id', 'timestamp'])
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_keys}
 
-        return GenerationContext(**kwargs)
+        # 更新 filtered_kwargs 中的缺失参数
+        for key, value in defaults.items():
+            if key not in filtered_kwargs:
+                filtered_kwargs[key] = value
+
+        return GenerationContext(**filtered_kwargs)
 
     def _determine_max_tokens(self, context_analysis: Dict) -> int:
         """确定最大token数"""
@@ -442,13 +522,18 @@ class APIBasedReplyGenerator:
 
     def _log_error(self, context: GenerationContext, error: Exception, start_time: datetime):
         """记录错误日志"""
+        # 确保上下文安全访问
+        user_input = context.user_input[:100] if context and hasattr(context, 'user_input') else "无法获取用户输入"
+        action_plan = str(context.action_plan)[:200] if context and hasattr(context, 'action_plan') else "无法获取行动方案"
+        current_vectors = context.current_vectors if context and hasattr(context, 'current_vectors') else {}
+        
         error_entry = {
             "timestamp": datetime.now().isoformat(),
-            "user_input": context.user_input[:100],
+            "user_input": user_input,
             "error_type": type(error).__name__,
             "error_message": str(error),
-            "action_plan": str(context.action_plan)[:200],
-            "vectors": context.current_vectors,
+            "action_plan": action_plan,
+            "vectors": current_vectors,
             "generation_time": (datetime.now() - start_time).total_seconds()
         }
 
@@ -460,12 +545,18 @@ class APIBasedReplyGenerator:
 
         # 记录指标
         if self.metrics:
-            self.metrics.record_reply_generation(
-                success=False,
-                length=0,
-                generation_time=(datetime.now() - start_time).total_seconds(),
-                used_api=False
-            )
+            labels = {
+                "success": "False",
+                "used_api": "False"
+            }
+            
+            # 记录回复生成失败
+            self.metrics.increment_counter("reply.generation.count", labels=labels)
+            self.metrics.increment_counter("reply.generation.failure", labels=labels)
+            
+            # 记录生成时间
+            generation_time = (datetime.now() - start_time).total_seconds()
+            self.metrics.record_histogram("reply.generation.time", generation_time, labels=labels)
 
     def get_generation_log(self, limit: int = 10) -> List[Dict]:
         """获取生成日志"""
@@ -514,36 +605,40 @@ class TemplateReplyGenerator:
     def _load_templates(self) -> Dict:
         """加载回复模板"""
         return {
-            "长期搭档": [
-                "关于这个问题，我的分析是：{strategy}。你怎么看？",
-                "从我的角度考虑，建议：{strategy}。",
-                "根据我们之前的讨论，我认为：{strategy}。",
-                "这个问题很有意思，我觉得可以这样考虑：{strategy}。"
+            "哲思伙伴": [
+                "让我思考一下这个问题...{strategy}。你怎么看？",
+                "从多个角度分析，我认为：{strategy}。不过我也在考虑...",
+                "这个问题很有意思，它让我想到了：{strategy}。你是否有类似的思考？",
+                "我一方面觉得{strategy}，但另一方面也考虑到可能存在的局限性...",
+                "根据我的理解，{strategy}。当然，这只是我当前的思考，可能还有其他视角。"
             ],
-            "知己": [
-                "我理解你的感受。{strategy}",
-                "其实我也有过类似的经历。{strategy}",
-                "跟你说说我的想法：{strategy}",
-                "我能体会到你的心情。{strategy}"
+            "创意同行": [
+                "哇，这个想法激发了我的灵感！{strategy}",
+                "我突然联想到：{strategy}，你觉得这个方向怎么样？",
+                "让我脑洞大开一下：{strategy}。这个创意如何？",
+                "这个问题可以从这样的角度切入：{strategy}，不过还有更有趣的可能性...",
+                "我正在思考一个新的角度：{strategy}，你觉得可行吗？"
             ],
-            "青梅竹马": [
-                "哈哈，这让我想起以前...{strategy}",
-                "你总是能提出有趣的问题！{strategy}",
-                "记得你之前也说过类似的话...{strategy}",
-                "哎呀，这个我熟！{strategy}"
+            "务实挚友": [
+                "我理解你的感受，{strategy}",
+                "根据我的经验，{strategy}。不过具体情况可能需要调整...",
+                "让我们一起想想办法：{strategy}。你觉得这个方案可行吗？",
+                "记得你之前提到过{strategy}，结合现在的情况，我认为...",
+                "我正在考虑各种可能性，其中{strategy}看起来是最实际的选择。"
             ],
-            "伴侣": [
-                "我深深感受到...{strategy}",
-                "这对我很重要，因为...{strategy}",
-                "我想和你分享的是...{strategy}",
-                "你知道的，我总是...{strategy}"
+            "幽默知己": [
+                "哈哈，这个问题很有意思！让我想想...{strategy}",
+                "我有个有趣的想法：{strategy}，是不是有点意思？",
+                "别担心，{strategy}，问题总能解决的！",
+                "这让我想起一件趣事：{strategy}，是不是和你的情况有点像？",
+                "我正在思考如何用轻松的方式解决这个问题：{strategy}，你觉得怎么样？"
             ]
         }
 
     def generate(self, mask: str, strategy: str, growth_result: Dict = None,
                  memory_context: Optional[Dict] = None) -> str:
         """使用模板生成回复，适配新的记忆系统"""
-        template_list = self.templates.get(mask, self.templates["长期搭档"])
+        template_list = self.templates.get(mask, self.templates["哲思伙伴"])
         template = random.choice(template_list)
 
         # 填充策略
@@ -569,8 +664,10 @@ class TemplateReplyGenerator:
             memory_info = resonant_memory.get("triggered_memory", "")
             risk_assessment = resonant_memory.get("risk_assessment", {})
             risk_level = risk_assessment.get("level", "低")
+            relevance = resonant_memory.get("relevance_score", 0.0)
 
-            if memory_info:
+            # 只有相关性分数高于0.7才使用记忆
+            if memory_info and relevance > 0.7:
                 # 根据风险级别调整回复
                 if risk_level == "低":
                     # 安全记忆，可以大胆引用

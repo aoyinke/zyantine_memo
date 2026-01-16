@@ -16,7 +16,7 @@ from zyantine_facade import ZyantineFacade, create_zyantine
 
 # 导入工具模块
 from utils.logger import get_logger
-from utils.error_handler import handle_error, register_shutdown_handler, GracefulShutdown
+from utils.exception_handler import handle_error, register_shutdown_handler, GracefulShutdown
 
 logger = get_logger("main")
 shutdown_handler = GracefulShutdown()

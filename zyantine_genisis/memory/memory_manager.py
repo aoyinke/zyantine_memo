@@ -2810,6 +2810,33 @@ class MemoryManager:
             keywords = self._extract_keywords(user_input)
             tags.extend(keywords[:3])  # 最多添加3个关键词
 
+            # 话题脉络管理
+            # 1. 提取当前话题
+            current_topics = self._extract_topics(user_input)
+            tags.extend(current_topics[:2])  # 最多添加2个话题标签
+
+            # 2. 获取之前的对话历史，分析话题连贯性
+            previous_conversations = self.get_conversation_history(limit=5)
+            related_topics = []
+            if previous_conversations:
+                # 从最近的对话中提取相关话题
+                for conv in previous_conversations:
+                    prev_input = conv.get("user_input", "")
+                    prev_topics = self._extract_topics(prev_input)
+                    # 找到与当前话题相关的话题
+                    for topic in current_topics:
+                        if topic in prev_topics:
+                            related_topics.append(topic)
+                    if related_topics:
+                        break
+
+            # 3. 构建话题脉络元数据
+            topic_metadata = {
+                "current_topics": current_topics,
+                "related_topics": related_topics,
+                "has_topic_continuity": len(related_topics) > 0
+            }
+
             # 添加到记忆系统
             memory_id = self.add_memory(
                 content=memory_content,
@@ -2822,7 +2849,9 @@ class MemoryManager:
                     "retrieved_memories_count": interaction_data.get("retrieved_memories_count", 0),
                     "has_resonant_memory": interaction_data.get("resonant_memory", False),
                     "has_cognitive_result": interaction_data.get("cognitive_result", False),
-                    "has_growth_result": bool(interaction_data.get("growth_result"))
+                    "has_growth_result": bool(interaction_data.get("growth_result")),
+                    # 新增话题脉络元数据
+                    "topics": topic_metadata
                 },
                 priority=MemoryPriority.MEDIUM,
                 ttl_hours=720  # 30天TTL
@@ -2841,20 +2870,43 @@ class MemoryManager:
 
     def _calculate_emotional_intensity(self, text: str) -> float:
         """计算情感强度"""
-        # 简单的情感词检测
-        positive_words = ['高兴', '快乐', '喜欢', '爱', '好', '开心', '幸福']
-        negative_words = ['难过', '伤心', '生气', '愤怒', '讨厌', '恨', '不好']
+        # 扩展的情感词库
+        positive_words = {
+            '高': ['高兴', '快乐', '喜欢', '爱', '好', '开心', '幸福', '兴奋', '激动', '满意', '惊喜', '愉悦', '自豪', '感动', '温馨'],
+            '中': ['不错', '可以', '还行', '挺好', '满意', '赞成', '支持', '欣赏', '认可', '喜欢']
+        }
+        negative_words = {
+            '高': ['难过', '伤心', '生气', '愤怒', '讨厌', '恨', '不好', '失望', '绝望', '痛苦', '悲伤', '焦虑', '恐惧', '担忧', '沮丧'],
+            '中': ['不太好', '不满意', '不喜欢', '不赞成', '反对', '失望', '担忧', '焦虑']
+        }
 
         text_lower = text.lower()
-        pos_count = sum(1 for word in positive_words if word in text_lower)
-        neg_count = sum(1 for word in negative_words if word in text_lower)
+        emotional_score = 0.5  # 中性起始
 
-        if pos_count > neg_count:
-            return 0.7 + (pos_count * 0.1)  # 0.7-1.0
-        elif neg_count > pos_count:
-            return 0.3 - (neg_count * 0.1)  # 0.0-0.3
-        else:
-            return 0.5
+        # 计算积极情感
+        for intensity, words in positive_words.items():
+            count = sum(1 for word in words if word in text_lower)
+            if intensity == '高':
+                emotional_score += count * 0.15
+            else:
+                emotional_score += count * 0.08
+
+        # 计算消极情感
+        for intensity, words in negative_words.items():
+            count = sum(1 for word in words if word in text_lower)
+            if intensity == '高':
+                emotional_score -= count * 0.15
+            else:
+                emotional_score -= count * 0.08
+
+        # 计算感叹号和问号的影响
+        exclamation_count = text.count('!')
+        question_count = text.count('?')
+        emotional_score += exclamation_count * 0.1
+        emotional_score -= question_count * 0.05
+
+        # 确保情感强度在0-1之间
+        return max(0.0, min(1.0, emotional_score))
 
     def _extract_keywords(self, text: str, max_keywords: int = 5) -> List[str]:
         """提取关键词"""
@@ -2868,6 +2920,35 @@ class MemoryManager:
         keywords = [word for word in words if word not in stop_words and len(word) > 1]
 
         return keywords[:max_keywords]
+    
+    def _extract_topics(self, text: str, max_topics: int = 3) -> List[str]:
+        """提取话题"""
+        # 简化的话题提取，基于关键词和常见话题词
+        topic_words = {
+            '生活': ['生活', '工作', '学习', '家庭', '朋友', '健康', '美食', '旅行'],
+            '情感': ['爱情', '友情', '亲情', '心情', '感受', '情绪', '开心', '难过'],
+            '科技': ['科技', '互联网', '人工智能', '编程', '计算机', '手机', '软件', '硬件'],
+            '娱乐': ['电影', '音乐', '游戏', '动漫', '明星', '综艺', '书籍', '阅读'],
+            '社会': ['社会', '新闻', '政治', '经济', '文化', '教育', '环境', '法律'],
+            '个人': ['个人', '自我', '成长', '梦想', '目标', '计划', '努力', '成功']
+        }
+        
+        text_lower = text.lower()
+        topics = []
+        
+        # 匹配话题
+        for topic, words in topic_words.items():
+            for word in words:
+                if word in text_lower:
+                    topics.append(topic)
+                    break
+        
+        # 如果没有匹配到预定义话题，使用关键词作为话题
+        if not topics:
+            keywords = self._extract_keywords(text, max_keywords=max_topics)
+            return keywords
+        
+        return list(set(topics))[:max_topics]
 
     def cleanup_memory(self,
                        max_memories: int = 10000,

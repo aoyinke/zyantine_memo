@@ -1,0 +1,437 @@
+{
+  "metadata": {
+    "export_time": "2026-01-16T10:27:25.458055",
+    "user_id": "default_user",
+    "session_id": "default",
+    "total_memories": 9
+  },
+  "semantic_memory_map": {
+    "conversation_20260115190425_a9b29700": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260115190425_a9b29700",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-15T19:04:25.603771",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 98,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "b58a55ed-ef95-4fdd-9338-7c2bb1ba0096",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.0
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.0,
+        "content_value": 4.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.0,
+      "content_value": 4.0
+    },
+    "conversation_20260115190646_d7911df7": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260115190646_d7911df7",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-15T19:06:46.974643",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，最近怎么样？"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 102,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，最近怎么样？\"}, {\"role\": \"assistant\", \"content\": \"我记得我们之前聊过类似的话题...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "9f222ddb-b7b3-4480-9a86-e3d5847dcdd7",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，最近怎么样？\"}, {\"role\": \"assistant\", \"content\": \"我记得我们之前聊过类似的话题...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，最近怎么样？"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 5.5
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 5.5
+    },
+    "conversation_20260115190858_d378de91": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260115190858_d378de91",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-15T19:08:58.148195",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，今天天气怎么样？"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 109,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天天气怎么样？\"}, {\"role\": \"assistant\", \"content\": \"也许从过去的对话来看，这个情况有点熟悉...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "13b7e05d-6089-4f01-9b26-121396a9be62",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天天气怎么样？\"}, {\"role\": \"assistant\", \"content\": \"也许从过去的对话来看，这个情况有点熟悉...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，今天天气怎么样？"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 5.5
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 5.5
+    },
+    "conversation_20260116094941_2fcab19c": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116094941_2fcab19c",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T09:49:41.080927",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学。"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 98,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学。\"}, {\"role\": \"assistant\", \"content\": \"可能我记得我们之前聊过类似的话题...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "3105d335-2520-4360-bb54-d1916299798a",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.0
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学。\"}, {\"role\": \"assistant\", \"content\": \"可能我记得我们之前聊过类似的话题...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学。"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.0,
+        "content_value": 4.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.0,
+      "content_value": 4.0
+    },
+    "conversation_20260116100514_e8c6cf70": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116100514_e8c6cf70",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T10:05:14.203236",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，今天天气怎么样？"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 107,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天天气怎么样？\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "76ddcbf2-24b1-4c2a-bc27-d28115b4ad8c",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天天气怎么样？\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，今天天气怎么样？"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 5.5
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 5.5
+    },
+    "conversation_20260116100751_297de0ed": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116100751_297de0ed",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T10:07:51.581781",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，今天天气真不错啊！"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 108,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天天气真不错啊！\"}, {\"role\": \"assistant\", \"content\": \"关于这个话题，我记得我们之前讨论过...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "c03c412e-dc12-48d1-9ce1-27f3705c4c76",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天天气真不错啊！\"}, {\"role\": \"assistant\", \"content\": \"关于这个话题，我记得我们之前讨论过...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，今天天气真不错啊！"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 4.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 4.0
+    },
+    "conversation_20260116100954_8846e95f": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116100954_8846e95f",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T10:09:54.092173",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，我今天去了公园，看到了很多美丽的花朵！"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 118,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，我今天去了公园，看到了很多美丽的花朵！\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "8ce1af5d-b654-4904-a8b0-534489bf8400",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，我今天去了公园，看到了很多美丽的花朵！\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，我今天去了公园，看到了很多美丽的花朵！"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 4.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 4.0
+    },
+    "conversation_20260116101145_850b226d": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116101145_850b226d",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T10:11:45.028990",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，我今天学习了很多新知识！"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 112,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，我今天学习了很多新知识！\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...呀\"}]",
+          "user_id": "default_user",
+          "interaction_id": "f2863cc4-56a1-4879-8a58-741fed3f7b78",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，我今天学习了很多新知识！\"}, {\"role\": \"assistant\", \"content\": \"从过去的对话来看，这个情况有点熟悉...呀\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，我今天学习了很多新知识！"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 4.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 4.0
+    },
+    "conversation_20260116101337_e20ead39": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116101337_e20ead39",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T10:13:37.353024",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学，今天是个美好的一天！"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 109,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天是个美好的一天！\"}, {\"role\": \"assistant\", \"content\": \"关于这个话题，我记得我们之前讨论过...\"}]",
+          "user_id": "default_user",
+          "interaction_id": "fe0bc3e8-35bc-45a0-8a79-145bde80e827",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.333333333333333
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学，今天是个美好的一天！\"}, {\"role\": \"assistant\", \"content\": \"关于这个话题，我记得我们之前讨论过...\"}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学，今天是个美好的一天！"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.333333333333333,
+        "content_value": 4.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.333333333333333,
+      "content_value": 4.0
+    }
+  },
+  "statistics": {
+    "total_memories": 9,
+    "by_type": {
+      "conversation": 9
+    },
+    "access_counts": {},
+    "tags_distribution": {
+      "对话": 9,
+      "交互": 9,
+      "你好，小叶同学": 1,
+      "你好，小叶同学，最近怎么样？": 1,
+      "你好，小叶同学，今天天气怎么样？": 2,
+      "你好，小叶同学。": 1,
+      "你好，小叶同学，今天天气真不错啊！": 1,
+      "你好，小叶同学，我今天去了公园，看到了很多美丽的花朵！": 1,
+      "你好，小叶同学，我今天学习了很多新知识！": 1,
+      "你好，小叶同学，今天是个美好的一天！": 1
+    }
+  },
+  "strategic_tags": [
+    "对话",
+    "交互",
+    "你好，小叶同学",
+    "你好，小叶同学，最近怎么样？",
+    "你好，小叶同学，今天天气怎么样？",
+    "你好，小叶同学。",
+    "你好，小叶同学，今天天气真不错啊！",
+    "你好，小叶同学，我今天去了公园，看到了很多美丽的花朵！",
+    "你好，小叶同学，我今天学习了很多新知识！",
+    "你好，小叶同学，今天是个美好的一天！"
+  ]
+}

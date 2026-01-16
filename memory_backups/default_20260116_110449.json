@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "export_time": "2026-01-16T11:04:49.186619",
+    "user_id": "default_user",
+    "session_id": "default",
+    "total_memories": 1
+  },
+  "semantic_memory_map": {
+    "conversation_20260116105635_b77bc269": {
+      "metadata": {
+        "full_metadata": {
+          "memory_id": "conversation_20260116105635_b77bc269",
+          "memory_type": "conversation",
+          "session_id": "default",
+          "created_at": "2026-01-16T10:56:35.868578",
+          "tags": [
+            "对话",
+            "交互",
+            "你好，小叶同学。"
+          ],
+          "emotional_intensity": 0.8,
+          "strategic_score": 0,
+          "strategic_level": "低",
+          "linked_tool": null,
+          "source": "zyantine_system",
+          "content_length": 112,
+          "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学。\"}, {\"role\": \"assistant\", \"content\": [\"关于这个话题，我记得我们之前讨论过...\", \"neutral\"]}]",
+          "user_id": "default_user",
+          "interaction_id": "17a76dca-c416-4ed9-9404-bab55f595649",
+          "context_keys": [
+            "conversation_history_length"
+          ],
+          "importance_score": 4.0
+        },
+        "content_preview": "[{\"role\": \"user\", \"content\": \"你好，小叶同学。\"}, {\"role\": \"assistant\", \"content\": [\"关于这个话题，我记得我们之前讨论过...\", \"neutral\"]}]",
+        "tags": [
+          "对话",
+          "交互",
+          "你好，小叶同学。"
+        ],
+        "emotional_intensity": 0.7999999999999999,
+        "strategic_value": {},
+        "linked_tool": null,
+        "importance_score": 4.0,
+        "content_value": 5.0
+      },
+      "access_count": 0,
+      "last_accessed": null,
+      "strategic_score": 0,
+      "importance_score": 4.0,
+      "content_value": 5.0
+    }
+  },
+  "statistics": {
+    "total_memories": 1,
+    "by_type": {
+      "conversation": 1
+    },
+    "access_counts": {},
+    "tags_distribution": {
+      "对话": 1,
+      "交互": 1,
+      "你好，小叶同学。": 1
+    }
+  },
+  "strategic_tags": [
+    "对话",
+    "交互",
+    "你好，小叶同学。"
+  ]
+}

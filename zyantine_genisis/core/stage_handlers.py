@@ -34,11 +34,28 @@ class PreprocessHandler(BaseStageHandler):
     def process(self, context: StageContext) -> StageContext:
         """预处理用户输入"""
         try:
+            # 检查 context 是否为 None
+            if context is None:
+                error_msg = "预处理失败: 上下文对象为 None"
+                if self.logger:
+                    self.logger.error(error_msg)
+                # 创建一个新的空上下文对象
+                from core.processing_pipeline import StageContext
+                context = StageContext(
+                    user_input="",
+                    conversation_history=[],
+                    system_components={}
+                )
+                context.add_error(error_msg)
+                return context
+
             if self.logger:
-                self.logger.debug(f"预处理开始: {context.user_input[:50]}...")
+                user_input = getattr(context, 'user_input', '')
+                self.logger.debug(f"预处理开始: {user_input[:50]}...")
 
             # 清理输入
-            cleaned_input = self._clean_input(context.user_input)
+            user_input = getattr(context, 'user_input', '')
+            cleaned_input = self._clean_input(user_input)
 
             # 提取上下文信息
             context_info = self._extract_context(cleaned_input, context)
@@ -47,7 +64,8 @@ class PreprocessHandler(BaseStageHandler):
             context.user_input = cleaned_input
             # 确保context_info是字典类型
             if not isinstance(context_info, dict):
-                self.logger.error(f"上下文信息不是字典类型，而是{type(context_info)}，将使用默认值")
+                if self.logger:
+                    self.logger.error(f"上下文信息不是字典类型，而是{type(context_info)}，将使用默认值")
                 context_info = {"raw_input": cleaned_input}
             context.context_info = context_info
 
@@ -58,7 +76,8 @@ class PreprocessHandler(BaseStageHandler):
             error_msg = f"预处理失败: {str(e)}"
             if self.logger:
                 self.logger.error(error_msg)
-            context.add_error(error_msg)
+            if context:
+                context.add_error(error_msg)
 
         return context
 
@@ -250,6 +269,21 @@ class MemoryRetrievalHandler(BaseStageHandler):
             if self.logger:
                 self.logger.debug("开始记忆检索")
 
+            # 检查 context 是否为 None
+            if context is None:
+                error_msg = "记忆检索失败: 上下文对象为 None"
+                if self.logger:
+                    self.logger.error(error_msg)
+                # 创建一个新的空上下文对象
+                from core.processing_pipeline import StageContext
+                context = StageContext(
+                    user_input="",
+                    conversation_history=[],
+                    system_components={}
+                )
+                context.add_error(error_msg)
+                return context
+
             # 提取查询关键词
             query = self._build_search_query(context)
 
@@ -263,8 +297,8 @@ class MemoryRetrievalHandler(BaseStageHandler):
             # 搜索共鸣记忆
             resonant_memory = self.memory_manager.find_resonant_memory({
                 "query": query,
-                "user_input": context.user_input,
-                "context": context.context_info
+                "user_input": getattr(context, 'user_input', ''),
+                "context": getattr(context, 'context_info', {})
             })
 
             # 更新上下文
@@ -278,27 +312,36 @@ class MemoryRetrievalHandler(BaseStageHandler):
             error_msg = f"记忆检索失败: {str(e)}"
             if self.logger:
                 self.logger.error(error_msg)
-            context.add_error(error_msg)
+            if context:
+                context.add_error(error_msg)
 
         return context
 
     def _build_search_query(self, context: StageContext) -> str:
         """构建搜索查询"""
-        # 确保context_info是字典
-        if not isinstance(context.context_info, dict):
-            self.logger.warning(f"context_info不是字典类型: {type(context.context_info)}")
-            return context.user_input[:200]
+        # 检查 context 是否为 None
+        if context is None:
+            return ""
         
-        keywords = context.context_info.get("keywords", [])
+        # 确保context_info是字典
+        context_info = getattr(context, 'context_info', {})
+        if not isinstance(context_info, dict):
+            if self.logger:
+                self.logger.warning(f"context_info不是字典类型: {type(context_info)}")
+            user_input = getattr(context, 'user_input', '')
+            return user_input[:200]
+        
+        keywords = context_info.get("keywords", [])
 
         if keywords:
             query = " ".join(keywords[:5])
         else:
-            query = context.user_input
+            query = getattr(context, 'user_input', '')
 
         # 添加对话历史上下文
-        if context.conversation_history:
-            recent_themes = self._extract_recent_themes(context.conversation_history)
+        conversation_history = getattr(context, 'conversation_history', [])
+        if conversation_history:
+            recent_themes = self._extract_recent_themes(conversation_history)
             if recent_themes:
                 query = f"{query} {recent_themes}"
 
@@ -574,6 +617,21 @@ class ReplyGenerationHandler(BaseStageHandler):
             if self.logger:
                 self.logger.debug("开始回复生成")
 
+            # 检查 context 是否为 None
+            if context is None:
+                error_msg = "回复生成失败: 上下文对象为 None"
+                if self.logger:
+                    self.logger.error(error_msg)
+                # 创建一个新的空上下文对象
+                from core.processing_pipeline import StageContext
+                context = StageContext(
+                    user_input="",
+                    conversation_history=[],
+                    system_components={}
+                )
+                context.add_error(error_msg)
+                return context
+
             # 1. 确定面具并保存到 context (修复 mask_type 丢失问题)
             chosen_mask = self._determine_mask(context)
             # 假设 StageContext 允许动态属性或已有该字段
@@ -583,55 +641,97 @@ class ReplyGenerationHandler(BaseStageHandler):
             generation_params = self._build_generation_params(context,chosen_mask)
 
             if context.cognitive_result:
-                reply = self.reply_generator.generate_from_cognitive_flow(generation_params)
+                reply_result = self.reply_generator.generate_from_cognitive_flow(generation_params)
             else:
-                reply = self.reply_generator.generate_reply(**generation_params)
+                reply_result = self.reply_generator.generate_reply(**generation_params)
+            
+            # 处理返回值，如果是元组则只取文本部分
+            if isinstance(reply_result, tuple):
+                reply_text, emotion = reply_result
+                # 将情绪信息存储到上下文
+                context.emotional_context = context.emotional_context or {}
+                context.emotional_context['reply_emotion'] = emotion
+            else:
+                reply_text = reply_result
+                emotion = 'neutral'
+            
             # 更新上下文
-            context.final_reply = reply
+            context.final_reply = reply_text
 
             if self.logger:
-                self.logger.debug(f"回复生成完成: 长度 {len(reply)}")
+                self.logger.debug(f"回复生成完成: 长度 {len(reply_text)}, 情绪: {emotion}")
 
         except Exception as e:
             error_msg = f"回复生成失败: {str(e)}"
             if self.logger:
                 self.logger.error(error_msg)
-            context.add_error(error_msg)
+            if context:
+                context.add_error(error_msg)
 
         return context
 
     def _build_generation_params(self, context: StageContext, chosen_mask: str) -> Dict:
         """构建回复生成参数"""
+        # 检查 context 是否为 None
+        if context is None:
+            if self.logger:
+                self.logger.error("_build_generation_params: context is None")
+            return {
+                "action_plan": {
+                    "chosen_mask": chosen_mask,
+                    "primary_strategy": None
+                },
+                "memory_context": {
+                    "retrieved_memories": [],
+                    "resonant_memory": None
+                },
+                "user_input": "",
+                "conversation_history": [],
+                "growth_result": None,
+                "context_analysis": {},
+                "current_vectors": {}
+            }
+        
+        if self.logger:
+            self.logger.debug(f"_build_generation_params: context type is {type(context)}")
+            self.logger.debug(f"_build_generation_params: context has user_input attribute: {hasattr(context, 'user_input')}")
+            if hasattr(context, 'user_input'):
+                self.logger.debug(f"_build_generation_params: context.user_input is {context.user_input}")
+        
         return {
-            "final_action_plan": {
+            "action_plan": {
                 "chosen_mask": chosen_mask,
-                "primary_strategy": context.strategy
+                "primary_strategy": getattr(context, 'strategy', None)
             },
             "memory_context": {
-                "retrieved_memories": context.retrieved_memories,
-                "resonant_memory": context.resonant_memory
+                "retrieved_memories": getattr(context, 'retrieved_memories', []),
+                "resonant_memory": getattr(context, 'resonant_memory', None)
             },
-            "user_input": context.user_input,
-            "conversation_history": context.conversation_history,
-            "growth_result": context.growth_result,
-            "context_analysis": context.context_info,
-            "current_vectors": context.desire_vectors
+            "user_input": getattr(context, 'user_input', ''),
+            "conversation_history": getattr(context, 'conversation_history', []),
+            "growth_result": getattr(context, 'growth_result', None),
+            "context_analysis": getattr(context, 'context_info', {}),
+            "current_vectors": getattr(context, 'desire_vectors', {})
         }
 
     def _determine_mask(self, context: StageContext) -> str:
         """确定使用哪个面具（角色）"""
         default_mask = "长期搭档"
 
-        if not context.desire_vectors:
+        # 检查 context 是否为 None
+        if context is None:
             return default_mask
 
-        vectors = context.desire_vectors
+        # 安全地获取 desire_vectors 属性
+        desire_vectors = getattr(context, 'desire_vectors', None)
+        if not desire_vectors:
+            return default_mask
 
-        connection_strength = vectors.get("connection", 0)
+        connection_strength = desire_vectors.get("connection", 0)
         if connection_strength > 0.7:
             return "知己" if random.random() > 0.5 else "伴侣"
 
-        growth_strength = vectors.get("growth", 0)
+        growth_strength = desire_vectors.get("growth", 0)
         if growth_strength > 0.7:
             return "青梅竹马"
 
@@ -646,7 +746,13 @@ class ReplyGenerationHandler(BaseStageHandler):
         if not templates:
             return None
 
-        emotion = context.emotional_context.get("dominant_emotion", "neutral")
+        # 检查 context 是否为 None
+        if context is None:
+            return random.choice(templates)
+
+        # 安全地获取 emotional_context 属性
+        emotional_context = getattr(context, 'emotional_context', {})
+        emotion = emotional_context.get("dominant_emotion", "neutral")
 
         if emotion == "positive" and len(templates) > 1:
             return templates[0]
@@ -658,14 +764,21 @@ class ReplyGenerationHandler(BaseStageHandler):
     def _fill_template(self, template: str, context: StageContext) -> str:
         """填充模板"""
         if not template:
-            return context.strategy or "我思考了一下，但还没有形成完整的回复。"
+            # 检查 context 是否为 None
+            if context is None:
+                return "我思考了一下，但还没有形成完整的回复。"
+            strategy = getattr(context, 'strategy', None)
+            return strategy or "我思考了一下，但还没有形成完整的回复。"
 
         reply = template
 
-        if "{strategy}" in reply and context.strategy:
-            reply = reply.replace("{strategy}", context.strategy)
-        elif context.strategy:
-            reply = f"{reply} {context.strategy}"
+        # 检查 context 是否为 None
+        if context is not None:
+            strategy = getattr(context, 'strategy', None)
+            if "{strategy}" in reply and strategy:
+                reply = reply.replace("{strategy}", strategy)
+            elif strategy:
+                reply = f"{reply} {strategy}"
 
         return reply
 
@@ -688,7 +801,22 @@ class ProtocolReviewHandler(BaseStageHandler):
             if self.logger:
                 self.logger.debug("开始协议审查")
 
-            if not context.final_reply:
+            # 检查 context 是否为 None
+            if context is None:
+                error_msg = "协议审查失败: 上下文对象为 None"
+                if self.logger:
+                    self.logger.error(error_msg)
+                # 创建一个新的空上下文对象
+                from core.processing_pipeline import StageContext
+                context = StageContext(
+                    user_input="",
+                    conversation_history=[],
+                    system_components={}
+                )
+                context.add_error(error_msg)
+                return context
+
+            if not getattr(context, 'final_reply', None):
                 error_msg = "没有可审查的回复"
                 if self.logger:
                     self.logger.error(error_msg)
@@ -701,8 +829,8 @@ class ProtocolReviewHandler(BaseStageHandler):
             if self.protocol_engine and hasattr(self.protocol_engine, 'apply_all_protocols'):
                 # 构建上下文信息
                 protocol_context = {
-                    "user_input": context.user_input,
-                    "conversation_history": context.conversation_history,
+                    "user_input": getattr(context, 'user_input', ''),
+                    "conversation_history": getattr(context, 'conversation_history', []),
                     "cognitive_snapshot": context.cognitive_snapshot if hasattr(context, 'cognitive_snapshot') else None,
                     "core_identity": context.core_identity if hasattr(context, 'core_identity') else None
                 }
@@ -770,7 +898,8 @@ class ProtocolReviewHandler(BaseStageHandler):
             error_msg = f"协议审查失败: {str(e)}"
             if self.logger:
                 self.logger.error(error_msg)
-            context.add_error(error_msg)
+            if context:
+                context.add_error(error_msg)
 
         return context
 

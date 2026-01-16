@@ -182,117 +182,171 @@ class FallbackStrategy:
             return self._generate_emergency_reply()
 
     def _select_strategy(self, context: FallbackContext) -> Dict[str, Any]:
-        """选择最合适的策略"""
-        action_plan = context.action_plan
-        memory_context = context.memory_context
-        user_input = context.user_input or ""
+        """
+        选择最合适的策略
+        """
+        try:
+            # 增强上下文检查
+            if not context:
+                self.logger.error("上下文对象为空")
+                return {
+                    "id": "simple_acknowledgment",
+                    "name": "简单承认策略",
+                    "score": 0,
+                    "analysis": {}
+                }
 
-        # 分析情境
-        situational_analysis = self._analyze_situation(action_plan, user_input, memory_context)
+            action_plan = context.action_plan if isinstance(context.action_plan, dict) else {}
+            memory_context = context.memory_context if isinstance(context.memory_context, (dict, type(None))) else None
+            user_input = context.user_input if isinstance(context.user_input, str) else ""
 
-        # 计算每个策略的得分
-        strategy_scores = {}
+            # 分析情境
+            situational_analysis = self._analyze_situation(action_plan, user_input, memory_context)
 
-        for strategy_id, strategy in self.strategies.items():
-            score = self._calculate_strategy_score(strategy, situational_analysis)
-            strategy_scores[strategy_id] = score
+            # 计算每个策略的得分
+            strategy_scores = {}
 
-        # 选择最高分的策略
-        best_strategy_id = max(strategy_scores, key=strategy_scores.get)
+            for strategy_id, strategy in self.strategies.items():
+                try:
+                    score = self._calculate_strategy_score(strategy, situational_analysis)
+                    strategy_scores[strategy_id] = score
+                except Exception as e:
+                    self.logger.error(f"计算策略得分失败: {str(e)}")
+                    strategy_scores[strategy_id] = 0
 
-        return {
-            "id": best_strategy_id,
-            "name": self.strategies[best_strategy_id]["name"],
-            "score": strategy_scores[best_strategy_id],
-            "analysis": situational_analysis
-        }
+            # 选择最高分的策略
+            if not strategy_scores:
+                self.logger.error("策略得分计算失败")
+                best_strategy_id = "simple_acknowledgment"
+            else:
+                best_strategy_id = max(strategy_scores, key=strategy_scores.get)
+
+            return {
+                "id": best_strategy_id,
+                "name": self.strategies[best_strategy_id]["name"],
+                "score": strategy_scores[best_strategy_id],
+                "analysis": situational_analysis
+            }
+        except Exception as e:
+            self.logger.error(f"选择策略失败: {str(e)}")
+            return {
+                "id": "simple_acknowledgment",
+                "name": "简单承认策略",
+                "score": 0,
+                "analysis": {}
+            }
 
     def _analyze_situation(self, action_plan: Dict, user_input: str,
                            memory_context: Optional[Dict]) -> Dict[str, Any]:
-        """分析当前情境"""
-        analysis = {
-            "is_emotional": False,
-            "is_seeking_support": False,
-            "is_unclear": False,
-            "is_complex": False,
-            "has_memory_context": memory_context is not None,
-            "mask_type": action_plan.get("chosen_mask", ""),
-            "strategy_type": action_plan.get("primary_strategy", ""),
-            "emotional_intensity": 0.0,  # 新增：情绪强度
-            "support_needs_level": 0.0  # 新增：支持需求等级
-        }
+        """
+        分析当前情境
+        """
+        try:
+            # 增强参数检查
+            if not isinstance(action_plan, dict):
+                action_plan = {}
+            if not isinstance(user_input, str):
+                user_input = ""
+            if not isinstance(memory_context, (dict, type(None))):
+                memory_context = None
 
-        if not user_input:
+            analysis = {
+                "is_emotional": False,
+                "is_seeking_support": False,
+                "is_unclear": False,
+                "is_complex": False,
+                "has_memory_context": memory_context is not None,
+                "mask_type": action_plan.get("chosen_mask", ""),
+                "strategy_type": action_plan.get("primary_strategy", ""),
+                "emotional_intensity": 0.0,  # 新增：情绪强度
+                "support_needs_level": 0.0  # 新增：支持需求等级
+            }
+
+            if not user_input:
+                return analysis
+
+            user_input_lower = user_input.lower()
+            user_input_chars = len(user_input)
+
+            # 更精细的情绪分析
+            emotional_keywords = {
+                "难过": 0.9, "伤心": 0.9, "悲伤": 0.9, "痛苦": 0.8,
+                "生气": 0.8, "愤怒": 0.8, "恼火": 0.7,
+                "沮丧": 0.7, "失落": 0.7, "绝望": 0.9,
+                "焦虑": 0.6, "压力": 0.6, "紧张": 0.6,
+                "抑郁": 0.9, "崩溃": 0.9, "哭了": 0.8, "泪": 0.7
+            }
+
+            # 计算情绪强度
+            emotional_score = 0.0
+            emotional_count = 0
+            for keyword, weight in emotional_keywords.items():
+                if keyword in user_input_lower:
+                    emotional_score += weight
+                    emotional_count += 1
+
+            if emotional_count > 0:
+                emotional_intensity = emotional_score / emotional_count
+                analysis["is_emotional"] = emotional_intensity > 0.3
+                analysis["emotional_intensity"] = min(1.0, emotional_intensity * 1.2)  # 归一化
+
+            # 更精细的支持需求分析
+            support_keywords = {
+                "帮帮我": 1.0, "怎么办": 0.9, "建议": 0.7, "意见": 0.6,
+                "想法": 0.5, "应该": 0.4, "怎么做": 0.9, "如何": 0.8,
+                "为什么": 0.6, "原因": 0.5, "求助": 0.9, "指导": 0.7
+            }
+
+            support_score = 0.0
+            for keyword, weight in support_keywords.items():
+                if keyword in user_input_lower:
+                    support_score += weight
+
+            # 考虑标点符号
+            if "?" in user_input or "？" in user_input:
+                support_score += 0.3
+
+            analysis["is_seeking_support"] = support_score > 0.5
+            analysis["support_needs_level"] = min(1.0, support_score / 3.0)
+
+            # 改进的模糊问题判断
+            question_indicators = ["?", "？", "吗", "呢", "什么", "怎样", "如何", "为什么"]
+            unclear_indicators = ["有点", "可能", "大概", "也许", "似乎", "好像", "不太", "不太确定"]
+
+            has_question = any(indicator in user_input for indicator in question_indicators)
+            has_unclear = any(indicator in user_input_lower for indicator in unclear_indicators)
+            is_short = user_input_chars < 15  # 增加长度阈值
+            is_long = user_input_chars > 200
+
+            analysis["is_unclear"] = (has_question and has_unclear) or (has_question and is_short) or is_long
+
+            # 更精细的复杂性判断
+            complex_keywords = ["解释", "分析", "讨论", "深入", "复杂", "困难", "挑战", "原理", "机制", "系统"]
+            analysis["is_complex"] = any(keyword in user_input_lower for keyword in complex_keywords)
+
+            # 检测重复内容（可能表示困惑）
+            words = user_input_lower.split()
+            if len(words) > 10:
+                unique_words = set(words)
+                repetition_ratio = len(unique_words) / len(words)
+                if repetition_ratio < 0.5:  # 大量重复
+                    analysis["is_unclear"] = True
+
             return analysis
-
-        user_input_lower = user_input.lower()
-        user_input_chars = len(user_input)
-
-        # 更精细的情绪分析
-        emotional_keywords = {
-            "难过": 0.9, "伤心": 0.9, "悲伤": 0.9, "痛苦": 0.8,
-            "生气": 0.8, "愤怒": 0.8, "恼火": 0.7,
-            "沮丧": 0.7, "失落": 0.7, "绝望": 0.9,
-            "焦虑": 0.6, "压力": 0.6, "紧张": 0.6,
-            "抑郁": 0.9, "崩溃": 0.9, "哭了": 0.8, "泪": 0.7
-        }
-
-        # 计算情绪强度
-        emotional_score = 0.0
-        emotional_count = 0
-        for keyword, weight in emotional_keywords.items():
-            if keyword in user_input_lower:
-                emotional_score += weight
-                emotional_count += 1
-
-        if emotional_count > 0:
-            emotional_intensity = emotional_score / emotional_count
-            analysis["is_emotional"] = emotional_intensity > 0.3
-            analysis["emotional_intensity"] = min(1.0, emotional_intensity * 1.2)  # 归一化
-
-        # 更精细的支持需求分析
-        support_keywords = {
-            "帮帮我": 1.0, "怎么办": 0.9, "建议": 0.7, "意见": 0.6,
-            "想法": 0.5, "应该": 0.4, "怎么做": 0.9, "如何": 0.8,
-            "为什么": 0.6, "原因": 0.5, "求助": 0.9, "指导": 0.7
-        }
-
-        support_score = 0.0
-        for keyword, weight in support_keywords.items():
-            if keyword in user_input_lower:
-                support_score += weight
-
-        # 考虑标点符号
-        if "?" in user_input or "？" in user_input:
-            support_score += 0.3
-
-        analysis["is_seeking_support"] = support_score > 0.5
-        analysis["support_needs_level"] = min(1.0, support_score / 3.0)
-
-        # 改进的模糊问题判断
-        question_indicators = ["?", "？", "吗", "呢", "什么", "怎样", "如何", "为什么"]
-        unclear_indicators = ["有点", "可能", "大概", "也许", "似乎", "好像", "不太", "不太确定"]
-
-        has_question = any(indicator in user_input for indicator in question_indicators)
-        has_unclear = any(indicator in user_input_lower for indicator in unclear_indicators)
-        is_short = user_input_chars < 15  # 增加长度阈值
-        is_long = user_input_chars > 200
-
-        analysis["is_unclear"] = (has_question and has_unclear) or (has_question and is_short) or is_long
-
-        # 更精细的复杂性判断
-        complex_keywords = ["解释", "分析", "讨论", "深入", "复杂", "困难", "挑战", "原理", "机制", "系统"]
-        analysis["is_complex"] = any(keyword in user_input_lower for keyword in complex_keywords)
-
-        # 检测重复内容（可能表示困惑）
-        words = user_input_lower.split()
-        if len(words) > 10:
-            unique_words = set(words)
-            repetition_ratio = len(unique_words) / len(words)
-            if repetition_ratio < 0.5:  # 大量重复
-                analysis["is_unclear"] = True
-
-        return analysis
+        except Exception as e:
+            self.logger.error(f"情境分析失败: {str(e)}")
+            # 返回默认分析结果
+            return {
+                "is_emotional": False,
+                "is_seeking_support": False,
+                "is_unclear": False,
+                "is_complex": False,
+                "has_memory_context": memory_context is not None,
+                "mask_type": "",
+                "strategy_type": "",
+                "emotional_intensity": 0.0,
+                "support_needs_level": 0.0
+            }
 
     def _calculate_strategy_score(self, strategy: Dict, analysis: Dict) -> float:
         """计算策略得分"""

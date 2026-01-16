@@ -131,6 +131,36 @@ status = facade.get_status()
 print(status)
 ```
 
+#### 使用智谱AI API
+
+```python
+from zai import ZhipuAiClient
+
+# 从配置文件读取API密钥
+import json
+with open('config/llm_config.json', 'r', encoding='utf-8') as f:
+    config = json.load(f)
+zhipu_api_key = config['api']['providers']['zhipu']['api_key']
+
+# 初始化智谱AI客户端
+client = ZhipuAiClient(api_key=zhipu_api_key)
+
+# 调用智谱AI API
+response = client.chat.completions.create(
+    model="glm-4.7",
+    messages=[
+        {"role": "user", "content": "作为一名营销专家，请为我的产品创作一个吸引人的口号"},
+        {"role": "assistant", "content": "当然，要创作一个吸引人的口号，请告诉我一些关于您产品的信息"},
+        {"role": "user", "content": "智谱AI开放平台"}
+    ],
+    max_tokens=65536,
+    temperature=1.0
+)
+
+# 获取完整回复
+print(response.choices[0].message)
+```
+
 #### API调用
 
 ```python
@@ -190,6 +220,30 @@ for line in response.iter_lines():
         "api_key": "your-openai-key",
         "base_url": "https://api.openai.com/v1",
         "chat_model": "gpt-5-nano-2025-08-07"
+      },
+      "deepseek": {
+        "enabled": false
+      }
+    }
+  }
+}
+```
+
+#### 切换到智谱AI
+
+```json
+{
+  "api": {
+    "provider": "zhipu",
+    "api_key": "your-zhipu-api-key",
+    "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    "chat_model": "glm-4.7",
+    "providers": {
+      "zhipu": {
+        "enabled": true,
+        "api_key": "your-zhipu-api-key",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+        "chat_model": "glm-4.7"
       },
       "deepseek": {
         "enabled": false
@@ -271,35 +325,32 @@ for line in response.iter_lines():
 
 ```bash
 # 使用测试运行器
-python run_tests.py --all
+python zyantine_genisis/tests/utils/run_tests.py --all
 
 # 或直接运行测试文件
-python tests/api/test_llm_provider.py
+python zyantine_genisis/tests/api/test_llm_provider.py
 ```
 
 ### 运行特定类别的测试
 
 ```bash
-# 记忆模块测试
-python run_tests.py --category memory
+# API模块测试
+python zyantine_genisis/tests/utils/run_tests.py --category api
 
-# 认知模块测试
-python run_tests.py --category cognition
+# 配置模块测试
+python zyantine_genisis/tests/utils/run_tests.py --category config
+
+# 集成测试
+python zyantine_genisis/tests/utils/run_tests.py --category integration
+
+# 记忆模块测试
+python zyantine_genisis/tests/utils/run_tests.py --category memory
+
+# 提示词模块测试
+python zyantine_genisis/tests/utils/run_tests.py --category prompt
 
 # 协议模块测试
-python run_tests.py --category protocols
-
-# API模块测试
-python run_tests.py --category api
-
-# 系统级测试
-python run_tests.py --category system
-```
-
-### 运行快速测试
-
-```bash
-python run_tests.py --quick
+python zyantine_genisis/tests/utils/run_tests.py --category protocols
 ```
 
 ## 📊 项目结构
@@ -311,6 +362,8 @@ zyantine_genisis/
 │   ├── llm_service.py     # LLM服务抽象基类
 │   ├── llm_service_factory.py  # LLM服务工厂
 │   ├── openai_service.py  # OpenAI兼容服务
+│   ├── prompt_engine.py   # 提示词引擎
+│   ├── reply_generator.py # 回复生成器
 │   └── service_provider.py  # 服务提供商管理
 ├── cognition/             # 认知模块
 │   ├── core_identity.py   # 核心身份识别
@@ -340,8 +393,10 @@ zyantine_genisis/
 │   └── memory_demo.py
 ├── tests/                 # 测试文件
 │   ├── api/               # API测试
-│   ├── cognition/         # 认知测试
+│   ├── config/            # 配置测试
+│   ├── integration/        # 集成测试
 │   ├── memory/            # 记忆测试
+│   ├── prompt/            # 提示词测试
 │   └── protocols/         # 协议测试
 ├── main.py                # 主入口
 ├── api_server.py          # API服务器

@@ -104,12 +104,19 @@ class FactChecker:
                 temperature=0.3  # 使用低温以获得更确定性的事实判断
             )
 
-            if not verification_result:
+            # 处理返回结果，获取回复文本
+            reply_text = ""
+            if isinstance(verification_result, tuple):
+                reply_text = verification_result[0] if verification_result[0] else ""
+            elif isinstance(verification_result, str):
+                reply_text = verification_result
+            
+            if not reply_text:
                 print(f"[事实检查器] API审查失败，回退到本地验证")
                 return self._local_final_review(final_draft, statements, context)
 
             # 解析API的审查结果
-            is_verified, violations, feedback = self._parse_api_verification_result(verification_result)
+            is_verified, violations, feedback = self._parse_api_verification_result(reply_text)
 
             # 记录审查结果
             self._log_api_review_result(final_draft, is_verified, violations, feedback)
@@ -248,30 +255,45 @@ class FactChecker:
 """
 
     def _build_verification_input(self, final_draft: str, statements: List[str], review_context: Dict) -> str:
-        """构建事实审查的用户输入"""
+        """
+        构建事实审查的用户输入
+        """
         input_parts = ["# 待审查的回复内容"]
-        input_parts.append(final_draft)
+        input_parts.append(final_draft if isinstance(final_draft, str) else "")
         input_parts.append("")
 
         # 陈述列表
         input_parts.append("# 需要验证的具体陈述")
-        for i, statement in enumerate(statements, 1):
-            input_parts.append(f"{i}. {statement}")
+        # 确保 statements 是可迭代的
+        safe_statements = []
+        if statements and isinstance(statements, (list, tuple)):
+            for statement in statements:
+                if isinstance(statement, str) and statement.strip():
+                    safe_statements.append(statement.strip())
+        
+        if safe_statements:
+            for i, statement in enumerate(safe_statements, 1):
+                input_parts.append(f"{i}. {statement}")
+        else:
+            input_parts.append("1....")
         input_parts.append("")
 
         # 上下文信息
         input_parts.append("# 相关记忆（供验证参考）")
         relevant_memories = review_context.get("relevant_memories", [])
-        if relevant_memories:
+        if relevant_memories and isinstance(relevant_memories, list):
             for i, memory in enumerate(relevant_memories, 1):
-                content = memory.content if isinstance(memory.content, str) else str(memory.content)
-                memory_type = memory.memory_type.value if hasattr(memory.memory_type, 'value') else str(memory.memory_type)
-                tags = memory.tags if memory.tags else []
+                try:
+                    content = memory.content if isinstance(memory.content, str) else str(memory.content)
+                    memory_type = memory.memory_type.value if hasattr(memory.memory_type, 'value') else str(memory.memory_type)
+                    tags = memory.tags if isinstance(memory.tags, list) else []
 
-                input_parts.append(f"{i}. 类型: {memory_type}")
-                input_parts.append(f"   内容: {content[:200]}...")
-                input_parts.append(f"   标签: {', '.join(tags[:3])}")
-                input_parts.append("")
+                    input_parts.append(f"{i}. 类型: {memory_type}")
+                    input_parts.append(f"   内容: {content[:200]}...")
+                    input_parts.append(f"   标签: {', '.join(tags[:3])}")
+                    input_parts.append("")
+                except Exception as e:
+                    self.logger.error(f"处理记忆时出错: {str(e)}")
         else:
             input_parts.append("无相关记忆")
         input_parts.append("")
@@ -279,13 +301,16 @@ class FactChecker:
         # 历史对话
         input_parts.append("# 最近对话历史")
         history = review_context.get("conversation_history", [])
-        if history:
+        if history and isinstance(history, list):
             for i, entry in enumerate(history[-3:], 1):  # 最近3条
-                user_input = entry.get("user_input", "")[:100]
-                system_response = entry.get("system_response", "")[:100]
-                input_parts.append(f"{i}. 用户: {user_input}")
-                input_parts.append(f"   助手: {system_response}")
-                input_parts.append("")
+                try:
+                    user_input = entry.get("user_input", "")[:100] if isinstance(entry, dict) else ""
+                    system_response = entry.get("system_response", "")[:100] if isinstance(entry, dict) else ""
+                    input_parts.append(f"{i}. 用户: {user_input}")
+                    input_parts.append(f"   助手: {system_response}")
+                    input_parts.append("")
+                except Exception as e:
+                    self.logger.error(f"处理历史对话时出错: {str(e)}")
         else:
             input_parts.append("无对话历史")
 
@@ -358,17 +383,24 @@ class FactChecker:
         })
 
     def _extract_statements(self, text: str) -> List[str]:
-        """从文本中提取陈述句"""
-        sentences = re.split(r'[。！？]', text)
-
+        """
+        从文本中提取陈述句
+        """
         statements = []
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if sentence and len(sentence) > 10:  # 过滤短句
-                # 移除引号、括号等内容
-                clean_sentence = re.sub(r'[《》"\'()【】]', '', sentence)
-                if clean_sentence:
-                    statements.append(clean_sentence)
+        try:
+            if not text or not isinstance(text, str):
+                return statements
+            sentences = re.split(r'[。！？]', text)
+
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if sentence and len(sentence) > 10:  # 过滤短句
+                    # 移除引号、括号等内容
+                    clean_sentence = re.sub(r'[《》"\'()【】]', '', sentence)
+                    if clean_sentence:
+                        statements.append(clean_sentence)
+        except Exception as e:
+            print(f"[事实检查器] 提取陈述时出错: {str(e)}")
 
         return statements
 

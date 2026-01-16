@@ -1,0 +1,142 @@
+{
+  "session_id": "default",
+  "user_id": "default_user",
+  "system_name": "ZyantineAI",
+  "version": "1.0.0",
+
+  "api": {
+    "enabled": true,
+    "provider": "deepseek",
+    "providers": {
+      "openai": {
+        "enabled": false,
+        "api_key": "sk-34uPXEo6mY1PB1J65d5f80810cDc48F28032DdEc62E49fC6",
+        "base_url": "https://openkey.cloud/v1",
+        "chat_model": "gpt-5-nano-2025-08-07",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "deepseek": {
+        "enabled": true,
+        "api_key": "sk-cd83b6411207408e8539b7623a1c5f35",
+        "base_url": "https://api.deepseek.com",
+        "chat_model": "deepseek-chat",
+        "timeout": 30,
+        "max_retries": 3,
+        "use_max_completion_tokens": true
+      },
+      "anthropic": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.anthropic.com",
+        "chat_model": "claude-3-5-sonnet-20241022",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "zhipu": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "",
+        "chat_model": "glm-4.7",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "moonshot": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.moonshot.cn/v1",
+        "chat_model": "moonshot-v1-8k",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "alibaba": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "chat_model": "qwen-turbo",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "baidu": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat",
+        "chat_model": "ernie-bot-4",
+        "timeout": 30,
+        "max_retries": 3
+      }
+    }
+  },
+
+  "memory": {
+    "system_type": "memo0",
+    "max_memories": 10000,
+    "retrieval_limit": 5,
+    "similarity_threshold": 0.7,
+    "enable_semantic_cache": true,
+    "cache_ttl": 300,
+    "backup_interval": 3600,
+    "backup_path": "./memory_backups",
+    "memo0_config": {
+      "vector_store": {
+        "provider": "milvus",
+        "config": {
+          "collection_name": "zyantine_memories",
+          "url": "http://localhost:19530",
+          "token": ""
+        }
+      },
+      "llm": {
+        "provider": "openai",
+        "config": {
+          "model": "deepseek-chat",
+          "api_key": "sk-cd83b6411207408e8539b7623a1c5f35",
+          "openai_base_url": "https://api.deepseek.com/v1"
+        }
+      },
+      "embedder": {
+        "provider": "openai",
+        "config": {
+          "model": "text-embedding-3-large",
+          "api_key": "sk-34uPXEo6mY1PB1J65d5f80810cDc48F28032DdEc62E49fC6",
+          "openai_base_url": "https://openkey.cloud/v1"
+        }
+      }
+    }
+  },
+
+  "processing": {
+    "mode": "standard",
+    "enable_stage_parallelism": false,
+    "max_conversation_history": 1000,
+    "enable_real_time_analysis": true,
+    "batch_size": 10,
+    "stage_configs": {
+      "preprocess": {"enabled": true, "timeout": 5},
+      "memory_retrieval": {"enabled": true, "cache_results": true},
+      "desire_update": {"enabled": true, "update_frequency": "always"},
+      "cognitive_flow": {"enabled": true, "max_iterations": 3},
+      "reply_generation": {"enabled": true, "fallback_to_template": true},
+      "protocol_review": {"enabled": true, "strict_mode": false}
+    }
+  },
+
+  "protocols": {
+    "enable_fact_check": true,
+    "enable_length_regulation": true,
+    "enable_expression_protocol": true,
+    "fact_check_strictness": 0.8,
+    "max_response_length": 2000,
+    "min_response_length": 50,
+    "allow_uncertainty_phrases": true,
+    "required_tags": []
+  },
+
+  "enable_monitoring": true,
+  "enable_logging": true,
+  "log_level": "INFO",
+  "log_file": "./logs/zyantine.log",
+  "enable_encryption": false,
+  "enable_backup": true,
+  "enable_validation": true
+}

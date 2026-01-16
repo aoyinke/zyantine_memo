@@ -64,6 +64,10 @@ class BaseLLMService(ABC):
         self.error_count = 0
         self.total_tokens = 0
         self.total_latency = 0.0
+        self.consecutive_errors = 0  # 连续错误计数
+        self.last_success_time = None  # 最后成功时间
+        self.last_error_time = None  # 最后错误时间
+        self.last_error_type = None  # 最后错误类型
 
         # 请求历史
         self.request_history: List[APIRequest] = []
@@ -78,6 +82,80 @@ class BaseLLMService(ABC):
         self._initialize_client()
 
         self.logger.info(f"{self.provider.value}服务初始化完成，模型: {self.model}")
+
+    def generate_reply_parallel(self, 
+                               system_prompt: str, 
+                               user_input: str, 
+                               conversation_history: Optional[List[Dict]] = None,
+                               models: List[str] = None, 
+                               max_tokens: int = 500, 
+                               temperature: float = 1.0) -> Tuple[Optional[str], Optional[Dict]]:
+        """
+        并行调用多个模型，返回最快的响应
+
+        Args:
+            system_prompt: 系统提示词
+            user_input: 用户输入
+            conversation_history: 对话历史
+            models: 要并行调用的模型列表
+            max_tokens: 最大token数
+            temperature: 温度参数
+
+        Returns:
+            Tuple[回复文本, 元数据]
+        """
+        if not models:
+            models = [self.model]
+
+        import concurrent.futures
+        results = {}
+        errors = {}
+
+        def call_model(model):
+            old_model = self.model
+            try:
+                self.model = model
+                result, metadata = self.generate_reply(
+                    system_prompt=system_prompt,
+                    user_input=user_input,
+                    conversation_history=conversation_history,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stream=False
+                )
+                return model, result, metadata
+            except Exception as e:
+                return model, None, {"error": str(e)}
+            finally:
+                self.model = old_model
+
+        # 并行调用模型
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(models), 3)) as executor:
+            future_to_model = {executor.submit(call_model, model): model for model in models}
+            for future in concurrent.futures.as_completed(future_to_model, timeout=30):
+                model = future_to_model[future]
+                try:
+                    model_name, result, metadata = future.result()
+                    if result:
+                        results[model_name] = (result, metadata)
+                    else:
+                        errors[model_name] = metadata.get("error", "Unknown error")
+                except Exception as e:
+                    errors[model_name] = str(e)
+
+        # 返回第一个成功的结果
+        if results:
+            # 按响应时间排序，返回最快的
+            fastest_model = min(results.keys(), key=lambda m: results[m][1].get("latency", float('inf')))
+            result, metadata = results[fastest_model]
+            metadata["model_used"] = fastest_model
+            self.logger.info(f"并行调用完成，使用模型: {fastest_model}")
+            return result, metadata
+        else:
+            # 所有模型都失败
+            error_msg = "所有模型调用失败: " + "; ".join([f"{m}: {e}" for m, e in errors.items()])
+            self.logger.error(error_msg)
+            return None, {"error": error_msg, "errors": errors}
 
     @abstractmethod
     def _initialize_client(self):
@@ -170,18 +248,47 @@ class BaseLLMService(ABC):
             if response:
                 # 处理响应
                 if stream:
-                    # 直接返回流式响应生成器
+                    # 优化流式响应生成器
                     def stream_generator():
                         reply_parts = []
+                        start_chunk_time = time.time()
+                        chunk_count = 0
+                        
                         for chunk in response:
                             content = self._extract_content(chunk)
                             if content:
+                                chunk_count += 1
                                 reply_parts.append(content)
-                                yield content
+                                # 优化：小 chunk 合并，减少网络往返
+                                if chunk_count % 3 == 0 or len("".join(reply_parts)) > 100:
+                                    # 检查并移除情绪标签
+                                    chunk_content = "".join(reply_parts)
+                                    clean_chunk = self.remove_emotion_tag(chunk_content)
+                                    if clean_chunk:
+                                        yield clean_chunk
+                                    reply_parts = []
+                                    chunk_count = 0
+                        
+                        # 发送剩余部分
+                        if reply_parts:
+                            # 检查并移除情绪标签
+                            final_content = "".join(reply_parts)
+                            clean_final = self.remove_emotion_tag(final_content)
+                            if clean_final:
+                                yield clean_final
                         
                         # 响应完成后记录统计信息
                         latency = time.time() - start_time
-                        prompt_tokens, completion_tokens, total_tokens = self._extract_usage(response)
+                        chunk_latency = time.time() - start_chunk_time
+                        
+                        # 提取情绪信息
+                        full_reply = "".join(reply_parts)
+                        emotion = self.extract_emotion(full_reply)
+                        
+                        try:
+                            prompt_tokens, completion_tokens, total_tokens = self._extract_usage(response)
+                        except Exception:
+                            prompt_tokens, completion_tokens, total_tokens = 0, 0, 0
                         
                         self._record_success(
                             request_id=request_id,
@@ -199,7 +306,9 @@ class BaseLLMService(ABC):
                             "model": self.model,
                             "tokens_used": total_tokens,
                             "latency": latency,
-                            "finish_reason": self._extract_finish_reason(response)
+                            "chunk_latency": chunk_latency,
+                            "finish_reason": self._extract_finish_reason(response),
+                            "emotion": emotion
                         }
                     
                     return stream_generator(), None
@@ -220,16 +329,22 @@ class BaseLLMService(ABC):
                         latency=latency
                     )
 
+                    # 提取情绪信息
+                    emotion = self.extract_emotion(reply)
+                    # 移除情绪标签
+                    clean_reply = self.remove_emotion_tag(reply)
+                    
                     metadata = {
                         "request_id": request_id,
                         "provider": self.provider.value,
                         "model": self.model,
                         "tokens_used": total_tokens,
                         "latency": latency,
-                        "finish_reason": self._extract_finish_reason(response)
+                        "finish_reason": self._extract_finish_reason(response),
+                        "emotion": emotion
                     }
 
-                    return reply, metadata
+                    return clean_reply, metadata
             else:
                 error_msg = "API响应为空"
                 self.logger.error(error_msg)
@@ -421,6 +536,8 @@ class BaseLLMService(ABC):
         self.success_count += 1
         self.total_tokens += total_tokens
         self.total_latency += latency
+        self.consecutive_errors = 0  # 重置连续错误计数
+        self.last_success_time = datetime.now()  # 更新最后成功时间
 
         # 记录请求历史
         request_record = APIRequest(
@@ -448,6 +565,9 @@ class BaseLLMService(ABC):
         """记录错误请求"""
         self.error_count += 1
         self.error_stats[error_type] = self.error_stats.get(error_type, 0) + 1
+        self.consecutive_errors += 1  # 递增连续错误计数
+        self.last_error_time = datetime.now()  # 更新最后错误时间
+        self.last_error_type = error_type  # 更新最后错误类型
 
         # 记录错误请求历史
         request_record = APIRequest(
@@ -471,7 +591,39 @@ class BaseLLMService(ABC):
 
     def is_available(self) -> bool:
         """检查服务是否可用"""
-        return self.client is not None
+        # 基本检查：客户端是否初始化
+        if not self.client:
+            self.logger.debug("服务不可用：客户端未初始化")
+            return False
+        
+        # 检查API密钥是否有效
+        if not self.api_key or len(self.api_key.strip()) < 10:
+            self.logger.debug("服务不可用：API密钥无效")
+            return False
+        
+        # 检查最近的错误情况：如果连续3个错误，标记为不可用
+        if hasattr(self, 'consecutive_errors') and self.consecutive_errors >= 3:
+            self.logger.debug(f"服务不可用：连续{self.consecutive_errors}个错误")
+            return False
+        
+        # 检查最近的成功请求：如果最近有成功请求，认为可用
+        if hasattr(self, 'last_success_time') and self.last_success_time is not None:
+            from datetime import datetime, timedelta
+            if datetime.now() - self.last_success_time < timedelta(minutes=5):
+                self.logger.debug("服务可用：最近5分钟内有成功请求")
+                return True
+        
+        # 检查是否有未解决的网络问题
+        if hasattr(self, 'last_error_time') and self.last_error_time is not None and hasattr(self, 'last_error_type'):
+            from datetime import datetime, timedelta
+            if datetime.now() - self.last_error_time < timedelta(minutes=1):
+                if self.last_error_type in [APIErrorType.NETWORK, APIErrorType.SERVER]:
+                    self.logger.debug("服务不可用：最近1分钟内有网络或服务器错误")
+                    return False
+        
+        # 默认可用
+        self.logger.debug("服务可用：通过所有检查")
+        return True
 
     def test_connection(self) -> Tuple[bool, Optional[str]]:
         """测试连接"""
@@ -562,6 +714,27 @@ class BaseLLMService(ABC):
 
         self.logger.info(f"{self.provider.value}服务已关闭")
 
+    def extract_emotion(self, text: str) -> str:
+        """从文本中提取情绪标签"""
+        import re
+        match = re.search(r'\[EMOTION:(\w+)\]', text)
+        if match:
+            emotion = match.group(1).lower()
+            # 验证情绪类型是否有效
+            if self.validate_emotion(emotion):
+                return emotion
+        return "neutral"
+
+    def validate_emotion(self, emotion: str) -> bool:
+        """验证情绪类型是否有效"""
+        valid_emotions = ["neutral", "happy", "sad", "angry", "excited", "calm", "surprised", "disgusted"]
+        return emotion in valid_emotions
+
+    def remove_emotion_tag(self, text: str) -> str:
+        """从文本中移除情绪标签"""
+        import re
+        return re.sub(r'\s*\[EMOTION:\w+\]\s*$', '', text).strip()
+
 
 class OpenAICompatibleService(BaseLLMService):
     """OpenAI兼容服务（支持OpenAI、DeepSeek等）"""
@@ -569,6 +742,22 @@ class OpenAICompatibleService(BaseLLMService):
     def _initialize_client(self):
         """初始化OpenAI兼容客户端"""
         try:
+            # 检查API密钥是否配置
+            if not self.api_key:
+                self.logger.error("未配置API密钥，无法初始化API客户端")
+                self.client = None
+                return
+            
+            # 验证API密钥格式
+            if not isinstance(self.api_key, str) or len(self.api_key.strip()) < 10:
+                self.logger.error("API密钥格式无效，请检查配置")
+                self.client = None
+                return
+            
+            # 记录初始化信息
+            self.logger.info(f"正在初始化{self.provider.value}客户端，模型: {self.model}")
+            self.logger.debug(f"基础URL: {self.base_url}")
+            
             self.client = OpenAI(
                 api_key=self.api_key,
                 base_url=self.base_url,
@@ -584,6 +773,17 @@ class OpenAICompatibleService(BaseLLMService):
             self.client = None
         except Exception as e:
             self.logger.error(f"初始化失败: {str(e)}")
+            self.logger.debug(f"详细错误堆栈:\n{traceback.format_exc()}")
+            # 提供更具体的错误诊断
+            error_str = str(e).lower()
+            if "invalid_api_key" in error_str or "authentication" in error_str:
+                self.logger.error("API密钥无效，请检查配置")
+            elif "model_not_found" in error_str or "invalid_model" in error_str:
+                self.logger.error(f"模型 {self.model} 不存在或不可用")
+            elif "connection" in error_str or "timeout" in error_str:
+                self.logger.error("网络连接失败，请检查网络环境或基础URL配置")
+            elif "rate_limit" in error_str:
+                self.logger.error("API请求频率过高，请检查配额或调整请求频率")
             self.client = None
 
     def _call_api(self, messages: List[Dict], max_tokens: int, temperature: float, stream: bool, request_id: str):

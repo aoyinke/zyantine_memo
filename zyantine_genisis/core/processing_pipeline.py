@@ -180,14 +180,29 @@ class BaseStageHandler(StageHandler):
 class ProcessingPipeline:
     """可配置的处理管道"""
 
-    def __init__(self, enable_parallelism: bool = False, max_workers: int = 4):
+    def __init__(self, enable_parallelism: bool = False, max_workers: int = 4, enable_fast_path: bool = False):
         self.stages: Dict[ProcessingStage, StageHandler] = {}
         self.stage_order: List[ProcessingStage] = []
         self.pre_hooks: Dict[ProcessingStage, List[Callable]] = {}
         self.post_hooks: Dict[ProcessingStage, List[Callable]] = {}
         self.enable_parallelism = enable_parallelism
+        self.enable_fast_path = enable_fast_path
         self.max_workers = max_workers
         self.executor = ThreadPoolExecutor(max_workers=max_workers) if enable_parallelism else None
+        
+        # 阶段依赖关系 - 只保留核心阶段的依赖
+        self.stage_dependencies = {
+            ProcessingStage.PREPROCESS: [],
+            ProcessingStage.INSTINCT_CHECK: [ProcessingStage.PREPROCESS],
+            ProcessingStage.MEMORY_RETRIEVAL: [ProcessingStage.PREPROCESS],
+            ProcessingStage.DESIRE_UPDATE: [ProcessingStage.MEMORY_RETRIEVAL],
+            ProcessingStage.COGNITIVE_FLOW: [ProcessingStage.DESIRE_UPDATE],
+            ProcessingStage.DIALECTICAL_GROWTH: [ProcessingStage.COGNITIVE_FLOW],
+            ProcessingStage.REPLY_GENERATION: [ProcessingStage.MEMORY_RETRIEVAL],  # 修改：只依赖记忆检索
+            ProcessingStage.PROTOCOL_REVIEW: [ProcessingStage.REPLY_GENERATION],
+            ProcessingStage.INTERACTION_RECORDING: [ProcessingStage.PROTOCOL_REVIEW],
+            ProcessingStage.WHITE_DOVE_CHECK: [ProcessingStage.INTERACTION_RECORDING]
+        }
 
     def register_stage(self, stage_handler: StageHandler):
         """注册阶段处理器"""
@@ -210,11 +225,71 @@ class ProcessingPipeline:
     def execute(self, context: StageContext) -> StageContext:
         """执行管道处理"""
         print(f"[处理管道] 开始处理，共{len(self.stage_order)}个阶段")
+        print(f"[处理管道] 配置: 并行={self.enable_parallelism}, 快速路径={self.enable_fast_path}")
 
-        # 按顺序执行各个阶段
-        for stage in self.stage_order:
+        # 检查是否启用快速路径
+        if self.enable_fast_path and self._should_use_fast_path(context):
+            print("[处理管道] 使用快速路径处理")
+            return self._execute_fast_path(context)
+
+        # 检查是否启用并行处理
+        if self.enable_parallelism:
+            context = self._execute_parallel(context)
+        else:
+            # 按顺序执行各个阶段
+            for stage in self.stage_order:
+                if not self._should_continue(context, stage):
+                    print(f"[处理管道] 提前终止，当前阶段: {stage.value}")
+                    break
+
+                # 执行前置钩子
+                self._execute_hooks(stage, context, pre_hook=True)
+
+                # 执行阶段处理器
+                context = self._execute_stage(stage, context)
+
+                # 执行后置钩子
+                self._execute_hooks(stage, context, pre_hook=False)
+
+        print(f"[处理管道] 处理完成，耗时: {time.time() - context.start_time:.2f}秒")
+        return context
+
+    def _should_use_fast_path(self, context: StageContext) -> bool:
+        """判断是否应该使用快速路径"""
+        # 简单请求判断逻辑
+        user_input = context.user_input.strip()
+        
+        # 长度判断
+        if len(user_input) > 100:
+            return False
+        
+        # 关键词判断
+        simple_keywords = ["你好", "Hello", "hi", "Hi", "再见", "Bye", "bye", "谢谢", "Thanks", "thanks"]
+        for keyword in simple_keywords:
+            if keyword in user_input:
+                return True
+        
+        # 问题类型判断（过于简化的判断）
+        if any(prefix in user_input for prefix in ["是什么", "什么是", "how", "How", "what", "What"]):
+            return False
+        
+        return False
+
+    def _execute_fast_path(self, context: StageContext) -> StageContext:
+        """执行快速路径处理"""
+        # 只执行4个核心阶段
+        fast_path_stages = [
+            ProcessingStage.PREPROCESS,
+            ProcessingStage.MEMORY_RETRIEVAL,
+            ProcessingStage.REPLY_GENERATION,
+            ProcessingStage.PROTOCOL_REVIEW
+        ]
+
+        for stage in fast_path_stages:
+            if stage not in self.stages:
+                continue
+                
             if not self._should_continue(context, stage):
-                print(f"[处理管道] 提前终止，当前阶段: {stage.value}")
                 break
 
             # 执行前置钩子
@@ -226,8 +301,103 @@ class ProcessingPipeline:
             # 执行后置钩子
             self._execute_hooks(stage, context, pre_hook=False)
 
-        print(f"[处理管道] 处理完成，耗时: {time.time() - context.start_time:.2f}秒")
         return context
+
+    def _execute_parallel(self, context: StageContext) -> StageContext:
+        """并行执行处理管道"""
+        # 构建阶段执行图
+        executed_stages = set()
+        remaining_stages = set(self.stage_order)
+
+        while remaining_stages:
+            # 找出所有可以执行的阶段（依赖已满足）
+            executable_stages = []
+            for stage in remaining_stages:
+                dependencies = self.stage_dependencies.get(stage, [])
+                if all(dep in executed_stages for dep in dependencies):
+                    executable_stages.append(stage)
+
+            if not executable_stages:
+                # 无法执行更多阶段，退出
+                break
+
+            # 并行执行这些阶段
+            if len(executable_stages) > 1:
+                print(f"[处理管道] 并行执行阶段: {[s.value for s in executable_stages]}")
+                
+                # 创建并行任务
+                tasks = []
+                for stage in executable_stages:
+                    if self._should_continue(context, stage):
+                        tasks.append((stage, context.copy() if hasattr(context, 'copy') else context))
+
+                # 执行并行任务
+                if tasks:
+                    results = []
+                    for stage, stage_context in tasks:
+                        # 执行前置钩子
+                        self._execute_hooks(stage, stage_context, pre_hook=True)
+                        # 执行阶段
+                        result_context = self._execute_stage(stage, stage_context)
+                        # 执行后置钩子
+                        self._execute_hooks(stage, result_context, pre_hook=False)
+                        results.append((stage, result_context))
+
+                    # 合并结果
+                    for stage, result_context in results:
+                        # 合并结果到主上下文
+                        self._merge_contexts(context, result_context)
+                        executed_stages.add(stage)
+                        remaining_stages.remove(stage)
+            else:
+                # 只有一个阶段，串行执行
+                stage = executable_stages[0]
+                if self._should_continue(context, stage):
+                    # 执行前置钩子
+                    self._execute_hooks(stage, context, pre_hook=True)
+                    # 执行阶段
+                    context = self._execute_stage(stage, context)
+                    # 执行后置钩子
+                    self._execute_hooks(stage, context, pre_hook=False)
+                    executed_stages.add(stage)
+                    remaining_stages.remove(stage)
+
+        return context
+
+    def _merge_contexts(self, target: StageContext, source: StageContext) -> None:
+        """合并上下文"""
+        # 合并错误和警告
+        target.errors.extend(source.errors)
+        target.warnings.extend(source.warnings)
+        
+        # 合并性能指标
+        for stage, duration in source.performance_metrics.items():
+            if stage not in target.performance_metrics:
+                target.performance_metrics[stage] = duration
+        
+        # 合并处理日志
+        target.processing_log.extend(source.processing_log)
+        
+        # 合并阶段结果
+        for stage, result in source.stage_results.items():
+            if stage not in target.stage_results:
+                target.stage_results[stage] = result
+        
+        # 合并其他字段
+        if source.final_reply:
+            target.final_reply = source.final_reply
+        if source.instinct_override:
+            target.instinct_override = source.instinct_override
+        if source.retrieved_memories:
+            target.retrieved_memories.extend(source.retrieved_memories)
+        if source.resonant_memory:
+            target.resonant_memory = source.resonant_memory
+        if source.cognitive_snapshot:
+            target.cognitive_snapshot = source.cognitive_snapshot
+        if source.cognitive_result:
+            target.cognitive_result = source.cognitive_result
+        if source.growth_result:
+            target.growth_result = source.growth_result
 
     def _should_continue(self, context: StageContext, current_stage: ProcessingStage) -> bool:
         """检查是否应该继续执行"""
@@ -254,13 +424,22 @@ class ProcessingPipeline:
             print(f"[处理管道] 执行阶段: {stage.value}")
 
             # 执行处理器的预处理钩子
-            context = handler.pre_process(context)
+            pre_result = handler.pre_process(context)
+            # 确保返回的是 StageContext 对象
+            if pre_result is not None:
+                context = pre_result
 
             # 执行主要处理逻辑
-            context = handler.process(context)
+            process_result = handler.process(context)
+            # 确保返回的是 StageContext 对象
+            if process_result is not None:
+                context = process_result
 
             # 执行处理器的后处理钩子
-            context = handler.post_process(context)
+            post_result = handler.post_process(context)
+            # 确保返回的是 StageContext 对象
+            if post_result is not None:
+                context = post_result
 
             duration = time.time() - stage_start
             context.add_performance_metric(stage.value, duration)

@@ -1,10 +1,13 @@
 """
 提示词引擎 - 构建和管理系统提示词
 """
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable, Union
 import re
+import json
+import os
 from dataclasses import dataclass
 from enum import Enum
+from collections import OrderedDict
 
 from cognition.core_identity import CoreIdentity
 from utils.logger import SystemLogger
@@ -28,30 +31,173 @@ class PromptSection(Enum):
 class PromptTemplate:
     """提示词模板"""
     name: str
-    sections: Dict[PromptSection, str]
+    sections: Dict[PromptSection, Union[Callable, str]]
     variables: List[str]
     description: str
     version: str = "1.0"
+    parent: Optional[str] = None
 
 
 class PromptEngine:
     """提示词引擎 - 构建和管理系统提示词"""
 
-    def __init__(self, config):
+    def __init__(self, config, config_file=None):
         self.config = config
         self.logger = SystemLogger().get_logger("prompt_engine")
+
+        # 加载配置文件
+        self.prompt_config = self._load_prompt_config(config_file)
 
         # 加载模板
         self.templates = self._load_templates()
         self.active_template = "standard"
 
-        # 缓存
-        self.prompt_cache: Dict[str, str] = {}
+        # 缓存 - 使用OrderedDict实现LRU缓存
+        self.prompt_cache: OrderedDict[str, str] = OrderedDict()
+        self.max_cache_size = self.prompt_config.get("cache", {}).get("max_size", 100)
+        self.cache_expiry_time = self.prompt_config.get("cache", {}).get("expiry_time", 3600)
+        self.cache_cleanup_strategy = self.prompt_config.get("cache", {}).get("cleanup_strategy", "LRU")
+
+        # 加载表达规则
+        self.expression_rules = self.prompt_config.get("expression_rules", {})
+
+        # 加载模板选择规则
+        self.template_selection_rules = self.prompt_config.get("template_selection", {}).get("rules", [])
 
         self.logger.info("提示词引擎初始化完成")
 
+    def _load_prompt_config(self, config_file=None):
+        """加载提示词引擎配置文件"""
+        if config_file is None:
+            # 默认配置文件路径
+            default_paths = [
+                "./config/prompt_engine_config.json",
+                "./zyantine_genisis/config/prompt_engine_config.json",
+                os.path.join(os.path.dirname(__file__), "..", "config", "prompt_engine_config.json"),
+            ]
+
+            for path in default_paths:
+                if os.path.exists(path):
+                    config_file = path
+                    break
+            else:
+                # 使用默认配置
+                self.logger.warning("未找到提示词引擎配置文件，使用默认配置")
+                return self._get_default_config()
+
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                self.logger.info(f"从配置文件加载提示词引擎配置: {config_file}")
+                return config.get("prompt_engine", self._get_default_config())
+        except Exception as e:
+            self.logger.error(f"加载提示词引擎配置文件失败: {e}")
+            return self._get_default_config()
+
+    def _get_default_config(self):
+        """获取默认配置"""
+        return {
+            "cache": {
+                "max_size": 100,
+                "expiry_time": 3600,
+                "cleanup_strategy": "LRU"
+            },
+            "expression_rules": {
+                "ai_ban_list": [
+                    "- ❌ '作为一个AI助手，我认为...' - 不要暴露身份",
+                    "- ❌ '从某种意义上来说...' - 过于学术化",
+                    "- ❌ '总的来说，'、'综上所述，' - 总结性开头",
+                    "- ❌ '首先，其次，最后' - 过于结构化",
+                    "- ❌ '值得注意的是，'、'需要强调的是' - 过于正式",
+                    "- ❌ '这个问题很有意思，让我来分析一下' - 过于套路化",
+                    "- ❌ '我理解你的感受，但是...' - 过于说教",
+                    "- ❌ '根据我的理解，' - 过于机械"
+                ],
+                "natural_expressions": [
+                    "- ✅ 直接表达观点，不绕弯子",
+                    "- ✅ 使用口语化表达，如'我觉得'、'我看'",
+                    "- ✅ 适当使用省略号'...'表示思考或停顿",
+                    "- ✅ 可以用反问句增强互动感，如'你说呢？'、'对吧？'",
+                    "- ✅ 使用简短有力的句子，避免长句"
+                ]
+            },
+            "template_selection": {
+                "rules": [
+                    {
+                        "condition": "has_resonant_memory",
+                        "template": "memory_enhanced",
+                        "priority": 10
+                    },
+                    {
+                        "condition": "high_complexity",
+                        "template": "standard",
+                        "priority": 9
+                    },
+                    {
+                        "condition": "professional_interaction",
+                        "template": "professional",
+                        "priority": 8
+                    },
+                    {
+                        "condition": "casual_interaction",
+                        "template": "casual",
+                        "priority": 7
+                    },
+                    {
+                        "condition": "default",
+                        "template": "concise",
+                        "priority": 1
+                    }
+                ]
+            }
+        }
+
     def _load_templates(self) -> Dict[str, PromptTemplate]:
         """加载提示词模板"""
+        templates = {}
+
+        # 从配置文件加载模板
+        config_templates = self.prompt_config.get("templates", {})
+        
+        if config_templates:
+            # 从配置文件加载模板
+            for template_name, template_config in config_templates.items():
+                try:
+                    sections = {}
+                    for section_name, builder_name in template_config.get("sections", {}).items():
+                        # 将字符串转换为实际的构建方法
+                        builder_method = getattr(self, builder_name, None)
+                        if builder_method and callable(builder_method):
+                            # 将字符串转换为PromptSection枚举
+                            try:
+                                section_enum = PromptSection(section_name)
+                                sections[section_enum] = builder_method
+                            except ValueError:
+                                self.logger.warning(f"未知的提示词部分: {section_name}")
+                        else:
+                            self.logger.warning(f"未知的构建方法: {builder_name}")
+
+                    # 创建模板
+                    template = PromptTemplate(
+                        name=template_name,
+                        description=template_config.get("description", ""),
+                        variables=template_config.get("variables", []),
+                        sections=sections,
+                        parent=template_config.get("parent", None)
+                    )
+                    templates[template_name] = template
+                    self.logger.info(f"从配置文件加载模板: {template_name}")
+                except Exception as e:
+                    self.logger.error(f"加载模板 {template_name} 失败: {e}")
+        else:
+            # 使用默认模板
+            self.logger.warning("未从配置文件加载到模板，使用默认模板")
+            templates = self._get_default_templates()
+
+        return templates
+
+    def _get_default_templates(self) -> Dict[str, PromptTemplate]:
+        """获取默认模板"""
         templates = {}
 
         # 标准模板
@@ -99,6 +245,36 @@ class PromptEngine:
                 PromptSection.INNER_STATE: self._build_inner_state_section,
                 PromptSection.MEMORY_INFORMATION: self._build_detailed_memory_section,
                 PromptSection.REPLY_REQUIREMENTS: self._build_memory_enhanced_reply_requirements_section,
+                PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
+            }
+        )
+
+        # 专业模板
+        templates["professional"] = PromptTemplate(
+            name="professional",
+            description="专业提示词模板",
+            variables=["mask", "strategy", "vectors", "memory"],
+            sections={
+                PromptSection.ROLE_SETTING: self._build_role_setting_section,
+                PromptSection.INTERACTION_MODE: self._build_interaction_mode_section,
+                PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
+                PromptSection.INNER_STATE: self._build_inner_state_section,
+                PromptSection.MEMORY_INFORMATION: self._build_memory_information_section,
+                PromptSection.REPLY_REQUIREMENTS: self._build_professional_reply_requirements_section,
+                PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
+            }
+        )
+
+        # 休闲模板
+        templates["casual"] = PromptTemplate(
+            name="casual",
+            description="休闲提示词模板",
+            variables=["mask", "strategy", "vectors"],
+            sections={
+                PromptSection.ROLE_SETTING: self._build_role_setting_section,
+                PromptSection.INTERACTION_MODE: self._build_interaction_mode_section,
+                PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
+                PromptSection.REPLY_REQUIREMENTS: self._build_casual_reply_requirements_section,
                 PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
             }
         )
@@ -151,6 +327,8 @@ class PromptEngine:
         cache_key = self._generate_cache_key(context)
 
         if cache_key in self.prompt_cache:
+            # 更新缓存顺序（LRU）
+            self.prompt_cache.move_to_end(cache_key)
             self.logger.debug(f"使用缓存的提示词，模板: {template_name}")
             return self.prompt_cache[cache_key]
 
@@ -175,28 +353,69 @@ class PromptEngine:
         prompt = re.sub(r'\n\s*\n\s*\n', '\n\n', prompt)
 
         # 缓存提示词
-        self.prompt_cache[cache_key] = prompt
-
-        # 保持缓存大小
-        if len(self.prompt_cache) > 50:
-            # 移除最旧的条目
-            oldest_key = next(iter(self.prompt_cache))
-            del self.prompt_cache[oldest_key]
+        self._add_to_cache(cache_key, prompt)
 
         self.logger.debug(f"构建提示词完成，长度: {len(prompt)}，模板: {template_name}")
 
         return prompt
 
+    def _add_to_cache(self, key: str, value: str) -> None:
+        """添加到缓存并管理缓存大小"""
+        if key in self.prompt_cache:
+            self.prompt_cache.move_to_end(key)
+        else:
+            self.prompt_cache[key] = value
+            # 如果缓存超过最大大小，删除最旧的条目
+            if len(self.prompt_cache) > self.max_cache_size:
+                self.prompt_cache.popitem(last=False)
+
     def _determine_template(self, memory_context: Optional[Dict], context_analysis: Dict) -> str:
         """确定使用的模板"""
+        # 从配置文件加载模板选择规则
+        rules = self.template_selection_rules
+        
+        if rules:
+            # 按优先级排序规则
+            sorted_rules = sorted(rules, key=lambda x: x.get("priority", 0), reverse=True)
+            
+            for rule in sorted_rules:
+                condition = rule.get("condition")
+                template = rule.get("template")
+                
+                # 检查条件是否满足
+                if condition == "has_resonant_memory":
+                    if memory_context and memory_context.get("resonant_memory"):
+                        return template
+                elif condition == "high_complexity":
+                    complexity = context_analysis.get("topic_complexity", "medium")
+                    if complexity == "high":
+                        return template
+                elif condition == "professional_interaction":
+                    interaction_type = context_analysis.get("interaction_type", "regular")
+                    if interaction_type == "professional":
+                        return template
+                elif condition == "casual_interaction":
+                    interaction_type = context_analysis.get("interaction_type", "regular")
+                    if interaction_type == "casual":
+                        return template
+                elif condition == "default":
+                    return template
+        
+        # 默认逻辑（当配置文件中没有规则时使用）
         # 如果有详细的记忆信息，使用记忆增强模板
         if memory_context and memory_context.get("resonant_memory"):
             return "memory_enhanced"
 
-        # 如果上下文复杂，使用标准模板
+        # 根据上下文复杂度和交互类型选择模板
         complexity = context_analysis.get("topic_complexity", "medium")
+        interaction_type = context_analysis.get("interaction_type", "regular")
+
         if complexity == "high":
             return "standard"
+        elif interaction_type == "professional":
+            return "professional"
+        elif interaction_type == "casual":
+            return "casual"
 
         # 默认使用简洁模板
         return "concise"
@@ -215,11 +434,36 @@ class PromptEngine:
             "sa": round(context.get("current_vectors", {}).get("SA", 0), 2),
             "template": context.get("template_name", "standard"),
             "has_memory": bool(context.get("memory_context", {}).get("resonant_memory")),
-            "version": "2.0"  # 版本号，代码更新后修改此值以使缓存失效
+            "version": "3.0"  # 版本号，代码更新后修改此值以使缓存失效
         }
 
         key_str = json.dumps(key_data, sort_keys=True)
         return hashlib.md5(key_str.encode()).hexdigest()[:16]
+
+    # ============ 通用构建器辅助方法 ============
+
+    def _get_common_ai_ban_list(self) -> List[str]:
+        """获取通用的AI味表达禁止列表"""
+        return self.expression_rules.get("ai_ban_list", [
+            "- ❌ '作为一个AI助手，我认为...' - 不要暴露身份",
+            "- ❌ '从某种意义上来说...' - 过于学术化",
+            "- ❌ '总的来说，'、'综上所述，' - 总结性开头",
+            "- ❌ '首先，其次，最后' - 过于结构化",
+            "- ❌ '值得注意的是，'、'需要强调的是' - 过于正式",
+            "- ❌ '这个问题很有意思，让我来分析一下' - 过于套路化",
+            "- ❌ '我理解你的感受，但是...' - 过于说教",
+            "- ❌ '根据我的理解，' - 过于机械"
+        ])
+
+    def _get_common_natural_expressions(self) -> List[str]:
+        """获取通用的自然表达方式建议"""
+        return self.expression_rules.get("natural_expressions", [
+            "- ✅ 直接表达观点，不绕弯子",
+            "- ✅ 使用口语化表达，如'我觉得'、'我看'",
+            "- ✅ 适当使用省略号'...'表示思考或停顿",
+            "- ✅ 可以用反问句增强互动感，如'你说呢？'、'对吧？'",
+            "- ✅ 使用简短有力的句子，避免长句"
+        ])
 
     # ============ 部分构建器 ============
 
@@ -518,7 +762,7 @@ class PromptEngine:
                 parts.append(f"记忆内容: {memory_info[:200]}...")
 
             relevance = resonant_memory.get("relevance_score", 0.0)
-            if relevance > 0:
+            if relevance > 0.7:  # 只有相关性分数高于0.7才使用记忆
                 parts.append(f"相关性分数: {relevance:.2f}")
 
             # 风险提示
@@ -613,24 +857,19 @@ class PromptEngine:
             "## 核心原则：去AI化表达",
             "你的回复必须像真实的人类对话，而不是AI助手。请严格遵守以下原则：",
             "",
-            "### 禁止的AI味表达（绝对避免）：",
-            "- ❌ '作为一个AI助手，我认为...' - 不要暴露身份",
-            "- ❌ '从某种意义上来说...' - 过于学术化",
-            "- ❌ '总的来说，'、'综上所述，' - 总结性开头",
-            "- ❌ '首先，其次，最后' - 过于结构化",
-            "- ❌ '值得注意的是，'、'需要强调的是' - 过于正式",
-            "- ❌ '这个问题很有意思，让我来分析一下' - 过于套路化",
-            "- ❌ '我理解你的感受，但是...' - 过于说教",
-            "- ❌ '根据我的理解，' - 过于机械",
+            "### 禁止的AI味表达（绝对避免）："
+        ]
+        parts.extend(self._get_common_ai_ban_list())
+        parts.extend([
             "- ❌ 频繁使用'其实'、'其实我觉得' - 过于犹豫",
             "- ❌ 过度使用'呢'、'呀'、'哦'等语气词 - 刻意装可爱",
+            "- ❌ 频繁使用'呵~ 你这话让我想起咱们以前讨论过的一个问题' - 过于重复的固定句式",
+            "- ❌ 过度使用'这让我想起...'、'记得以前...'等回忆性开头 - 避免过度引用记忆",
             "",
-            "### 推荐的自然表达方式：",
-            "- ✅ 直接表达观点，不绕弯子",
-            "- ✅ 使用口语化表达，如'我觉得'、'我看'、'我觉得吧'",
-            "- ✅ 适当使用省略号'...'表示思考或停顿",
-            "- ✅ 可以用反问句增强互动感，如'你说呢？'、'对吧？'",
-            "- ✅ 使用简短有力的句子，避免长句",
+            "### 推荐的自然表达方式："
+        ])
+        parts.extend(self._get_common_natural_expressions())
+        parts.extend([
             "- ✅ 适当使用感叹号表达情绪，但不要过度",
             "- ✅ 可以用'哈哈'、'嗯'等自然语气词",
             "- ✅ 表达个人观点时用'我觉得'、'我看'，而不是'我认为'",
@@ -659,12 +898,15 @@ class PromptEngine:
             "1. 如果有相关记忆信息，可以适当地、自然地引用，但不要生硬地提及",
             "2. 优先考虑用户当前的情感需求",
             "3. 使用真实、诚恳的表达，不虚构事实",
-            "4. 适当的时机可以使用口头禅：'呵~'（但不要过度使用，每3-5句话最多一次）",
+            "4. 避免使用固定口头禅，保持自然表达",
             "5. 回复长度要适中，根据情境重要性调整",
             "6. 避免使用过于正式的词汇，如'鉴于'、'基于'、'通过'等",
             "7. 多用'咱们'代替'我们'，增加亲近感",
-            "8. 可以适当使用'嗯'、'对'、'好的'等简短回应词"
-        ]
+            "8. 可以适当使用'嗯'、'对'、'好的'等简短回应词",
+            "9. 请在回复末尾添加情绪标签，格式为：[EMOTION:情绪类型]",
+            "10. 情绪类型可选值：neutral（中性）、happy（开心）、sad（悲伤）、angry（愤怒）、excited（兴奋）、calm（平静）、surprised（惊讶）、disgusted（厌恶）",
+            "11. 请根据对话内容和上下文选择合适的情绪类型。"
+        ])
 
         return "\n".join(parts)
 
@@ -676,22 +918,17 @@ class PromptEngine:
             "## 核心原则：去AI化表达",
             "你的回复必须像真实的人类对话，而不是AI助手。请严格遵守以下原则：",
             "",
-            "### 禁止的AI味表达（绝对避免）：",
-            "- ❌ '作为一个AI助手，我认为...' - 不要暴露身份",
-            "- ❌ '从某种意义上来说...' - 过于学术化",
-            "- ❌ '总的来说，'、'综上所述，' - 总结性开头",
-            "- ❌ '首先，其次，最后' - 过于结构化",
-            "- ❌ '值得注意的是，'、'需要强调的是' - 过于正式",
-            "- ❌ '这个问题很有意思，让我来分析一下' - 过于套路化",
-            "- ❌ '我理解你的感受，但是...' - 过于说教",
-            "- ❌ '根据我的理解，' - 过于机械",
+            "### 禁止的AI味表达（绝对避免）："
+        ]
+        parts.extend(self._get_common_ai_ban_list())
+        parts.extend([
+            "- ❌ 频繁使用'呵~ 你这话让我想起咱们以前讨论过的一个问题' - 过于重复的固定句式",
+            "- ❌ 过度使用'这让我想起...'、'记得以前...'等回忆性开头 - 避免过度引用记忆",
             "",
-            "### 推荐的自然表达方式：",
-            "- ✅ 直接表达观点，不绕弯子",
-            "- ✅ 使用口语化表达，如'我觉得'、'我看'",
-            "- ✅ 适当使用省略号'...'表示思考或停顿",
-            "- ✅ 可以用反问句增强互动感，如'你说呢？'、'对吧？'",
-            "- ✅ 使用简短有力的句子，避免长句",
+            "### 推荐的自然表达方式："
+        ])
+        parts.extend(self._get_common_natural_expressions())
+        parts.extend([
             "- ✅ 可以用'嗯'、'对'、'好的'等简短回应词",
             "",
             "## 其他要求：",
@@ -700,8 +937,11 @@ class PromptEngine:
             "3. 优先考虑用户当前的情感需求",
             "4. 使用真实、诚恳的表达",
             "5. 多用'咱们'代替'我们'，增加亲近感",
-            "6. 避免使用过于正式的词汇"
-        ]
+            "6. 避免使用过于正式的词汇",
+            "7. 请在回复末尾添加情绪标签，格式为：[EMOTION:情绪类型]",
+            "8. 情绪类型可选值：neutral（中性）、happy（开心）、sad（悲伤）、angry（愤怒）、excited（兴奋）、calm（平静）、surprised（惊讶）、disgusted（厌恶）",
+            "9. 请根据对话内容和上下文选择合适的情绪类型。"
+        ])
 
         return "\n".join(parts)
 
@@ -713,8 +953,87 @@ class PromptEngine:
             "2. 根据风险评估谨慎使用记忆",
             "3. 优先使用推荐的建议方式",
             "4. 保持回复的情感一致性",
-            "5. 不过度强调记忆，自然过渡"
+            "5. 不过度强调记忆，自然过渡",
+            "6. 请在回复末尾添加情绪标签，格式为：[EMOTION:情绪类型]",
+            "7. 情绪类型可选值：neutral（中性）、happy（开心）、sad（悲伤）、angry（愤怒）、excited（兴奋）、calm（平静）、surprised（惊讶）、disgusted（厌恶）",
+            "8. 请根据对话内容和上下文选择合适的情绪类型。"
         ]
+
+        return "\n".join(parts)
+
+    def _build_professional_reply_requirements_section(self, context: Dict) -> str:
+        """构建专业回复要求部分"""
+        parts = [
+            "# 回复要求",
+            "",
+            "## 核心原则：专业且自然的表达",
+            "你的回复应该专业、准确，同时保持自然的人类对话风格。",
+            "",
+            "### 禁止的表达："
+        ]
+        parts.extend(self._get_common_ai_ban_list())
+        parts.extend([
+            "- ❌ 使用过于口语化的表达",
+            "- ❌ 使用俚语或网络用语",
+            "- ❌ 过度使用表情符号",
+            "",
+            "### 推荐的表达方式："
+        ])
+        parts.extend(self._get_common_natural_expressions())
+        parts.extend([
+            "- ✅ 使用专业但易懂的词汇",
+            "- ✅ 保持逻辑清晰的表达",
+            "- ✅ 提供准确的信息和建议",
+            "- ✅ 保持客观中立的态度",
+            "",
+            "## 其他要求：",
+            "1. 确保信息的准确性和可靠性",
+            "2. 提供具体、可操作的建议",
+            "3. 保持适当的专业距离",
+            "4. 避免使用过于情绪化的表达",
+            "5. 回复长度要适中，重点突出",
+            "6. 请在回复末尾添加情绪标签，格式为：[EMOTION:情绪类型]",
+            "7. 情绪类型可选值：neutral（中性）、happy（开心）、sad（悲伤）、angry（愤怒）、excited（兴奋）、calm（平静）、surprised（惊讶）、disgusted（厌恶）",
+            "8. 请根据对话内容和上下文选择合适的情绪类型。"
+        ])
+
+        return "\n".join(parts)
+
+    def _build_casual_reply_requirements_section(self, context: Dict) -> str:
+        """构建休闲回复要求部分"""
+        parts = [
+            "# 回复要求",
+            "",
+            "## 核心原则：轻松自然的表达",
+            "你的回复应该轻松、随意，像朋友之间的对话一样。",
+            "",
+            "### 禁止的表达："
+        ]
+        parts.extend(self._get_common_ai_ban_list())
+        parts.extend([
+            "- ❌ 使用过于正式的词汇",
+            "- ❌ 使用复杂的句式结构",
+            "- ❌ 过于拘谨或生硬的表达",
+            "",
+            "### 推荐的表达方式："
+        ])
+        parts.extend(self._get_common_natural_expressions())
+        parts.extend([
+            "- ✅ 使用轻松幽默的语言",
+            "- ✅ 适当使用俚语和网络用语",
+            "- ✅ 表达真实的情感和反应",
+            "- ✅ 使用简短、活泼的句子",
+            "",
+            "## 其他要求：",
+            "1. 保持对话的轻松愉快",
+            "2. 适当使用表情符号和语气词",
+            "3. 展现真实的个性和态度",
+            "4. 避免过于严肃或沉重的话题",
+            "5. 回复长度要简短，符合休闲对话风格",
+            "6. 请在回复末尾添加情绪标签，格式为：[EMOTION:情绪类型]",
+            "7. 情绪类型可选值：neutral（中性）、happy（开心）、sad（悲伤）、angry（愤怒）、excited（兴奋）、calm（平静）、surprised（惊讶）、disgusted（厌恶）",
+            "8. 请根据对话内容和上下文选择合适的情绪类型。"
+        ])
 
         return "\n".join(parts)
 
@@ -756,6 +1075,8 @@ class PromptEngine:
             "28. ❌ 禁止使用'根据...来看'、'从...可以得出'等推理性表达",
             "29. ❌ 禁止使用'我们可以看到'、'我们可以发现'等观察性表达",
             "30. ❌ 禁止使用'这表明'、'这说明'、'这显示'等结论性表达",
+            "31. ❌ 禁止使用'呵~ 你这话让我想起咱们以前讨论过的一个问题'等固定句式",
+            "32. ❌ 禁止过度使用'这让我想起...'、'记得以前...'等回忆性表达",
             "",
             "## 推荐的自然表达：",
             "- ✅ 使用'我觉得'、'我看'、'我觉得吧'代替'我认为'、'在我看来'",
@@ -798,6 +1119,27 @@ class PromptEngine:
 
         return str(memory_item)[:200]
 
+    def extract_emotion(self, text: str) -> str:
+        """从文本中提取情绪标签"""
+        import re
+        match = re.search(r'\[EMOTION:(\w+)\]', text)
+        if match:
+            emotion = match.group(1).lower()
+            # 验证情绪类型是否有效
+            if self.validate_emotion(emotion):
+                return emotion
+        return "neutral"
+
+    def validate_emotion(self, emotion: str) -> bool:
+        """验证情绪类型是否有效"""
+        valid_emotions = ["neutral", "happy", "sad", "angry", "excited", "calm", "surprised", "disgusted"]
+        return emotion in valid_emotions
+
+    def remove_emotion_tag(self, text: str) -> str:
+        """从文本中移除情绪标签"""
+        import re
+        return re.sub(r'\s*\[EMOTION:\w+\]\s*$', '', text).strip()
+
     def switch_template(self, template_name: str) -> bool:
         """切换模板"""
         if template_name in self.templates:
@@ -808,8 +1150,8 @@ class PromptEngine:
             self.logger.error(f"模板不存在: {template_name}")
             return False
 
-    def create_custom_template(self, name: str, sections: Dict[PromptSection, str],
-                               description: str = "") -> bool:
+    def create_custom_template(self, name: str, sections: Dict[PromptSection, Union[Callable, str]],
+                               description: str = "", parent: Optional[str] = None) -> bool:
         """创建自定义模板"""
         if name in self.templates:
             self.logger.warning(f"模板已存在: {name}")
@@ -819,7 +1161,8 @@ class PromptEngine:
             name=name,
             sections=sections,
             variables=[],
-            description=description
+            description=description,
+            parent=parent
         )
 
         self.templates[name] = template
@@ -837,7 +1180,8 @@ class PromptEngine:
             "description": template.description,
             "sections": [section.value for section in template.sections.keys()],
             "variables": template.variables,
-            "version": template.version
+            "version": template.version,
+            "parent": template.parent
         }
 
     def clear_cache(self):
@@ -851,5 +1195,6 @@ class PromptEngine:
             "total_templates": len(self.templates),
             "active_template": self.active_template,
             "cache_size": len(self.prompt_cache),
-            "template_names": list(self.templates.keys())
+            "template_names": list(self.templates.keys()),
+            "max_cache_size": self.max_cache_size
         }

@@ -133,6 +133,11 @@ class APIServer:
         self.app: Optional[FastAPI] = None
         self.startup_time: Optional[int] = None
         self.connection_manager = ConnectionManager()
+        # 快速响应模式配置
+        self.enable_fast_response = True
+        self.fast_response_threshold = 0.5  # 秒
+        self.fast_response_cache = {}
+        self.fast_response_cache_size = 100
 
     async def startup(self):
         """启动时初始化"""
@@ -199,7 +204,12 @@ class APIServer:
                 "status": "healthy",
                 "service": "zyantine-ai",
                 "session_id": self.session_id,
-                "uptime": int(time.time()) - self.startup_time if self.startup_time else 0
+                "uptime": int(time.time()) - self.startup_time if self.startup_time else 0,
+                "fast_response": {
+                    "enabled": self.enable_fast_response,
+                    "cache_size": len(self.fast_response_cache),
+                    "cache_limit": self.fast_response_cache_size
+                }
             }
 
         @self.app.get("/v1/models", response_model=ModelsResponse)
@@ -252,12 +262,52 @@ class APIServer:
                     if msg.role == "user":
                         user_message = msg.content
 
-
                 if not user_message:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="No user message found"
                     )
+
+                # 快速响应模式检查
+                if self.enable_fast_response and not request.stream:
+                    # 生成缓存键
+                    cache_key = hash((user_message, request.model))
+                    
+                    # 检查快速响应缓存
+                    if cache_key in self.fast_response_cache:
+                        cached_response, timestamp = self.fast_response_cache[cache_key]
+                        if time.time() - timestamp < 3600:  # 1小时过期
+                            print("[快速响应] 使用缓存响应")
+                            # 构建响应
+                            completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
+                            created_time = int(time.time())
+                            response_text = cached_response
+                            
+                            # 估算 token 数
+                            prompt_tokens = sum(len(msg.content) // 4 for msg in request.messages)
+                            completion_tokens = len(response_text) // 4
+                            total_tokens = prompt_tokens + completion_tokens
+
+                            return ChatCompletionResponse(
+                                id=completion_id,
+                                created=created_time,
+                                model=request.model,
+                                choices=[
+                                    ChatCompletionChoice(
+                                        index=0,
+                                        message=ChatMessage(
+                                            role="assistant",
+                                            content=response_text
+                                        ),
+                                        finish_reason="stop"
+                                    )
+                                ],
+                                usage=Usage(
+                                    prompt_tokens=prompt_tokens,
+                                    completion_tokens=completion_tokens,
+                                    total_tokens=total_tokens
+                                )
+                            )
 
                 # 判断是否使用增强版认知流程
                 use_enhanced = request.model == "zyantine-enhanced"
@@ -355,6 +405,19 @@ class APIServer:
                     prompt_tokens = sum(len(msg.content) // 4 for msg in request.messages)
                     completion_tokens = len(response_text) // 4
                     total_tokens = prompt_tokens + completion_tokens
+
+                    # 添加到快速响应缓存
+                    if self.enable_fast_response:
+                        cache_key = hash((user_message, request.model))
+                        # 检查缓存大小
+                        if len(self.fast_response_cache) >= self.fast_response_cache_size:
+                            # 移除最旧的缓存项
+                            oldest_key = min(self.fast_response_cache.keys(), 
+                                           key=lambda k: self.fast_response_cache[k][1])
+                            del self.fast_response_cache[oldest_key]
+                        # 添加新缓存项
+                        self.fast_response_cache[cache_key] = (response_text, time.time())
+                        print(f"[快速响应] 添加到缓存，当前缓存大小: {len(self.fast_response_cache)}")
 
                     # 构建响应
                     completion_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
