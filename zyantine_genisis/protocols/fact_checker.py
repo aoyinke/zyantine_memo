@@ -66,7 +66,23 @@ class FactChecker:
     def final_review(self, final_draft: str, context: Dict) -> Tuple[bool, str]:
         """
         最终输出前的终审，使用大模型进行事实审查
+        
+        Args:
+            final_draft: 最终草稿
+            context: 上下文信息，可能包含 skip_fact_check 标志
+        
+        Returns:
+            (是否通过, 反馈信息)
         """
+        # 检查是否跳过事实检查（降级回复或明确标记）
+        if context.get("skip_fact_check", False):
+            return True, "跳过API事实审查（降级回复或标记跳过）"
+        
+        # 检测是否是降级回复
+        if self._is_fallback_reply(final_draft):
+            print(f"[事实检查器] 检测到降级回复，跳过API事实审查")
+            return True, "降级回复，跳过API事实审查"
+        
         # 提取关键陈述句
         statements = self._extract_statements(final_draft)
 
@@ -77,14 +93,61 @@ class FactChecker:
 
         # 如果有API服务，使用大模型进行审查
         if self.enable_api_verification:
-            return self._api_based_final_review(final_draft, statements, context)
+            try:
+                return self._api_based_final_review(final_draft, statements, context)
+            except Exception as e:
+                print(f"[事实检查器] API审查异常，回退到本地验证: {str(e)}")
+                return self._local_final_review(final_draft, statements, context)
         else:
             # 回退到本地验证
             return self._local_final_review(final_draft, statements, context)
 
+    def _is_fallback_reply(self, reply_text: str) -> bool:
+        """
+        检测是否是降级回复
+        
+        Args:
+            reply_text: 回复文本
+            
+        Returns:
+            是否是降级回复
+        """
+        if not reply_text or not isinstance(reply_text, str):
+            return True
+        
+        # 检查长度（降级回复通常很短）
+        if len(reply_text) < 20:
+            return True
+        
+        # 检查是否是常见的降级回复模式
+        fallback_patterns = [
+            "我收到了你的消息",
+            "我收到了",
+            "收到了",
+            "我思考了一下",
+            "能请你再问一次吗",
+            "我们重新开始吧",
+            "让我重新整理一下",
+            "刚才的思考",
+            "意识流有点波动",
+            "思考过程出现了一些混乱",
+        ]
+        
+        reply_lower = reply_text.lower()
+        for pattern in fallback_patterns:
+            if pattern in reply_lower:
+                return True
+        
+        return False
+    
     def _api_based_final_review(self, final_draft: str, statements: List[str], context: Dict) -> Tuple[bool, str]:
         """基于API的大模型事实审查"""
         try:
+            # 检查API服务是否可用
+            if not self.api_service or not hasattr(self.api_service, 'generate_reply'):
+                print(f"[事实检查器] API服务不可用，回退到本地验证")
+                return self._local_final_review(final_draft, statements, context)
+            
             # 准备审查上下文
             review_context = self._prepare_review_context(context, statements)
 
@@ -112,11 +175,15 @@ class FactChecker:
                 reply_text = verification_result
             
             if not reply_text:
-                print(f"[事实检查器] API审查失败，回退到本地验证")
+                print(f"[事实检查器] API返回空结果，回退到本地验证")
                 return self._local_final_review(final_draft, statements, context)
 
             # 解析API的审查结果
-            is_verified, violations, feedback = self._parse_api_verification_result(reply_text)
+            try:
+                is_verified, violations, feedback = self._parse_api_verification_result(reply_text)
+            except Exception as e:
+                print(f"[事实检查器] 解析API结果失败: {str(e)}，回退到本地验证")
+                return self._local_final_review(final_draft, statements, context)
 
             # 记录审查结果
             self._log_api_review_result(final_draft, is_verified, violations, feedback)

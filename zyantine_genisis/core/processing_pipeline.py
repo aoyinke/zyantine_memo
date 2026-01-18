@@ -56,6 +56,7 @@ class StageContext:
     final_reply: Optional[str] = None
     review_results: List[Dict] = field(default_factory=list)  # 新增：审查结果
     white_dove_check: Dict[str, Any] = field(default_factory=dict)  # 修改：白鸽检查结果
+    is_fallback_reply: bool = False  # 新增：是否是降级回复
 
     # 状态跟踪
     current_stage: Optional[ProcessingStage] = None
@@ -223,13 +224,9 @@ class ProcessingPipeline:
         self.post_hooks[stage].append(hook)
 
     def execute(self, context: StageContext) -> StageContext:
-        """执行管道处理"""
-        print(f"[处理管道] 开始处理，共{len(self.stage_order)}个阶段")
-        print(f"[处理管道] 配置: 并行={self.enable_parallelism}, 快速路径={self.enable_fast_path}")
-
-        # 检查是否启用快速路径
+        """执行管道处理 - 优化版：减少日志输出"""
+        # 检查是否启用快速路径 - 优先判断
         if self.enable_fast_path and self._should_use_fast_path(context):
-            print("[处理管道] 使用快速路径处理")
             return self._execute_fast_path(context)
 
         # 检查是否启用并行处理
@@ -239,7 +236,6 @@ class ProcessingPipeline:
             # 按顺序执行各个阶段
             for stage in self.stage_order:
                 if not self._should_continue(context, stage):
-                    print(f"[处理管道] 提前终止，当前阶段: {stage.value}")
                     break
 
                 # 执行前置钩子
@@ -251,38 +247,58 @@ class ProcessingPipeline:
                 # 执行后置钩子
                 self._execute_hooks(stage, context, pre_hook=False)
 
-        print(f"[处理管道] 处理完成，耗时: {time.time() - context.start_time:.2f}秒")
         return context
 
     def _should_use_fast_path(self, context: StageContext) -> bool:
-        """判断是否应该使用快速路径"""
+        """判断是否应该使用快速路径 - 优化版：更激进地使用快速路径"""
         # 简单请求判断逻辑
         user_input = context.user_input.strip()
         
-        # 长度判断
-        if len(user_input) > 100:
+        # 长度判断 - 放宽到200字符
+        if len(user_input) > 200:
             return False
         
-        # 关键词判断
-        simple_keywords = ["你好", "Hello", "hi", "Hi", "再见", "Bye", "bye", "谢谢", "Thanks", "thanks"]
+        # 简单问候和常见对话 - 直接使用快速路径
+        simple_keywords = [
+            "你好", "Hello", "hello", "hi", "Hi", "嗨", "哈喽",
+            "再见", "Bye", "bye", "拜拜", "晚安", "早安", "早上好", "下午好", "晚上好",
+            "谢谢", "Thanks", "thanks", "感谢", "多谢",
+            "好的", "OK", "ok", "嗯", "哦", "是的", "对", "明白",
+            "在吗", "在不在", "你在吗", "忙吗",
+            "怎么样", "最近", "今天", "昨天", "明天",
+            "吃了吗", "吃饭", "睡觉", "休息",
+            "开心", "高兴", "难过", "伤心", "累", "困",
+            "哈哈", "嘻嘻", "呵呵", "😊", "😄", "👍"
+        ]
         for keyword in simple_keywords:
             if keyword in user_input:
                 return True
         
-        # 问题类型判断（过于简化的判断）
-        if any(prefix in user_input for prefix in ["是什么", "什么是", "how", "How", "what", "What"]):
-            return False
+        # 短对话直接使用快速路径（50字符以内）
+        if len(user_input) <= 50:
+            return True
         
-        return False
+        # 只有复杂问题才使用完整流程
+        complex_indicators = [
+            "为什么", "怎么办", "如何", "请解释", "请分析", "请帮我",
+            "详细", "具体", "深入", "全面",
+            "计划", "方案", "策略", "建议给我",
+            "代码", "程序", "算法", "技术"
+        ]
+        for indicator in complex_indicators:
+            if indicator in user_input:
+                return False
+        
+        # 默认使用快速路径
+        return True
 
     def _execute_fast_path(self, context: StageContext) -> StageContext:
-        """执行快速路径处理"""
-        # 只执行4个核心阶段
+        """执行快速路径处理 - 优化版：最小化处理阶段"""
+        # 快速路径只执行2个核心阶段：预处理和回复生成
+        # 跳过记忆检索和协议审查以获得最快响应
         fast_path_stages = [
             ProcessingStage.PREPROCESS,
-            ProcessingStage.MEMORY_RETRIEVAL,
             ProcessingStage.REPLY_GENERATION,
-            ProcessingStage.PROTOCOL_REVIEW
         ]
 
         for stage in fast_path_stages:
@@ -292,14 +308,25 @@ class ProcessingPipeline:
             if not self._should_continue(context, stage):
                 break
 
-            # 执行前置钩子
-            self._execute_hooks(stage, context, pre_hook=True)
+            # 快速路径跳过钩子以提高速度
+            # 直接执行阶段处理器
+            context = self._execute_stage_fast(stage, context)
 
-            # 执行阶段处理器
-            context = self._execute_stage(stage, context)
+        return context
+    
+    def _execute_stage_fast(self, stage: ProcessingStage, context: StageContext) -> StageContext:
+        """快速执行单个阶段 - 跳过日志和钩子"""
+        handler = self.stages.get(stage)
+        if not handler:
+            return context
 
-            # 执行后置钩子
-            self._execute_hooks(stage, context, pre_hook=False)
+        try:
+            # 直接执行主要处理逻辑，跳过pre/post处理
+            process_result = handler.process(context)
+            if process_result is not None:
+                context = process_result
+        except Exception as e:
+            context.add_error(f"阶段 {stage.value} 失败: {str(e)}")
 
         return context
 
@@ -411,53 +438,36 @@ class ProcessingPipeline:
         return True
 
     def _execute_stage(self, stage: ProcessingStage, context: StageContext) -> StageContext:
-        """执行单个阶段"""
+        """执行单个阶段 - 优化版：减少日志"""
         handler = self.stages.get(stage)
         if not handler:
-            print(f"[处理管道] 警告：未找到阶段处理器: {stage.value}")
             return context
 
         stage_start = time.time()
 
         try:
-            # 执行阶段处理
-            print(f"[处理管道] 执行阶段: {stage.value}")
-
             # 执行处理器的预处理钩子
             pre_result = handler.pre_process(context)
-            # 确保返回的是 StageContext 对象
             if pre_result is not None:
                 context = pre_result
 
             # 执行主要处理逻辑
             process_result = handler.process(context)
-            # 确保返回的是 StageContext 对象
             if process_result is not None:
                 context = process_result
 
             # 执行处理器的后处理钩子
             post_result = handler.post_process(context)
-            # 确保返回的是 StageContext 对象
             if post_result is not None:
                 context = post_result
 
             duration = time.time() - stage_start
             context.add_performance_metric(stage.value, duration)
 
-            # 记录阶段完成
-            context.log_stage_completion(stage, {"duration": duration})
-
-            print(f"[处理管道] 阶段完成: {stage.value}，耗时: {duration:.2f}秒")
-
         except Exception as e:
             duration = time.time() - stage_start
             context.add_performance_metric(stage.value, duration)
             context.add_error(f"阶段 {stage.value} 失败: {str(e)}")
-
-            if not handler.is_optional:
-                print(f"[处理管道] 错误：关键阶段 {stage.value} 失败: {e}")
-            else:
-                print(f"[处理管道] 警告：可选阶段 {stage.value} 失败，继续执行: {e}")
 
         return context
 

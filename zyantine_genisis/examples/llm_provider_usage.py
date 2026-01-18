@@ -43,7 +43,7 @@ def example_2_use_preset_config():
     # 使用DeepSeek预设配置
     deepseek_service = LLMServiceFactory.create_from_preset(
         provider="deepseek",
-        api_key="sk-cd83b6411207408e8539b7623a1c5f35",
+        api_key="your-api-key-here",
         model="deepseek-chat"
     )
 
@@ -77,7 +77,7 @@ def example_3_switch_provider():
     # 创建DeepSeek服务
     deepseek_service = LLMServiceFactory.create_from_preset(
         provider="deepseek",
-        api_key="sk-cd83b6411207408e8539b7623a1c5f35"
+        api_key="your-api-key-here"
     )
 
     # 创建OpenAI服务
@@ -120,7 +120,7 @@ def example_4_custom_config():
     custom_config = {
         "provider": "deepseek",
         "chat_model": "deepseek-chat",
-        "api_key": "sk-cd83b6411207408e8539b7623a1c5f35",
+        "api_key": "your-api-key-here",
         "base_url": "https://api.deepseek.com",
         "timeout": 30,
         "max_retries": 3,
@@ -193,7 +193,7 @@ def example_6_get_statistics():
     # DeepSeek服务
     deepseek_service = LLMServiceFactory.create_from_preset(
         provider="deepseek",
-        api_key="sk-cd83b6411207408e8539b7623a1c5f35"
+        api_key="your-api-key-here"
     )
     if deepseek_service:
         services.append(deepseek_service)

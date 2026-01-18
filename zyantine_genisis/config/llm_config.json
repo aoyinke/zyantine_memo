@@ -35,7 +35,7 @@
       },
       "zhipu": {
         "enabled": false,
-        "api_key": "",
+        "api_key": "199d6b2011494a2f96530090f4cecddc.HDEJEZurnkpgCLkC",
         "base_url": "",
         "chat_model": "glm-4.7",
         "timeout": 30,
@@ -106,18 +106,21 @@
   },
 
   "processing": {
-    "mode": "standard",
+    "mode": "fast",
     "enable_stage_parallelism": false,
-    "max_conversation_history": 1000,
-    "enable_real_time_analysis": true,
+    "enable_fast_path": true,
+    "enable_streaming": true,
+    "max_conversation_history": 50,
+    "enable_real_time_analysis": false,
     "batch_size": 10,
+    "fast_response_threshold": 0.3,
     "stage_configs": {
-      "preprocess": {"enabled": true, "timeout": 5},
-      "memory_retrieval": {"enabled": true, "cache_results": true},
-      "desire_update": {"enabled": true, "update_frequency": "always"},
-      "cognitive_flow": {"enabled": true, "max_iterations": 3},
+      "preprocess": {"enabled": true, "timeout": 2},
+      "memory_retrieval": {"enabled": true, "cache_results": true, "max_results": 5},
+      "desire_update": {"enabled": false, "update_frequency": "on_demand"},
+      "cognitive_flow": {"enabled": false, "max_iterations": 1},
       "reply_generation": {"enabled": true, "fallback_to_template": true},
-      "protocol_review": {"enabled": true, "strict_mode": false}
+      "protocol_review": {"enabled": false, "strict_mode": false}
     }
   },
 
@@ -132,11 +135,11 @@
     "required_tags": []
   },
 
-  "enable_monitoring": true,
+  "enable_monitoring": false,
   "enable_logging": true,
-  "log_level": "INFO",
+  "log_level": "WARNING",
   "log_file": "./logs/zyantine.log",
   "enable_encryption": false,
   "enable_backup": true,
-  "enable_validation": true
+  "enable_validation": false
 }

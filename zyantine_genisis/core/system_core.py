@@ -4,6 +4,7 @@
 import os
 import uuid
 import hashlib
+import traceback
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
@@ -15,7 +16,7 @@ from core.component_manager import ComponentManager
 from protocols.protocol_engine import ProtocolEngine
 from cognition.cognitive_flow_manager import CognitiveFlowManager
 from utils.logger import SystemLogger
-from utils.error_handler import ErrorHandler
+from utils.exception_handler import ErrorHandler
 from core.stage_handlers import (
             PreprocessHandler, MemoryRetrievalHandler,
             ReplyGenerationHandler, ProtocolReviewHandler
@@ -243,9 +244,7 @@ class ZyantineCore:
         return response
 
     def process_input(self, user_input: str) -> str:
-        """处理用户输入"""
-        self.logger.info(f"开始处理用户输入: {user_input[:100]}...")
-
+        """处理用户输入 - 优化版：减少日志和不必要的处理"""
         try:
             # 检查是否是人格选择指令
             personality_selector = self._check_personality_selection(user_input)
@@ -262,9 +261,9 @@ class ZyantineCore:
             if conversation_review:
                 return conversation_review
 
-            # 生成上下文哈希，用于处理流程
-            conversation_history = self.memory_manager.get_conversation_history(limit=10)
-            context_hash = hashlib.md5(str(conversation_history).encode()).hexdigest() if conversation_history else "empty"
+            # 获取对话历史 - 增加数量以保持上下文连贯性
+            # 之前是5条，但这导致AI无法记住前几轮的承诺和话题
+            conversation_history = self.memory_manager.get_conversation_history(limit=20)
 
             # 创建处理上下文
             context = StageContext(
@@ -279,40 +278,69 @@ class ZyantineCore:
 
             # 处理结果
             if context.final_reply:
-                # 记录API使用情况
-                if hasattr(context, 'api_metadata'):
-                    self._record_api_usage(context.api_metadata)
-
-                # 记录交互到记忆系统
-                try:
-                    interaction_data = {
-                        "user_input": user_input,
-                        "system_response": context.final_reply,
-                        "interaction_id": str(uuid.uuid4()),
-                        "context": {
-                            "conversation_history_length": len(context.conversation_history) if isinstance(context.conversation_history, list) else 0
-                        }
-                    }
-                    self.memory_manager.record_interaction(interaction_data)
-                except Exception as e:
-                    self.logger.error(f"记录交互失败: {e}")
-
-                self.logger.info(f"处理成功，响应长度: {len(context.final_reply)}")
+                # 异步记录交互到记忆系统（不阻塞响应）
+                self._async_record_interaction(user_input, context.final_reply)
                 return context.final_reply
             else:
-                # 生成错误响应
-                error_response = self._generate_error_response(
+                return self._generate_error_response(
                     context.errors[-1] if context.errors else "未知错误",
                     user_input
                 )
-                self.logger.error(f"处理失败，使用错误响应: {context.errors}")
-                return error_response
 
         except Exception as e:
             self.logger.error(f"处理过程中发生异常: {str(e)}")
-            import traceback
-            self.logger.error(traceback.format_exc())
             return self._generate_error_response(e, user_input)
+    
+    def _async_record_interaction(self, user_input: str, response: str):
+        """
+        记录交互 - 优化版：先同步记录到短期记忆，再异步记录到长期记忆
+        
+        关键改进：
+        1. 短期记忆同步记录，确保下一轮对话能立即看到上一轮的内容
+        2. 长期记忆异步记录，不阻塞响应
+        """
+        import threading
+        
+        # 1. 同步记录到短期记忆（关键：确保对话历史立即可用）
+        try:
+            conversation_id = self.memory_manager.session_id
+            memory_system = self.memory_manager.memory_system
+            
+            # 构建短期记忆内容
+            short_term_content = f"用户: {user_input}\nAI: {response}"
+            
+            # 同步添加到短期记忆
+            short_term_memory_id = memory_system.add_short_term_memory(
+                content=short_term_content,
+                conversation_id=conversation_id,
+                metadata={
+                    "user_input": user_input,
+                    "system_response": response,
+                    "timestamp": datetime.now().isoformat(),
+                    "memory_type": "conversation"
+                }
+            )
+            
+            self.logger.debug(f"[短期记忆] 同步记录成功: {short_term_memory_id}")
+        except Exception as e:
+            self.logger.warning(f"[短期记忆] 同步记录失败: {e}")
+        
+        # 2. 异步记录到长期记忆（不阻塞响应）
+        def record_to_long_term():
+            try:
+                interaction_data = {
+                    "user_input": user_input,
+                    "system_response": response,
+                    "interaction_id": str(uuid.uuid4()),
+                    "context": {}
+                }
+                self.memory_manager.record_interaction(interaction_data)
+            except Exception:
+                pass  # 静默失败，不影响用户体验
+        
+        # 在后台线程中记录长期记忆
+        thread = threading.Thread(target=record_to_long_term, daemon=True)
+        thread.start()
 
     def _check_personality_selection(self, user_input: str) -> Optional[str]:
         """检查并处理人格选择指令"""

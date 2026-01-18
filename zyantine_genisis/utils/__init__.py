@@ -11,13 +11,26 @@ from .logger import (
     get_performance_logger
 )
 
-from .error_handler import (
+from .exception_handler import (
     ErrorHandler,
+    ExceptionHandler,
+    EnhancedExceptionHandler,
     GracefulShutdown,
+    ZyantineException,
+    APIException,
+    ConfigException,
+    ProcessingException,
+    ValidationException,
     handle_error,
     retry_on_error,
     safe_execute,
-    register_shutdown_handler
+    register_shutdown_handler,
+    handle_api_error,
+    handle_config_error,
+    handle_processing_error,
+    enhanced_handle_error,
+    get_error_statistics,
+    clear_error_statistics
 )
 
 from .validators import (
@@ -65,11 +78,24 @@ __all__ = [
 
     # 错误处理
     "ErrorHandler",
+    "ExceptionHandler",
+    "EnhancedExceptionHandler",
     "GracefulShutdown",
+    "ZyantineException",
+    "APIException",
+    "ConfigException",
+    "ProcessingException",
+    "ValidationException",
     "handle_error",
     "retry_on_error",
     "safe_execute",
     "register_shutdown_handler",
+    "handle_api_error",
+    "handle_config_error",
+    "handle_processing_error",
+    "enhanced_handle_error",
+    "get_error_statistics",
+    "clear_error_statistics",
 
     # 验证器
     "DataValidator",

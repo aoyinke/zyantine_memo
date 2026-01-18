@@ -1,8 +1,16 @@
-from typing import Optional, Any, Dict
+"""
+统一异常处理模块 - 合并了 error_handler 和 exception_handler 的功能
+"""
+from typing import Optional, Any, Dict, Callable
 import traceback
 import logging
+import sys
+import signal
+from functools import wraps
+from datetime import datetime
 
 from memory.memory_exceptions import MemoryException, handle_memory_error
+from .logger import get_logger, StructuredLogger
 
 # 错误级别
 error_levels = {
@@ -267,52 +275,67 @@ def handle_processing_error(exception: Exception,
 
 
 class GracefulShutdown:
-    """优雅关闭处理器"""
+    """优雅关闭处理器（统一版本）"""
     
     def __init__(self):
-        self.shutdown_signaled = False
         self.shutdown_handlers = []
+        self.is_shutting_down = False
     
     def setup_signal_handlers(self):
         """设置信号处理器"""
-        import signal
-        
         def signal_handler(signum, frame):
-            self.shutdown()
+            signal_name = signal.Signals(signum).name
+            self.shutdown(f"收到信号: {signal_name}")
+            sys.exit(0)
         
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        # 注册常见信号
+        signals = [signal.SIGINT, signal.SIGTERM]
+        if hasattr(signal, 'SIGHUP'):
+            signals.append(signal.SIGHUP)
+        
+        for sig in signals:
+            signal.signal(sig, signal_handler)
     
-    def register_shutdown_handler(self, handler, name="unknown"):
-        """注册关闭处理器"""
-        self.shutdown_handlers.append((name, handler))
+    def register_shutdown_handler(self, handler: Callable, name: Optional[str] = None):
+        """
+        注册关闭处理器
+        
+        Args:
+            handler: 处理函数
+            name: 处理器名称
+        """
+        handler_info = {
+            "handler": handler,
+            "name": name or handler.__name__
+        }
+        self.shutdown_handlers.append(handler_info)
     
-    def shutdown(self, reason="收到关闭信号"):
-        """执行优雅关闭"""
-        if self.shutdown_signaled:
+    def shutdown(self, reason: str = "正常关闭"):
+        """执行关闭过程"""
+        if self.is_shutting_down:
             return
         
-        self.shutdown_signaled = True
+        self.is_shutting_down = True
+        logger = get_logger("shutdown")
         
-        logger = logging.getLogger("graceful_shutdown")
         logger.info(f"开始优雅关闭: {reason}")
         
-        # 执行所有注册的关闭处理器
-        for name, handler in self.shutdown_handlers:
+        # 逆序执行关闭处理器（后进先出）
+        for handler_info in reversed(self.shutdown_handlers):
             try:
-                logger.info(f"执行关闭处理器: {name}")
-                handler()
+                handler_name = handler_info["name"]
+                logger.info(f"执行关闭处理器: {handler_name}")
+                handler_info["handler"]()
+                logger.info(f"关闭处理器完成: {handler_name}")
             except Exception as e:
-                logger.error(f"执行关闭处理器 {name} 时出错: {e}")
+                logger.error(f"关闭处理器执行失败 {handler_name}: {str(e)}")
         
         logger.info("优雅关闭完成")
 
 
-def register_shutdown_handler(handler, name="unknown"):
-    """注册关闭处理器"""
-    shutdown_handler = GracefulShutdown()
-    shutdown_handler.register_shutdown_handler(handler, name)
-    return shutdown_handler
+def register_shutdown_handler(handler: Callable, name: Optional[str] = None):
+    """注册关闭处理器（快捷函数）"""
+    return global_shutdown_handler.register_shutdown_handler(handler, name)
 
 
 class EnhancedExceptionHandler(ExceptionHandler):
@@ -492,3 +515,116 @@ def get_error_statistics():
 def clear_error_statistics():
     """清除错误统计信息（快捷函数）"""
     return enhanced_exception_handler.clear_error_statistics()
+
+
+# ============ 兼容层：ErrorHandler 类 ============
+# 为了向后兼容，提供 ErrorHandler 类作为 EnhancedExceptionHandler 的包装
+class ErrorHandler:
+    """错误处理器（兼容层，使用 EnhancedExceptionHandler）"""
+    
+    def __init__(self, logger_name: str = "error_handler"):
+        self.logger = StructuredLogger(logger_name)
+        self.error_stats = {
+            "total_errors": 0,
+            "by_type": {},
+            "by_function": {}
+        }
+        # 使用增强的异常处理器
+        self._enhanced_handler = EnhancedExceptionHandler(logging.getLogger(logger_name))
+    
+    def handle_error(self, error: Exception,
+                     context: Optional[Dict] = None,
+                     raise_again: bool = False,
+                     custom_message: Optional[str] = None):
+        """
+        处理错误
+        
+        Args:
+            error: 异常对象
+            context: 上下文信息
+            raise_again: 是否重新抛出异常
+            custom_message: 自定义错误消息
+        """
+        # 收集错误信息
+        error_info = {
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "traceback": traceback.format_exc(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        if context:
+            error_info["context"] = context
+        
+        # 更新统计
+        self.error_stats["total_errors"] += 1
+        error_type = error_info["error_type"]
+        self.error_stats["by_type"][error_type] = self.error_stats["by_type"].get(error_type, 0) + 1
+        
+        # 记录错误
+        self.logger.error(
+            custom_message or f"发生错误: {error_type}",
+            **error_info
+        )
+        
+        # 使用增强处理器处理异常
+        context_str = custom_message if custom_message else None
+        handled_exception = self._enhanced_handler.handle_exception(
+            error,
+            context=context_str,
+            function_name=context.get("function") if context else None
+        )
+        
+        # 如果需要重新抛出
+        if raise_again:
+            raise handled_exception
+    
+    def retry_on_error(self, max_retries: int = 3,
+                       delay: float = 1.0,
+                       backoff: float = 2.0,
+                       exceptions: tuple = (Exception,)):
+        """装饰器：在发生错误时重试"""
+        return self._enhanced_handler.retry_on_error(max_retries, delay, backoff, exceptions)
+    
+    def safe_execute(self, func: Callable,
+                     default_return: Any = None,
+                     log_error: bool = True,
+                     context: Optional[Dict] = None,
+                     *args, **kwargs) -> Any:
+        """安全执行函数"""
+        return self._enhanced_handler.safe_execute(
+            func,
+            default_return=default_return,
+            log_error=log_error,
+            context=str(context) if context else None,
+            *args, **kwargs
+        )
+    
+    def get_error_statistics(self) -> Dict[str, Any]:
+        """获取错误统计信息"""
+        return {
+            "total_errors": self.error_stats["total_errors"],
+            "by_type": self.error_stats["by_type"],
+            "by_function": self.error_stats["by_function"],
+            "error_rate": self._calculate_error_rate()
+        }
+    
+    def _calculate_error_rate(self) -> float:
+        """计算错误率（简化版本）"""
+        total_calls = 1000  # 假设值，实际应用中应该从其他地方获取
+        if total_calls > 0:
+            return (self.error_stats["total_errors"] / total_calls) * 100
+        return 0.0
+    
+    def clear_statistics(self):
+        """清除统计信息"""
+        self.error_stats = {
+            "total_errors": 0,
+            "by_type": {},
+            "by_function": {}
+        }
+        self._enhanced_handler.clear_error_statistics()
+
+
+# 全局实例
+global_shutdown_handler = GracefulShutdown()

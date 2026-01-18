@@ -91,114 +91,208 @@ class ProtocolEngine:
 
         Args:
             draft: 原始草稿
-            context: 上下文信息
+            context: 上下文信息，可能包含 skip_fact_check 标志
 
         Returns:
             (最终文本, 协议执行摘要)
         """
+        # 初始化默认返回值，确保始终返回有效字典
+        default_summary = {
+            "timestamp": datetime.now().isoformat(),
+            "original_draft_length": len(draft) if draft else 0,
+            "final_text_length": len(draft) if draft else 0,
+            "protocol_steps": {},
+            "conflicts_detected": [],
+            "conflicts_resolved": [],
+            "total_reduction": 0,
+            "total_processing_time": 0
+        }
+        
         start_time = datetime.now()
         protocol_summary = {
             "timestamp": datetime.now().isoformat(),
-            "original_draft_length": len(draft),
+            "original_draft_length": len(draft) if draft else 0,
             "protocol_steps": {},
             "conflicts_detected": [],
             "conflicts_resolved": []
         }
 
-        current_text = draft
+        current_text = draft if draft else ""
         protocol_results = {}
 
-        # 1. 事实检查
-        if self.fact_checker:
-            step_start = datetime.now()
-            is_verified, feedback = self.fact_checker.final_review(current_text, context)
-            step_time = (datetime.now() - step_start).total_seconds()
+        try:
+            # 1. 事实检查（根据上下文决定是否跳过）
+            skip_fact_check = context.get("skip_fact_check", False)
             
-            protocol_results["fact_check"] = {
-                "status": "passed" if is_verified else "failed",
-                "feedback": feedback,
-                "processing_time": step_time
-            }
-            
-            if not is_verified:
+            if self.fact_checker and not skip_fact_check:
+                try:
+                    step_start = datetime.now()
+                    is_verified, feedback = self.fact_checker.final_review(current_text, context)
+                    step_time = (datetime.now() - step_start).total_seconds()
+                    
+                    # 确保feedback是字符串
+                    feedback = str(feedback) if feedback else ""
+                    
+                    protocol_results["fact_check"] = {
+                        "status": "passed" if is_verified else "failed",
+                        "feedback": feedback,
+                        "processing_time": step_time
+                    }
+                    
+                    if not is_verified:
+                        protocol_summary["protocol_steps"]["fact_check"] = {
+                            "status": "failed",
+                            "feedback": feedback,
+                            "action": "需要重新生成或修改草稿"
+                        }
+                    else:
+                        protocol_summary["protocol_steps"]["fact_check"] = {
+                            "status": "passed",
+                            "feedback": feedback
+                        }
+                except Exception as e:
+                    # 事实检查失败，记录但不中断流程
+                    error_msg = f"事实检查失败: {str(e)}"
+                    print(f"[协议引擎] {error_msg}")
+                    protocol_results["fact_check"] = {
+                        "status": "error",
+                        "feedback": error_msg,
+                        "processing_time": 0
+                    }
+                    protocol_summary["protocol_steps"]["fact_check"] = {
+                        "status": "error",
+                        "feedback": error_msg
+                    }
+            elif skip_fact_check:
+                # 跳过事实检查
                 protocol_summary["protocol_steps"]["fact_check"] = {
-                    "status": "failed",
-                    "feedback": feedback,
-                    "action": "需要重新生成或修改草稿"
-                }
-            else:
-                protocol_summary["protocol_steps"]["fact_check"] = {
-                    "status": "passed",
-                    "feedback": feedback
+                    "status": "skipped",
+                    "feedback": "跳过事实检查（降级回复或标记跳过）"
                 }
 
-        # 2. 长度规整（需要认知快照）
-        if self.length_regulator and "cognitive_snapshot" in context:
-            step_start = datetime.now()
-            original_length = len(current_text)
-            current_text = self.length_regulator.regulate(current_text, context["cognitive_snapshot"])
-            step_time = (datetime.now() - step_start).total_seconds()
+            # 2. 长度规整（需要认知快照）
+            if self.length_regulator and context.get("cognitive_snapshot"):
+                try:
+                    step_start = datetime.now()
+                    original_length = len(current_text)
+                    regulated_text = self.length_regulator.regulate(current_text, context["cognitive_snapshot"])
+                    # 确保返回的是字符串
+                    current_text = regulated_text if regulated_text else current_text
+                    step_time = (datetime.now() - step_start).total_seconds()
+                    
+                    protocol_results["length_regulation"] = {
+                        "status": "applied",
+                        "original_length": original_length,
+                        "new_length": len(current_text),
+                        "reduction": original_length - len(current_text),
+                        "processing_time": step_time
+                    }
+                    
+                    protocol_summary["protocol_steps"]["length_regulation"] = {
+                        "status": "applied",
+                        "new_length": len(current_text),
+                        "reduction": protocol_summary["original_draft_length"] - len(current_text)
+                    }
+                except Exception as e:
+                    error_msg = f"长度规整失败: {str(e)}"
+                    print(f"[协议引擎] {error_msg}")
+                    protocol_results["length_regulation"] = {
+                        "status": "error",
+                        "feedback": error_msg,
+                        "processing_time": 0
+                    }
+
+            # 3. 表达验证
+            if self.expression_validator:
+                try:
+                    step_start = datetime.now()
+                    final_text, violations = self.expression_validator.validate_and_transform(current_text)
+                    step_time = (datetime.now() - step_start).total_seconds()
+                    
+                    # 确保返回值有效
+                    final_text = final_text if final_text else current_text
+                    violations = violations if isinstance(violations, list) else []
+                    
+                    protocol_results["expression_validation"] = {
+                        "status": "passed" if not violations else "violations_found",
+                        "violations_count": len(violations),
+                        "violations": violations[:3] if violations else [],
+                        "processing_time": step_time
+                    }
+                    
+                    protocol_summary["protocol_steps"]["expression_validation"] = {
+                        "status": "passed" if not violations else "violations_found",
+                        "violations_count": len(violations),
+                        "violations": violations[:3] if violations else []
+                    }
+                    current_text = final_text
+                except Exception as e:
+                    error_msg = f"表达验证失败: {str(e)}"
+                    print(f"[协议引擎] {error_msg}")
+                    protocol_results["expression_validation"] = {
+                        "status": "error",
+                        "feedback": error_msg,
+                        "processing_time": 0
+                    }
+
+            # 检测冲突
+            try:
+                conflicts = self._detect_conflicts(protocol_results)
+                if conflicts and isinstance(conflicts, list):
+                    protocol_summary["conflicts_detected"] = conflicts
+                    
+                    # 解决冲突
+                    resolved_text, resolution_summary = self._resolve_conflicts(
+                        conflicts, current_text, context, protocol_results
+                    )
+                    current_text = resolved_text if resolved_text else current_text
+                    protocol_summary["conflicts_resolved"] = resolution_summary if isinstance(resolution_summary, list) else []
+            except Exception as e:
+                error_msg = f"冲突检测/解决失败: {str(e)}"
+                print(f"[协议引擎] {error_msg}")
+                protocol_summary["conflicts_detected"] = []
+
+            # 更新性能统计
+            total_time = (datetime.now() - start_time).total_seconds()
+            try:
+                self._update_protocol_performance(protocol_results, total_time, conflicts if 'conflicts' in locals() else [])
+            except Exception:
+                pass  # 性能统计失败不影响主流程
+
+            # 更新摘要
+            protocol_summary["final_text_length"] = len(current_text) if current_text else 0
+            protocol_summary["total_reduction"] = protocol_summary["original_draft_length"] - protocol_summary["final_text_length"]
+            protocol_summary["total_processing_time"] = total_time
+
+            # 确保所有必需字段都存在
+            if "protocol_steps" not in protocol_summary:
+                protocol_summary["protocol_steps"] = {}
+            if "conflicts_detected" not in protocol_summary:
+                protocol_summary["conflicts_detected"] = []
+            if "conflicts_resolved" not in protocol_summary:
+                protocol_summary["conflicts_resolved"] = []
+
+            # 记录协议执行
+            try:
+                self._log_protocol_execution(protocol_summary)
+            except Exception:
+                pass  # 日志记录失败不影响主流程
+
+            return current_text, protocol_summary
+
+        except Exception as e:
+            # 发生严重错误，返回默认值
+            error_msg = f"协议执行失败: {str(e)}"
+            print(f"[协议引擎] {error_msg}")
             
-            protocol_results["length_regulation"] = {
-                "status": "applied",
-                "original_length": original_length,
-                "new_length": len(current_text),
-                "reduction": original_length - len(current_text),
-                "processing_time": step_time
+            # 返回原始草稿和错误摘要
+            default_summary["protocol_steps"]["error"] = {
+                "status": "failed",
+                "feedback": error_msg
             }
+            default_summary["total_processing_time"] = (datetime.now() - start_time).total_seconds()
             
-            protocol_summary["protocol_steps"]["length_regulation"] = {
-                "status": "applied",
-                "new_length": len(current_text),
-                "reduction": protocol_summary["original_draft_length"] - len(current_text)
-            }
-
-        # 3. 表达验证
-        if self.expression_validator:
-            step_start = datetime.now()
-            final_text, violations = self.expression_validator.validate_and_transform(current_text)
-            step_time = (datetime.now() - step_start).total_seconds()
-            
-            protocol_results["expression_validation"] = {
-                "status": "passed" if not violations else "violations_found",
-                "violations_count": len(violations),
-                "violations": violations[:3] if violations else [],
-                "processing_time": step_time
-            }
-            
-            protocol_summary["protocol_steps"]["expression_validation"] = {
-                "status": "passed" if not violations else "violations_found",
-                "violations_count": len(violations),
-                "violations": violations[:3] if violations else []
-            }
-            current_text = final_text
-
-        # 检测冲突
-        conflicts = self._detect_conflicts(protocol_results)
-        if conflicts:
-            protocol_summary["conflicts_detected"] = conflicts
-            
-            # 解决冲突
-            resolved_text, resolution_summary = self._resolve_conflicts(
-                conflicts, current_text, context, protocol_results
-            )
-            current_text = resolved_text
-            protocol_summary["conflicts_resolved"] = resolution_summary
-
-        # 更新性能统计
-        total_time = (datetime.now() - start_time).total_seconds()
-        self._update_protocol_performance(protocol_results, total_time, conflicts)
-
-        # 更新摘要
-        protocol_summary["final_text_length"] = len(current_text)
-        protocol_summary["total_reduction"] = protocol_summary["original_draft_length"] - protocol_summary[
-            "final_text_length"]
-        protocol_summary["total_processing_time"] = total_time
-
-        # 记录协议执行
-        self._log_protocol_execution(protocol_summary)
-
-        return current_text, protocol_summary
+            return draft if draft else "", default_summary
 
     def _log_protocol_execution(self, protocol_summary: Dict):
         """记录协议执行过程"""

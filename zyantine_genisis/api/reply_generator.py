@@ -224,14 +224,15 @@ class APIBasedReplyGenerator:
             self.logger.debug("使用缓存的提示词")
             return self.prompt_cache[cache_key]
 
-        # 使用提示词引擎构建
+        # 使用提示词引擎构建 - 新增conversation_history参数以保持话题连贯性
         prompt = self.prompt_engine.build_prompt(
             action_plan=context.action_plan,
             growth_result=context.growth_result,
             context_analysis=context.context_analysis,
             core_identity=context.core_identity,
             current_vectors=context.current_vectors,
-            memory_context=context.memory_context
+            memory_context=context.memory_context,
+            conversation_history=context.conversation_history  # 新增：传递对话历史
         )
 
         # 缓存提示词

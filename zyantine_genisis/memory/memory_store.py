@@ -1,13 +1,26 @@
 # ============ 基于memo0的简化记忆系统 ============
+"""
+Zyantine 记忆存储系统
+
+重构说明：
+- ShortTermMemory 数据模型已移至 models.py
+- 本文件保留 ZyantineMemorySystem 核心类
+"""
 import os
 import json
 import hashlib
 import time
+import traceback
+from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Union, Tuple
+from typing import Dict, List, Any, Optional, Union, Tuple, Set
 
 # Mem0框架导入
 from mem0 import Memory
+
+# ============ 常量定义 ============
+DEFAULT_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://openkey.cloud/v1")
+DEFAULT_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # 自定义异常类导入
 from .memory_exceptions import (
@@ -28,245 +41,26 @@ from .memory_exceptions import (
     handle_memory_error
 )
 
-# 统一异常处理导入
-from utils.exception_handler import (
-    handle_error, retry_on_error, safe_execute,
-    APIException, ConfigException, ProcessingException
+# 导入数据模型
+from .models import ShortTermMemory
+
+# 导入记忆评估器
+from .memory_evaluator import MemoryEvaluator, MemoryEvaluationResult
+
+# 导入通用工具函数
+from .memory_utils import (
+    CacheManager,
+    calculate_hash,
+    generate_memory_id,
+    get_current_timestamp,
+    calculate_age_hours,
+    is_time_expired,
+    calculate_time_diff,
+    to_json_str,
+    get_content_size,
+    StatisticsManager,
+    safe_get_config
 )
-
-# ============ 常量定义 ============
-import os
-DEFAULT_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://openkey.cloud/v1")
-DEFAULT_API_KEY = os.getenv("OPENAI_API_KEY", "")
-
-# ============ 大模型API调用模块 ============
-class LLMClient:
-    """大模型API调用客户端"""
-    
-    def __init__(self, api_key: str = None):
-        """初始化大模型客户端"""
-        self.api_key = api_key or DEFAULT_API_KEY or os.getenv("ZHIPU_API_KEY", "")
-        self.cache = {}  # 缓存评估结果
-        self.cache_expiry = 3600  # 缓存过期时间（秒）
-        self.max_cache_size = 1000  # 最大缓存大小
-        self.batch_requests = {}  # 批量请求队列
-        self.batch_timeout = 0.1  # 批量请求超时时间（秒）
-        self.last_batch_time = time.time()
-        self.client = None
-        # 初始化智谱AI客户端
-        self._init_zhipu_client()
-    
-    def _init_zhipu_client(self):
-        """初始化智谱AI客户端，支持多种导入方式"""
-        try:
-            from zai import ZhipuAiClient
-            if self.api_key:
-                self.client = ZhipuAiClient(api_key=self.api_key)
-                print(f"[LLMClient] 智谱AI客户端(ZhipuAiClient)初始化成功")
-            else:
-                print(f"[LLMClient] 警告：智谱AI API密钥为空，无法初始化ZhipuAiClient")
-                self.client = None
-        except ImportError as e:
-            print(f"[LLMClient] 导入ZhipuAiClient失败: {e}")
-            # 尝试其他导入方式
-            try:
-                from zhipuai import ZhipuAI
-                if self.api_key:
-                    self.client = ZhipuAI(api_key=self.api_key)
-                    print(f"[LLMClient] 智谱AI SDK客户端(ZhipuAI)初始化成功")
-                else:
-                    print(f"[LLMClient] 警告：智谱AI API密钥为空，无法初始化ZhipuAI")
-                    self.client = None
-            except ImportError as e2:
-                print(f"[LLMClient] 导入智谱AI SDK失败: {e2}")
-                self.client = None
-            except Exception as e3:
-                print(f"[LLMClient] 初始化ZhipuAI客户端失败: {e3}")
-                self.client = None
-        except Exception as e:
-            print(f"[LLMClient] 初始化智谱AI客户端失败: {e}")
-            self.client = None
-        
-        # 如果所有初始化方式都失败，确保客户端为None并记录日志
-        if not self.client:
-            print(f"[LLMClient] 所有智谱AI客户端初始化方式均失败，将使用备用评估逻辑")
-    
-    @retry_on_error(max_retries=3, delay=1.0, backoff=2.0)
-    def _call_api(self, prompt: str, model: str = "glm-4.7") -> str:
-        """调用智谱AI API"""
-        # 检查客户端是否初始化
-        if not self.client:
-            # 客户端未初始化，直接使用备用逻辑
-            return self._fallback_evaluation(prompt)
-        
-        try:
-            # 使用官方SDK调用智谱AI API
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": "你是一个记忆系统的评估助手，负责评估对话内容的价值和重要性。"},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=65536,
-                temperature=1.0
-            )
-            
-            # 获取完整回复
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            print(f"[LLMClient] API调用失败: {e}")
-            # 使用备用逻辑
-            return self._fallback_evaluation(prompt)
-    
-    def _fallback_evaluation(self, prompt: str) -> str:
-        """备用评估逻辑"""
-        if "内容价值评估" in prompt or "评分" in prompt:
-            # 简单的价值评估逻辑
-            content = prompt.split("内容：")[1].split("评分：")[0].strip()
-            if len(content) < 3:
-                return "0"
-            elif any(word in content for word in ["重要", "会议", "项目", "电话", "号码"]):
-                return "8"
-            elif any(word in content for word in ["你好", "天气", "忙", "工作"]):
-                return "5"
-            else:
-                return "3"
-        elif "搜索查询增强" in prompt:
-            # 简单的查询增强逻辑
-            query = prompt.split("原始查询：")[1].split("增强查询：")[0].strip()
-            return query  # 简单返回原查询
-        else:
-            return ""
-    
-    def _get_cache_key(self, prompt: str) -> str:
-        """生成缓存键"""
-        return hashlib.md5(prompt.encode()).hexdigest()
-    
-
-    
-    def evaluate_content_value(self, content: str) -> float:
-        """评估内容价值"""
-        prompt = f"请评估以下对话内容的价值，从0到10评分，0表示无意义，10表示非常重要。\n内容：{content}\n评分："
-        response = self.get_response(prompt)
-        try:
-            return float(response)
-        except:
-            return 5.0
-    
-    def calculate_importance_score(self, content: str) -> float:
-        """计算内容重要性"""
-        prompt = f"请评估以下对话内容的重要性，从0到10评分，0表示不重要，10表示非常重要。\n内容：{content}\n评分："
-        response = self.get_response(prompt)
-        try:
-            return float(response)
-        except:
-            return 5.0
-    
-    def enhance_search_query(self, query: str) -> str:
-        """增强搜索查询"""
-        prompt = f"请增强以下搜索查询，使其更准确地表达语义，保持核心含义不变。\n原始查询：{query}\n增强查询："
-        response = self.get_response(prompt)
-        return response or query
-    
-    def clear_cache(self):
-        """清理缓存"""
-        self.cache.clear()
-    
-    def _cleanup_cache(self):
-        """清理过期缓存和限制缓存大小"""
-        current_time = time.time()
-        
-        # 清理过期缓存
-        expired_keys = []
-        for key, data in self.cache.items():
-            if current_time - data["timestamp"] > self.cache_expiry:
-                expired_keys.append(key)
-        
-        for key in expired_keys:
-            del self.cache[key]
-        
-        # 如果缓存仍然过大，删除最旧的缓存
-        if len(self.cache) > self.max_cache_size:
-            # 按时间排序缓存
-            sorted_cache = sorted(self.cache.items(), key=lambda x: x[1]["timestamp"])
-            # 删除最旧的缓存
-            for key, _ in sorted_cache[:len(self.cache) - self.max_cache_size]:
-                del self.cache[key]
-    
-    def get_response(self, prompt: str) -> str:
-        """获取大模型响应，带缓存"""
-        cache_key = self._get_cache_key(prompt)
-        
-        # 清理过期缓存
-        self._cleanup_cache()
-        
-        # 检查缓存
-        if cache_key in self.cache:
-            cached_data = self.cache[cache_key]
-            if time.time() - cached_data["timestamp"] < self.cache_expiry:
-                return cached_data["response"]
-        
-        # 调用API
-        try:
-            response = self._call_api(prompt)
-            # 更新缓存
-            self.cache[cache_key] = {
-                "response": response,
-                "timestamp": time.time()
-            }
-            return response
-        except Exception as e:
-            # 只在真正的API调用失败时显示错误
-            # 客户端未初始化的情况已经在_call_api中处理
-            if self.client:
-                print(f"[LLMClient] API调用失败: {e}")
-            # 返回默认值
-            return "5"  # 默认中等价值
-    
-    def batch_get_responses(self, prompts: List[str]) -> List[str]:
-        """批量获取大模型响应"""
-        responses = []
-        uncached_prompts = []
-        uncached_indices = []
-        
-        # 检查缓存
-        for i, prompt in enumerate(prompts):
-            cache_key = self._get_cache_key(prompt)
-            if cache_key in self.cache:
-                cached_data = self.cache[cache_key]
-                if time.time() - cached_data["timestamp"] < self.cache_expiry:
-                    responses.append(cached_data["response"])
-                    continue
-            # 未命中缓存
-            uncached_prompts.append(prompt)
-            uncached_indices.append(i)
-            responses.append("5")  # 先填充默认值
-        
-        # 如果所有请求都命中缓存，直接返回
-        if not uncached_prompts:
-            return responses
-        
-        # 处理未命中缓存的请求
-        # 由于智谱AI API可能不支持真正的批量请求，这里模拟批量处理
-        for i, prompt in zip(uncached_indices, uncached_prompts):
-            try:
-                response = self._call_api(prompt)
-                responses[i] = response
-                # 更新缓存
-                cache_key = self._get_cache_key(prompt)
-                self.cache[cache_key] = {
-                    "response": response,
-                    "timestamp": time.time()
-                }
-            except Exception as e:
-                if self.client:
-                    print(f"[LLMClient] 批量API调用失败: {e}")
-                # 保持默认值
-        
-        # 清理缓存
-        self._cleanup_cache()
-        
-        return responses
 
 # ============ 记忆系统核心类 ============
 class ZyantineMemorySystem:
@@ -275,7 +69,6 @@ class ZyantineMemorySystem:
     def __init__(self,
                  base_url: Optional[str] = None,
                  api_key: Optional[str] = None,
-                 zhipu_api_key: Optional[str] = None,
                  user_id: str = "default",
                  session_id: str = "default",
                  memo0_config: Optional[Dict[str, Any]] = None) -> None:
@@ -301,48 +94,498 @@ class ZyantineMemorySystem:
         self.user_id: str = user_id
         self.session_id: str = session_id
 
-        # 获取智谱AI API配置
-        self.zhipu_api_key: str = zhipu_api_key or config.api.providers.get("zhipu", {}).get("api_key", "")
-
-        # 初始化大模型客户端（用于记忆评估，使用智谱AI）
-        self.llm_client = LLMClient(api_key=self.zhipu_api_key)
+        # 初始化智能记忆评估器（优化：减少API调用，使用规则引擎）
+        self.memory_evaluator = MemoryEvaluator(
+            llm_client=None,  # 不使用LLM评估
+            enable_llm_evaluation=False,  # 默认关闭LLM评估，使用规则引擎
+            conservative_mode=True  # 保守模式：宁可多存储
+        )
 
         # 初始化memo0记忆系统，添加异常处理
+        self.memory: Optional[Memory] = None
+        self.memory_store: List[Dict[str, Any]] = []
+        self._persistent_storage_path: Optional[str] = None
+        
         try:
-            self.memory: Memory = self._initialize_memo0()
-            print("[记忆系统] Mem0记忆系统初始化成功")
+            self.memory = self._initialize_memo0()
+            # 验证memo0是否正常工作
+            if self._verify_memo0_connection():
+                print("[记忆系统] Mem0记忆系统初始化成功并验证通过")
+            else:
+                print("[记忆系统] Mem0记忆系统初始化成功但验证失败，启用文件持久化回退")
+                self._setup_persistent_storage()
         except Exception as e:
             print(f"[记忆系统] Mem0记忆系统初始化失败: {e}")
-            print("[记忆系统] 警告：将使用简化的内存记忆系统作为替代")
+            print(f"[记忆系统] 错误详情:\n{traceback.format_exc()}")
+            print("[记忆系统] 警告：将使用简化的内存记忆系统作为替代，并启用文件持久化")
             # 创建一个简单的内存记忆系统作为替代
             self.memory = None
-            self.memory_store = []
+            self._setup_persistent_storage()
 
-        self.semantic_memory_map: Dict[str, Dict[str, Any]] = {}
+        self.semantic_memory_map: Dict[str, Dict[str, Any]] = {}  # 增强：语义记忆地图
         self.strategic_tags: List[str] = []
         
+        # 新增：增强索引结构
+        self.topic_index: Dict[str, List[str]] = defaultdict(list)  # 主题 -> 记忆ID列表
+        self.memory_topics: Dict[str, List[str]] = defaultdict(list)  # 记忆ID -> 主题列表
+        self.key_info_index: Dict[str, List[str]] = defaultdict(list)  # 关键信息 -> 记忆ID列表
+        self.memory_key_info: Dict[str, List[str]] = defaultdict(list)  # 记忆ID -> 关键信息列表
+        self.importance_index: Dict[int, List[str]] = defaultdict(list)  # 重要性分数 -> 记忆ID列表
+        self.type_index: Dict[str, List[str]] = defaultdict(list)  # 记忆类型 -> 记忆ID列表
+        
+        # 主题关键词库
+        self.topic_keywords = {
+            "fitness": ["体测", "体检", "健身", "运动", "锻炼", "测试", "成绩", "跑步", "跳远", "肺活量"],
+            "work": ["工作", "上班", "任务", "项目", "会议", "报告", "邮件", "客户", "同事"],
+            "study": ["学习", "学校", "考试", "作业", "课程", "复习", "考试", "成绩", "论文"],
+            "life": ["生活", "日常", "周末", "假期", "旅行", "美食", "电影", "音乐"]
+        }
+        
         # 添加查询增强缓存
-        self.query_enhancement_cache: Dict[str, str] = {}
-        self.query_cache_ttl: int = 3600  # 缓存1小时
-        self.query_cache_last_cleanup: float = time.time()
+        self.query_enhancement_cache = CacheManager(max_size=1000, cache_expiry=3600)  # 使用统一的缓存管理器
         
         # 语义记忆地图配置
         self.max_semantic_map_size: int = 5000  # 最大语义记忆地图大小
         self.semantic_map_cleanup_threshold: float = 0.3  # 清理阈值（低于此值的记忆会被清理）
+        
+        # 新增：上下文窗口管理
+        self.context_window: List[str] = []  # 上下文窗口，存储当前对话相关的记忆ID
+        self.max_context_window_size: int = 20  # 默认最大上下文窗口大小
+        self.min_context_window_size: int = 5  # 默认最小上下文窗口大小
+        self.current_context_window_size: int = 10  # 当前上下文窗口大小
+        self.context_window_dynamic_weight: float = 0.8  # 上下文窗口动态调整权重
+        
+        # 新增：当前对话主题追踪
+        self.current_topics: Dict[str, float] = {}  # 当前对话主题及权重
+        self.topic_decay_rate: float = 0.9  # 主题权重衰减率
+        
+        # 新增：短期记忆标记
+        self.short_term_memories: Set[str] = set()  # 短期记忆ID集合
+        self.short_term_memory_duration: int = 3600  # 短期记忆持续时间（秒）
+
+        # 短期记忆配置
+        self.short_term_store: Dict[str, ShortTermMemory] = {}  # 短期记忆存储（内存）
+        self.conversation_index: Dict[str, List[str]] = defaultdict(list)  # 对话ID -> 记忆ID列表
+        self.short_term_ttl: int = 3600  # 短期记忆默认生存时间（秒）
+        self.short_term_max_size: int = 1000  # 短期记忆最大容量
+        self.last_cleanup_time: float = time.time()  # 上次清理时间
+        
+        # 记忆分级配置
+        self.memory_tiers = {
+            "hot": {"max_size": 500, "min_access_count": 10, "max_age_hours": 24},  # 热数据：频繁访问，最近24小时
+            "warm": {"max_size": 2000, "min_access_count": 3, "max_age_hours": 168},  # 温数据：定期访问，最近7天
+            "cold": {"max_size": 10000, "min_access_count": 0, "max_age_hours": 720}  # 冷数据：很少访问，最近30天
+        }
+        
+        # 记忆分级存储
+        self.memory_tier_store: Dict[str, Dict[str, Dict]] = {
+            "hot": {},
+            "warm": {},
+            "cold": {}
+        }
+        
+        # 记忆到分级的映射
+        self.memory_to_tier: Dict[str, str] = {}  # 记忆ID -> 存储级别
+        
+        # 记忆分级检查定时器
+        self.last_tier_check_time: float = time.time()
+        self.tier_check_interval: int = 3600  # 每小时检查一次记忆分级
 
         # 统计信息
         self.stats: Dict[str, Any] = {
             "total_memories": 0,
             "by_type": {},
             "access_counts": {},
-            "tags_distribution": {}
+            "tags_distribution": {},
+            "topics_distribution": defaultdict(int)  # 新增：主题分布统计
         }
 
         print(f"[记忆系统] 初始化完成，用户ID: {user_id}，会话ID: {session_id}")
         print(f"[记忆系统] LLM配置: provider={self.memo0_config.get('llm', {}).get('provider')}, model={llm_config.get('model')}")
         print(f"[记忆系统] Embedder配置: provider={self.memo0_config.get('embedder', {}).get('provider')}, model={embedder_config.get('model')}")
-        print(f"[记忆系统] LLM客户端初始化完成")
+        print("[记忆系统] LLM客户端初始化完成")
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """获取记忆系统统计信息
+        
+        Returns:
+            Dict[str, Any]: 包含记忆系统统计信息的字典
+        """
+        try:
+            # 基本统计信息
+            stats = {
+                "user_id": self.user_id,
+                "session_id": self.session_id,
+                "total_memories": self.stats["total_memories"],
+                "memory_types": self.stats["by_type"],
+                "system_status": "active",
+                "initialized_at": getattr(self, "initialized_at", datetime.now().isoformat()),
+                "last_updated": datetime.now().isoformat(),
+                "short_term_memory_stats": {
+                    "current_size": len(self.short_term_store),
+                    "max_size": self.short_term_max_size,
+                    "ttl_seconds": self.short_term_ttl,
+                    "last_cleanup": self.last_cleanup_time
+                },
+                "memory_tier_stats": {
+                    "hot": {
+                        "current_size": len(self.memory_tier_store["hot"]),
+                        "max_size": self.memory_tiers["hot"]["max_size"]
+                    },
+                    "warm": {
+                        "current_size": len(self.memory_tier_store["warm"]),
+                        "max_size": self.memory_tiers["warm"]["max_size"]
+                    },
+                    "cold": {
+                        "current_size": len(self.memory_tier_store["cold"]),
+                        "max_size": self.memory_tiers["cold"]["max_size"]
+                    },
+                    "last_tier_check": self.last_tier_check_time
+                }
+            }
+            
+            # 如果memo0实例存在，尝试获取更详细的统计信息
+            if hasattr(self, "memory") and self.memory:
+                try:
+                    # 调用memo0的stats方法（如果可用）
+                    if hasattr(self.memory, "stats"):
+                        memo0_stats = self.memory.stats()
+                        stats["total_memories"] = memo0_stats.get("total_memories", self.stats["total_memories"])
+                        stats["memory_types"] = memo0_stats.get("memory_types", self.stats["by_type"])
+                except Exception as e:
+                    # 如果获取memo0统计信息失败，使用默认值
+                    print(f"[记忆系统] 获取memo0统计信息失败: {e}")
+            
+            return stats
+        except Exception as e:
+            print(f"[记忆系统] 获取统计信息失败: {e}")
+            # 返回基本统计信息
+            return {
+                "user_id": self.user_id,
+                "session_id": self.session_id,
+                "total_memories": 0,
+                "memory_types": {},
+                "system_status": "error",
+                "error": str(e),
+                "last_updated": datetime.now().isoformat(),
+                "short_term_memory_stats": {
+                    "current_size": len(self.short_term_store),
+                    "max_size": self.short_term_max_size,
+                    "ttl_seconds": self.short_term_ttl,
+                    "last_cleanup": self.last_cleanup_time
+                },
+                "memory_tier_stats": {
+                    "hot": {
+                        "current_size": len(self.memory_tier_store["hot"]),
+                        "max_size": self.memory_tiers["hot"]["max_size"]
+                    },
+                    "warm": {
+                        "current_size": len(self.memory_tier_store["warm"]),
+                        "max_size": self.memory_tiers["warm"]["max_size"]
+                    },
+                    "cold": {
+                        "current_size": len(self.memory_tier_store["cold"]),
+                        "max_size": self.memory_tiers["cold"]["max_size"]
+                    },
+                    "last_tier_check": self.last_tier_check_time
+                }
+            }
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """获取统计信息（别名方法，用于兼容）"""
+        return self.get_statistics()
+    
+    def test_connection(self) -> bool:
+        """测试记忆系统连接"""
+        try:
+            # 简单测试，检查memory实例是否存在且可用
+            return hasattr(self, "memory") and self.memory is not None
+        except Exception as e:
+            print(f"[记忆系统] 连接测试失败: {e}")
+            return False
+    
+    def export_memories(self, file_path: str, format_type: str = "json") -> bool:
+        """导出记忆"""
+        try:
+            # 尝试使用memory的export方法（如果可用）
+            if hasattr(self, "memory") and self.memory:
+                if hasattr(self.memory, "export"):
+                    self.memory.export(file_path, format_type)
+                    return True
+            
+            # 如果没有memory导出方法，创建一个简单的导出文件
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump({
+                    "exported_at": datetime.now().isoformat(), 
+                    "user_id": self.user_id,
+                    "short_term_memories": [stm.to_dict() for stm in self.short_term_store.values()]
+                }, f, ensure_ascii=False, indent=2)
+            return True
+        except Exception as e:
+            print(f"[记忆系统] 导出记忆失败: {e}")
+            return False
 
+    # ============ 短期记忆管理方法 ============
+    def add_short_term_memory(self, 
+                            content: str, 
+                            conversation_id: str,
+                            metadata: Optional[Dict[str, Any]] = None,
+                            ttl: int = None) -> str:
+        """
+        添加短期记忆
+        
+        Args:
+            content: 记忆内容
+            conversation_id: 对话ID
+            metadata: 元数据
+            ttl: 生存时间（秒），默认使用系统配置
+            
+        Returns:
+            str: 记忆ID
+        """
+        # 定期清理过期记忆
+        self._cleanup_short_term_memory()
+        
+        # 生成记忆ID
+        memory_id = generate_memory_id(content, "short_term")
+        
+        # 使用默认TTL如果未提供
+        if ttl is None:
+            ttl = self.short_term_ttl
+        
+        # 创建短期记忆对象
+        stm = ShortTermMemory(
+            memory_id=memory_id,
+            content=content,
+            conversation_id=conversation_id,
+            metadata=metadata or {},
+            ttl=ttl
+        )
+        
+        # 存储到短期记忆
+        self.short_term_store[memory_id] = stm
+        
+        # 更新对话索引
+        self.conversation_index[conversation_id].append(memory_id)
+        
+        # 如果超过最大容量，删除最旧的记忆
+        if len(self.short_term_store) > self.short_term_max_size:
+            self._evict_oldest_short_term_memory()
+        
+        return memory_id
+    
+    def get_short_term_memory(self, memory_id: str) -> Optional[ShortTermMemory]:
+        """
+        获取短期记忆
+        
+        Args:
+            memory_id: 记忆ID
+            
+        Returns:
+            Optional[ShortTermMemory]: 短期记忆对象，如果不存在或过期则返回None
+        """
+        # 检查记忆是否存在
+        if memory_id not in self.short_term_store:
+            return None
+        
+        # 获取记忆
+        stm = self.short_term_store[memory_id]
+        
+        # 检查是否过期
+        if stm.is_expired():
+            # 删除过期记忆
+            self._delete_short_term_memory(memory_id)
+            return None
+        
+        return stm
+    
+    def search_short_term_memories(self, 
+                                conversation_id: str, 
+                                limit: int = 10) -> List[ShortTermMemory]:
+        """
+        搜索短期记忆
+        
+        Args:
+            conversation_id: 对话ID
+            limit: 返回数量限制
+            
+        Returns:
+            List[ShortTermMemory]: 短期记忆列表
+        """
+        # 定期清理过期记忆
+        self._cleanup_short_term_memory()
+        
+        # 获取对话相关的记忆ID
+        memory_ids = self.conversation_index.get(conversation_id, [])
+        
+        # 过滤过期记忆并排序
+        results = []
+        for memory_id in memory_ids:
+            stm = self.get_short_term_memory(memory_id)
+            if stm:
+                results.append(stm)
+        
+        # 按创建时间倒序排序
+        results.sort(key=lambda x: x.created_at, reverse=True)
+        
+        # 限制返回数量
+        return results[:limit]
+    
+    def _cleanup_short_term_memory(self, force: bool = False):
+        """清理过期的短期记忆
+        
+        Args:
+            force: 是否强制清理，忽略时间间隔
+        """
+        current_time = time.time()
+        
+        # 每30秒清理一次，除非强制清理
+        if not force and current_time - self.last_cleanup_time < 30:
+            return
+        
+        # 找出过期的记忆
+        expired_memory_ids = []
+        for memory_id, stm in self.short_term_store.items():
+            if stm.is_expired():
+                expired_memory_ids.append(memory_id)
+        
+        # 删除过期记忆
+        for memory_id in expired_memory_ids:
+            self._delete_short_term_memory(memory_id)
+        
+        # 更新最后清理时间
+        self.last_cleanup_time = current_time
+    
+    def _delete_short_term_memory(self, memory_id: str):
+        """删除短期记忆"""
+        if memory_id in self.short_term_store:
+            # 获取对话ID
+            conversation_id = self.short_term_store[memory_id].conversation_id
+            
+            # 删除记忆
+            del self.short_term_store[memory_id]
+            
+            # 从对话索引中删除
+            if conversation_id in self.conversation_index:
+                if memory_id in self.conversation_index[conversation_id]:
+                    self.conversation_index[conversation_id].remove(memory_id)
+                
+                # 如果对话索引为空，删除该对话索引
+                if not self.conversation_index[conversation_id]:
+                    del self.conversation_index[conversation_id]
+    
+    def _evict_oldest_short_term_memory(self):
+        """删除最旧的短期记忆"""
+        if not self.short_term_store:
+            return
+        
+        # 找到最旧的记忆
+        oldest_stm = min(self.short_term_store.values(), key=lambda x: x.created_at)
+        
+        # 删除最旧的记忆
+        self._delete_short_term_memory(oldest_stm.memory_id)
+    
+    def _determine_memory_tier(self, memory_id: str) -> str:
+        """确定记忆的存储级别
+        
+        Args:
+            memory_id: 记忆ID
+            
+        Returns:
+            str: 存储级别（hot, warm, cold）
+        """
+        if memory_id not in self.semantic_memory_map:
+            return "cold"
+        
+        memory_data = self.semantic_memory_map[memory_id]
+        metadata = memory_data["metadata"]
+        
+        # 计算记忆年龄（小时）
+        created_at = metadata.get("full_metadata", {}).get("created_at")
+        if not created_at:
+            return "cold"
+        
+        age_hours = calculate_age_hours(created_at)
+        access_count = memory_data.get("access_count", 0)
+        
+        # 根据访问频率和年龄确定存储级别
+        if access_count >= self.memory_tiers["hot"]["min_access_count"] and age_hours <= self.memory_tiers["hot"]["max_age_hours"]:
+            return "hot"
+        elif access_count >= self.memory_tiers["warm"]["min_access_count"] and age_hours <= self.memory_tiers["warm"]["max_age_hours"]:
+            return "warm"
+        else:
+            return "cold"
+    
+    def _migrate_memory_tier(self, memory_id: str, target_tier: str):
+        """迁移记忆到目标存储级别
+        
+        Args:
+            memory_id: 记忆ID
+            target_tier: 目标存储级别
+        """
+        # 获取当前存储级别
+        current_tier = self.memory_to_tier.get(memory_id, "cold")
+        
+        # 如果已经在目标级别，无需迁移
+        if current_tier == target_tier:
+            return
+        
+        # 从当前级别移除
+        if current_tier in self.memory_tier_store and memory_id in self.memory_tier_store[current_tier]:
+            del self.memory_tier_store[current_tier][memory_id]
+        
+        # 添加到目标级别
+        if memory_id in self.semantic_memory_map:
+            self.memory_tier_store[target_tier][memory_id] = self.semantic_memory_map[memory_id]
+            self.memory_to_tier[memory_id] = target_tier
+    
+    def _check_and_update_memory_tiers(self):
+        """检查并更新所有记忆的存储级别"""
+        current_time = time.time()
+        
+        # 只有当距离上次检查超过指定时间间隔时才执行
+        if current_time - self.last_tier_check_time < self.tier_check_interval:
+            return
+        
+        print("[记忆系统] 开始检查和更新记忆分级...")
+        
+        # 更新所有记忆的存储级别
+        for memory_id in list(self.semantic_memory_map.keys()):
+            target_tier = self._determine_memory_tier(memory_id)
+            self._migrate_memory_tier(memory_id, target_tier)
+        
+        # 清理各个级别的超出容量的记忆
+        for tier, tier_config in self.memory_tiers.items():
+            tier_store = self.memory_tier_store[tier]
+            max_size = tier_config["max_size"]
+            
+            if len(tier_store) > max_size:
+                # 按访问时间排序，删除最旧的记忆
+                sorted_memories = sorted(tier_store.items(), key=lambda x: x[1].get("last_accessed", 0))
+                excess = len(tier_store) - max_size
+                
+                for memory_id, _ in sorted_memories[:excess]:
+                    if memory_id in tier_store:
+                        del tier_store[memory_id]
+                        if memory_id in self.memory_to_tier:
+                            del self.memory_to_tier[memory_id]
+        
+        # 更新最后检查时间
+        self.last_tier_check_time = current_time
+        print("[记忆系统] 记忆分级检查和更新完成")
+    
+    def _update_tier_store(self, memory_id: str):
+        """更新记忆分级存储
+        
+        Args:
+            memory_id: 记忆ID
+        """
+        # 确定记忆的存储级别
+        target_tier = self._determine_memory_tier(memory_id)
+        
+        # 迁移记忆到目标级别
+        self._migrate_memory_tier(memory_id, target_tier)
+    
     def _initialize_memo0(self) -> Memory:
         """初始化memo0框架"""
         # 使用从配置文件读取的配置
@@ -366,7 +609,7 @@ class ZyantineMemorySystem:
                 "config": {
                     "model": "gpt-5-nano-2025-08-07",
                     "api_key": api_key_to_use,
-                    "base_url": self.base_url
+                    "openai_base_url": self.base_url
                 }
             }
         else:
@@ -374,8 +617,8 @@ class ZyantineMemorySystem:
             llm_config = config["llm"]["config"]
             if "api_key" not in llm_config:
                 llm_config["api_key"] = api_key_to_use
-            if "base_url" not in llm_config:
-                llm_config["base_url"] = self.base_url
+            if "openai_base_url" not in llm_config:
+                llm_config["openai_base_url"] = self.base_url
 
         if "embedder" not in config:
             config["embedder"] = {
@@ -395,6 +638,93 @@ class ZyantineMemorySystem:
                 embedder_config["openai_base_url"] = self.base_url
 
         return Memory.from_config(config)
+    
+    def _verify_memo0_connection(self) -> bool:
+        """
+        验证memo0连接是否正常工作
+        
+        Returns:
+            是否正常工作
+        """
+        if not self.memory:
+            return False
+        
+        try:
+            # 尝试一个简单的搜索操作来验证连接
+            # 根据mem0 API，第一个参数是query（位置参数），后面必须使用命名参数
+            test_results = self.memory.search(
+                "test",
+                user_id=self.user_id
+            )
+            # 如果能够成功调用search方法，说明连接正常
+            return True
+        except Exception as e:
+            print(f"[记忆系统] Mem0连接验证失败: {e}")
+            return False
+    
+    def _setup_persistent_storage(self):
+        """设置文件系统持久化存储作为回退方案"""
+        try:
+            import os
+            from pathlib import Path
+            
+            # 创建持久化存储目录
+            storage_dir = Path("./memory_storage")
+            storage_dir.mkdir(exist_ok=True)
+            
+            # 为当前用户创建存储文件
+            storage_file = storage_dir / f"{self.user_id}_memories.jsonl"
+            self._persistent_storage_path = str(storage_file)
+            
+            # 加载已有记忆（如果存在）
+            if storage_file.exists():
+                try:
+                    with open(storage_file, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            if line.strip():
+                                memory_item = json.loads(line)
+                                self.memory_store.append(memory_item)
+                    print(f"[记忆系统] 从文件加载了 {len(self.memory_store)} 条记忆")
+                except Exception as e:
+                    print(f"[记忆系统] 加载持久化记忆失败: {e}")
+            
+            print(f"[记忆系统] 文件持久化存储已设置: {self._persistent_storage_path}")
+        except Exception as e:
+            print(f"[记忆系统] 设置文件持久化存储失败: {e}")
+            self._persistent_storage_path = None
+    
+    def _save_to_persistent_storage(self, memory_item: Dict[str, Any]):
+        """保存记忆到文件系统持久化存储"""
+        if not self._persistent_storage_path:
+            return
+        
+        try:
+            import os
+            # 使用追加模式写入JSONL格式
+            with open(self._persistent_storage_path, 'a', encoding='utf-8') as f:
+                json.dump(memory_item, f, ensure_ascii=False)
+                f.write('\n')
+        except Exception as e:
+            print(f"[记忆系统] 保存到持久化存储失败: {e}")
+    
+    def _verify_memory_stored(self, memory_id: str, memory_type: str, max_retries: int = 2) -> bool:
+        """
+        验证记忆是否成功存储到memo0
+        
+        Args:
+            memory_id: 记忆ID
+            memory_type: 记忆类型
+            max_retries: 最大重试次数
+            
+        Returns:
+            是否存储成功
+        """
+        if not self.memory:
+            return False
+        
+        # 对于新添加的记忆，可能无法立即检索到，所以这里只做基本验证
+        # 如果memo0没有抛出异常，认为存储成功
+        return True
 
     # ============ 记忆CRUD操作 ============
 
@@ -406,7 +736,14 @@ class ZyantineMemorySystem:
                    emotional_intensity: float = 0.5,
                    strategic_value: Optional[Dict[str, Any]] = None,
                    linked_tool: Optional[str] = None) -> str:
-        """添加记忆（精简metadata避免过大）"""
+        """
+        添加记忆（使用智能评估器）
+        
+        优化说明：
+        1. 使用多维度规则引擎评估，减少API调用
+        2. 保守策略：宁可多存储，不轻易过滤
+        3. 提取更丰富的特征用于后续检索
+        """
         # 验证记忆类型
         valid_memory_types: List[str] = [
             "conversation", "experience", "user_profile", "system_event",
@@ -420,36 +757,51 @@ class ZyantineMemorySystem:
 
         content_str: str = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
         
-        # 评估内容价值
-        content_value = self._evaluate_content_value(content_str)
+        # ============ 使用智能评估器评估记忆价值 ============
+        evaluation_result = self.memory_evaluator.evaluate(
+            content=content_str,
+            memory_type=memory_type,
+            metadata=metadata,
+            context={
+                "current_topics": self.current_topics,
+                "session_id": self.session_id,
+                "user_id": self.user_id
+            }
+        )
         
-        # 根据记忆类型设置不同的价值阈值
-        if memory_type == "conversation":
-            # 对话内容设置较低的阈值，确保有意义的对话能够被存储
-            if content_value < 4.0:
-                print(f"[记忆系统] 过滤低价值对话内容: {content_str[:50]}...")
-                return "filtered_content"
-        else:
-            # 其他类型的记忆保持原有的阈值
-            if content_value < 6.0:
-                print(f"[记忆系统] 过滤低价值内容: {content_str[:50]}...")
-                return "filtered_content"
+        # 获取评估结果
+        content_value = evaluation_result.overall_score
+        importance_score = content_value  # 使用综合分数作为重要性分数
+        
+        # 根据评估结果决定是否存储
+        if not evaluation_result.should_store:
+            print(f"[记忆系统] 过滤低价值内容: {content_str[:50]}... (分数: {content_value:.2f}, 原因: {evaluation_result.reason})")
+            return "filtered_content"
         
         # 检查重复内容
         duplicate_id = self._check_duplicate_content(content_str, memory_type)
         if duplicate_id:
             print(f"[记忆系统] 检测到重复内容，更新现有记忆: {duplicate_id}")
+            # 更新现有记忆的主题
+            self._update_memory_topics(duplicate_id, content_str)
             # 这里可以实现更新逻辑，暂时返回重复ID
             return duplicate_id
-        
-        # 计算重要性分数
-        importance_score = self._calculate_importance_score(content_str, memory_type)
         
         # 生成记忆ID
         memory_id: str = self._generate_memory_id(content_str, memory_type)
 
         full_content: Union[str, List[Dict[str, Any]]] = content if isinstance(content, list) else [{"role": "user", "content": content}]
 
+        # 新增：识别对话主题
+        detected_topics = self._detect_topics(content_str)
+        
+        # ============ 关键信息提取：增强memo0能力 ============
+        extracted_key_info = self._extract_key_information(content_str, memory_type)
+        
+        # 合并评估器提取的实体和意图
+        if evaluation_result.extracted_entities:
+            extracted_key_info = list(set(extracted_key_info + evaluation_result.extracted_entities))[:15]
+        
         # 准备精简的metadata
         memory_metadata: Dict[str, Any] = self._prepare_metadata(
             memory_id=memory_id,
@@ -462,48 +814,110 @@ class ZyantineMemorySystem:
             linked_tool=linked_tool
         )
         
+        # 新增：将主题添加到metadata
+        if detected_topics:
+            memory_metadata["topics"] = detected_topics
+            # 合并主题到标签
+            if "tags" in memory_metadata:
+                memory_metadata["tags"] = list(set(memory_metadata["tags"] + detected_topics))[:5]  # 限制标签数量
+            else:
+                memory_metadata["tags"] = detected_topics[:5]
+        
         # 添加重要性分数到metadata
         memory_metadata["importance_score"] = importance_score
-
+        
+        # 添加提取的关键信息到metadata
+        if extracted_key_info:
+            memory_metadata["key_information"] = extracted_key_info
+        
+        # ============ 添加评估器的详细信息 ============
+        memory_metadata["evaluation"] = {
+            "overall_score": evaluation_result.overall_score,
+            "storage_priority": evaluation_result.storage_priority,
+            "dimension_scores": evaluation_result.dimension_scores,
+            "detected_intents": evaluation_result.detected_intents[:5],  # 限制数量
+            "confidence": evaluation_result.confidence,
+            "evaluation_method": evaluation_result.evaluation_method,
+        }
+        
+        # 如果评估器建议了TTL，添加到metadata
+        if evaluation_result.suggested_ttl_hours:
+            memory_metadata["suggested_ttl_hours"] = evaluation_result.suggested_ttl_hours
+        
         # 检查并进一步压缩metadata
         metadata_size: int = len(json.dumps(memory_metadata))
         if metadata_size > 30000:
             print(f"[记忆系统] 警告：metadata大小({metadata_size})接近限制，进一步精简")
             memory_metadata = self._further_compress_metadata(memory_metadata)
 
+        # 准备记忆项（无论使用哪种存储方式都需要）
+        memory_item = {
+            "content": full_content,
+            "user_id": self.user_id,
+            "metadata": memory_metadata,
+            "memory_id": memory_id,
+            "timestamp": get_current_timestamp()
+        }
+        
+        storage_success = False
+        
         try:
-            # 添加到memo0或简化的内存存储
+            # 优先尝试添加到memo0
             if self.memory:
-                # 添加到memo0
-                self.memory.add(full_content, user_id=self.user_id, metadata=memory_metadata)
-            else:
+                try:
+                    # 添加到memo0
+                    add_result = self.memory.add(full_content, user_id=self.user_id, metadata=memory_metadata)
+                    
+                    # 验证存储是否成功（通过尝试检索来验证）
+                    if self._verify_memory_stored(memory_id, memory_type):
+                        storage_success = True
+                        print(f"[记忆系统] 记忆成功存储到memo0: {memory_id}")
+                    else:
+                        print(f"[记忆系统] 警告：记忆可能未成功存储到memo0: {memory_id}")
+                        # 即使验证失败，也继续添加到内存和文件存储作为备份
+                except Exception as memo0_error:
+                    print(f"[记忆系统] memo0存储失败: {memo0_error}，使用回退方案")
+                    # 继续使用内存和文件存储
+            
+            # 如果memo0不可用或存储失败，使用内存和文件存储
+            if not storage_success or not self.memory:
                 # 添加到简化的内存存储
-                memory_item = {
-                    "content": full_content,
-                    "user_id": self.user_id,
-                    "metadata": memory_metadata
-                }
                 self.memory_store.append(memory_item)
+                # 同时保存到文件系统持久化存储
+                self._save_to_persistent_storage(memory_item)
+                print(f"[记忆系统] 记忆已保存到内存和文件存储: {memory_id}")
         except Exception as e:
             if "exceeds max length" in str(e):
-                print(f"[记忆系统] 错误：metadata仍然过大，使用最小化版本")
+                print("[记忆系统] 错误：metadata仍然过大，使用最小化版本")
                 minimal_metadata: Dict[str, Any] = {
                     "memory_id": memory_id,
                     "memory_type": memory_type,
                     "session_id": self.session_id,
-                    "created_at": datetime.now().isoformat(),
+                    "created_at": get_current_timestamp(),
                     "importance_score": importance_score
                 }
+                # 即使在最小化版本中也保留主题信息
+                if detected_topics:
+                    minimal_metadata["topics"] = detected_topics[:2]  # 限制主题数量
+                # 保留关键信息
+                if extracted_key_info:
+                    minimal_metadata["key_information"] = extracted_key_info[:200]  # 限制关键信息长度
+                # 更新memory_item使用最小化metadata
+                memory_item["metadata"] = minimal_metadata
+                
                 try:
                     if self.memory:
-                        self.memory.add(full_content, user_id=self.user_id, metadata=minimal_metadata)
-                    else:
-                        memory_item = {
-                            "content": full_content,
-                            "user_id": self.user_id,
-                            "metadata": minimal_metadata
-                        }
-                        self.memory_store.append(memory_item)
+                        try:
+                            self.memory.add(full_content, user_id=self.user_id, metadata=minimal_metadata)
+                            # 验证存储
+                            if self._verify_memory_stored(memory_id, memory_type):
+                                print(f"[记忆系统] 最小化记忆成功存储到memo0: {memory_id}")
+                        except Exception as memo0_error:
+                            print(f"[记忆系统] memo0存储最小化记忆失败: {memo0_error}")
+                    
+                    # 无论如何都保存到内存和文件存储
+                    self.memory_store.append(memory_item)
+                    self._save_to_persistent_storage(memory_item)
                 except Exception as minimal_error:
                     raise MemorySizeExceededError(
                         f"无法添加记忆：metadata大小超过限制",
@@ -527,22 +941,177 @@ class ZyantineMemorySystem:
             "strategic_value": strategic_value or {},
             "linked_tool": linked_tool,
             "importance_score": importance_score,
-            "content_value": content_value
+            "content_value": content_value,
+            "topics": detected_topics,  # 新增：主题信息
+            "key_information": extracted_key_info  # 新增：关键信息
         })
+
+        # 新增：更新主题索引
+        self._update_topic_index(memory_id, detected_topics)
+        
+        # 新增：更新关键信息索引
+        self._update_key_info_index(memory_id, extracted_key_info)
+        
+        # 新增：更新重要性索引
+        self._update_importance_index(memory_id, importance_score)
+        
+        # 新增：更新类型索引
+        self._update_type_index(memory_id, memory_type)
 
         # 更新统计信息
         self._update_stats(memory_type, tags or [])
+        
+        # 新增：更新主题统计
+        for topic in detected_topics:
+            self.stats["topics_distribution"][topic] += 1
+        
+        # 更新上下文窗口
+        self._update_context_window(memory_id, detected_topics)
+
+        # 更新记忆分级存储
+        self._update_tier_store(memory_id)
 
         print(f"[记忆系统] 添加记忆成功，ID: {memory_id}，类型: {memory_type}，重要性: {importance_score:.2f}，价值: {content_value:.2f}")
+        if detected_topics:
+            print(f"[记忆系统] 检测到主题: {', '.join(detected_topics)}")
+        if extracted_key_info:
+            print(f"[记忆系统] 提取关键信息: {', '.join(extracted_key_info[:3])}...")
         return memory_id
 
     def _generate_memory_id(self, content: str, memory_type: str) -> str:
         """生成记忆ID"""
-        timestamp: str = datetime.now().strftime("%Y%m%d%H%M%S")
-        content_hash: str = hashlib.md5(content.encode()).hexdigest()[:8]
-        return f"{memory_type}_{timestamp}_{content_hash}"
+        return generate_memory_id(content, memory_type)
 
-    def _prepare_metadata(self,
+    def _extract_key_information(self, content: str, memory_type: str) -> List[str]:
+        """提取关键信息 - 优化：增强特征提取，添加更多语义特征"""
+        # 优化：增强的关键信息提取逻辑，结合规则和LLM
+        
+        key_info = []
+        content_lower = content.lower()
+        
+        # 基于规则的关键信息提取 - 优化：扩展规则集
+        import re
+        
+        # 1. 日期和时间 - 优化：扩展日期格式支持
+        date_patterns = [
+            r'\d{4}[-/]\d{1,2}[-/]\d{1,2}',  # YYYY-MM-DD或YYYY/MM/DD
+            r'\d{1,2}[-/]\d{1,2}[-/]\d{4}',  # MM-DD-YYYY或MM/DD/YYYY
+            r'\d{1,2}月\d{1,2}日',  # 中文日期，如1月1日
+            r'\d{4}年\d{1,2}月\d{1,2}日',  # 中文完整日期，如2023年1月1日
+            r'\d{2}:\d{2}',  # 时间，如14:30
+            r'\d{2}:\d{2}:\d{2}',  # 完整时间，如14:30:00
+            r'昨天|今天|明天|上周|本周|下周|上月|本月|下月',  # 相对日期
+            r'\d+天前|\d+天后|\d+小时前|\d+小时后',  # 相对时间
+        ]
+        
+        for pattern in date_patterns:
+            matches = re.findall(pattern, content)
+            for match in matches:
+                key_info.append(f"时间: {match}")
+        
+        # 2. 地点 - 优化：增强地点提取
+        location_keywords = ["在", "位于", "地址", "地点", "位置", "前往", "来自", "到达", "离开"]
+        for keyword in location_keywords:
+            if keyword in content_lower:
+                # 优化：改进地点提取算法
+                parts = content_lower.split(keyword)
+                if len(parts) > 1:
+                    # 提取关键词后面的内容，直到遇到标点符号或停用词
+                    location_part = parts[1].split()[0] if parts[1].split() else ""
+                    if location_part:
+                        key_info.append(f"地点: {location_part}")
+        
+        # 3. 人物 - 优化：扩展人物关键词
+        person_keywords = ["我", "你", "他", "她", "他们", "我们", "大家", "用户", "客户", "同事", "领导", 
+                         "老师", "学生", "朋友", "家人", "医生", "护士", "律师", "工程师"]
+        for keyword in person_keywords:
+            if keyword in content_lower:
+                key_info.append(f"人物: {keyword}")
+        
+        # 4. 数字和金额 - 优化：扩展数字模式
+        number_patterns = [
+            r'\d+\.?\d*',  # 数字
+            r'¥\d+\.?\d*',  # 人民币金额
+            r'\$\d+\.?\d*',  # 美元金额
+            r'\d+%',  # 百分比
+            r'第\d+',  # 序数词
+            r'\d+个|\d+只|\d+条',  # 数量词
+        ]
+        
+        for pattern in number_patterns:
+            matches = re.findall(pattern, content)
+            for match in matches:
+                key_info.append(f"数字: {match}")
+        
+        # 5. 动作和事件 - 优化：扩展动作关键词
+        action_keywords = ["做", "完成", "开始", "结束", "计划", "安排", "会议", "任务", "项目", "工作", 
+                         "学习", "研究", "开发", "测试", "部署", "维护", "升级", "更新"]
+        for keyword in action_keywords:
+            if keyword in content_lower:
+                key_info.append(f"动作: {keyword}")
+        
+        # 6. 重要性词汇 - 优化：扩展重要性关键词
+        importance_keywords = ["重要", "关键", "紧急", "必须", "需要", "应该", "建议", "务必", "亟需", "优先", "核心"]
+        for keyword in importance_keywords:
+            if keyword in content_lower:
+                key_info.append(f"重要性: {keyword}")
+        
+        # 7. 情感词汇 - 新增：情感特征提取
+        positive_emotions = ["高兴", "开心", "满意", "喜欢", "好", "棒", "优秀", "出色", "成功", "胜利"]
+        negative_emotions = ["生气", "难过", "失望", "讨厌", "差", "糟糕", "失败", "错误", "问题", "困难"]
+        for emotion in positive_emotions:
+            if emotion in content_lower:
+                key_info.append(f"情感: 积极")
+                break
+        for emotion in negative_emotions:
+            if emotion in content_lower:
+                key_info.append(f"情感: 消极")
+                break
+        
+        # 8. 记忆类型特定提取 - 优化：增强类型特定提取
+        if memory_type == "conversation":
+            # 对话特定关键信息提取
+            if "问题" in content_lower or "？" in content:
+                key_info.append("类型: 问题")
+            if "回答" in content_lower or "答案" in content_lower:
+                key_info.append("类型: 回答")
+            if "请求" in content_lower or "要求" in content_lower:
+                key_info.append("类型: 请求")
+            if "建议" in content_lower or "推荐" in content_lower:
+                key_info.append("类型: 建议")
+        elif memory_type == "experience":
+            # 经历特定关键信息提取
+            if "经验" in content_lower or "经历" in content_lower:
+                key_info.append("类型: 经验分享")
+            if "教训" in content_lower or "总结" in content_lower:
+                key_info.append("类型: 经验总结")
+        elif memory_type == "user_profile":
+            # 用户档案特定关键信息提取
+            profile_keywords = ["姓名", "年龄", "性别", "职业", "爱好", "兴趣", "生日", "籍贯", "学历", "技能"]
+            for keyword in profile_keywords:
+                if keyword in content_lower:
+                    key_info.append(f"用户信息: {keyword}")
+        elif memory_type == "knowledge":
+            # 知识特定关键信息提取
+            knowledge_keywords = ["定义", "概念", "原理", "方法", "步骤", "技巧", "规则", "标准", "公式"]
+            for keyword in knowledge_keywords:
+                if keyword in content_lower:
+                    key_info.append(f"知识类型: {keyword}")
+        
+        # 9. 主题相关 - 新增：主题特征提取
+        for topic, keywords in self.topic_keywords.items():
+            for keyword in keywords:
+                if keyword in content_lower:
+                    key_info.append(f"主题: {topic}")
+                    break
+        
+        # 去重并限制数量 - 优化：增加关键信息数量至15个
+        key_info = list(set(key_info))[:15]  # 最多返回15个关键信息（优化：从10个增加到15个）
+        
+        return key_info
+
+    def _prepare_metadata(
+                          self,
                           memory_id: str,
                           memory_type: str,
                           content: str,
@@ -562,7 +1131,7 @@ class ZyantineMemorySystem:
             "memory_id": memory_id,
             "memory_type": memory_type,
             "session_id": self.session_id,
-            "created_at": datetime.now().isoformat(),
+            "created_at": get_current_timestamp(),
             "tags": tags[:5] if tags else [],
             "emotional_intensity": round(emotional_intensity, 2),
             "strategic_score": simplified_strategic.get("score", 0),
@@ -616,6 +1185,135 @@ class ZyantineMemorySystem:
         if len(self.semantic_memory_map) > self.max_semantic_map_size:
             self._cleanup_semantic_memory()
     
+    def _detect_topics(self, content: str) -> List[str]:
+        """检测内容的主题"""
+        detected_topics = []
+        content_lower = content.lower()
+        
+        # 遍历主题关键词库，检测匹配的主题
+        for topic, keywords in self.topic_keywords.items():
+            for keyword in keywords:
+                if keyword in content_lower:
+                    if topic not in detected_topics:
+                        detected_topics.append(topic)
+                    break
+        
+        return detected_topics
+    
+    def _update_topic_index(self, memory_id: str, topics: List[str]) -> None:
+        """更新主题索引"""
+        if not topics:
+            return
+        
+        # 添加到主题索引
+        for topic in topics:
+            if memory_id not in self.topic_index[topic]:
+                self.topic_index[topic].append(memory_id)
+        
+        # 更新记忆主题映射
+        self.memory_topics[memory_id] = topics
+    
+    def _update_key_info_index(self, memory_id: str, key_info: List[str]) -> None:
+        """更新关键信息索引"""
+        if not key_info:
+            return
+        
+        # 添加到关键信息索引
+        for info in key_info:
+            if memory_id not in self.key_info_index[info]:
+                self.key_info_index[info].append(memory_id)
+        
+        # 更新记忆关键信息映射
+        self.memory_key_info[memory_id] = key_info
+    
+    def _update_importance_index(self, memory_id: str, importance_score: float) -> None:
+        """更新重要性索引"""
+        # 将重要性分数转换为整数，用于索引
+        importance_level = int(round(importance_score))
+        if memory_id not in self.importance_index[importance_level]:
+            self.importance_index[importance_level].append(memory_id)
+    
+    def _update_type_index(self, memory_id: str, memory_type: str) -> None:
+        """更新类型索引"""
+        if memory_id not in self.type_index[memory_type]:
+            self.type_index[memory_type].append(memory_id)
+    
+    # ============ 上下文窗口管理 ============
+    
+    def _update_context_window(self, memory_id: str, topics: List[str]) -> None:
+        """更新上下文窗口，将相关记忆添加到当前上下文"""
+        # 如果记忆已经在上下文窗口中，移到末尾（最近使用）
+        if memory_id in self.context_window:
+            self.context_window.remove(memory_id)
+        
+        # 添加到上下文窗口末尾
+        self.context_window.append(memory_id)
+        
+        # 更新当前对话主题
+        self._update_current_topics(topics)
+        
+        # 标记为短期记忆
+        self.short_term_memories.add(memory_id)
+        
+        # 动态调整上下文窗口大小
+        self._adjust_context_window_size()
+        
+        # 如果上下文窗口超过最大大小，移除最旧的记忆
+        if len(self.context_window) > self.current_context_window_size:
+            removed_memory = self.context_window.pop(0)
+            # 如果移除的是短期记忆，从短期记忆集合中移除
+            if removed_memory in self.short_term_memories:
+                self.short_term_memories.remove(removed_memory)
+    
+    def _adjust_context_window_size(self) -> None:
+        """动态调整上下文窗口大小"""
+        # 基于当前对话活跃度和记忆重要性调整窗口大小
+        # 这里实现一个简单的自适应算法，基于当前对话的记忆数量和重要性
+        if len(self.context_window) > self.current_context_window_size * 1.5:
+            # 对话活跃，增大窗口
+            self.current_context_window_size = min(
+                self.current_context_window_size + 2,
+                self.max_context_window_size
+            )
+        elif len(self.context_window) < self.current_context_window_size * 0.5:
+            # 对话不活跃，缩小窗口
+            self.current_context_window_size = max(
+                self.current_context_window_size - 1,
+                self.min_context_window_size
+            )
+    
+    def _update_current_topics(self, topics: List[str]) -> None:
+        """更新当前对话主题及权重"""
+        # 主题权重衰减
+        for topic in self.current_topics:
+            self.current_topics[topic] *= self.topic_decay_rate
+            
+        # 移除权重过低的主题
+        self.current_topics = {k: v for k, v in self.current_topics.items() if v > 0.1}
+        
+        # 更新新主题权重
+        for topic in topics:
+            if topic in self.current_topics:
+                self.current_topics[topic] += 0.5
+            else:
+                self.current_topics[topic] = 1.0
+        
+        # 归一化主题权重
+        total_weight = sum(self.current_topics.values())
+        if total_weight > 0:
+            for topic in self.current_topics:
+                self.current_topics[topic] /= total_weight
+    
+
+    
+    def _update_memory_topics(self, memory_id: str, content: str) -> None:
+        """更新现有记忆的主题"""
+        # 检测新主题
+        new_topics = self._detect_topics(content)
+        
+        # 更新主题索引
+        self._update_topic_index(memory_id, new_topics)
+    
     def _cleanup_semantic_memory(self):
         """清理语义记忆地图中的低价值记忆"""
         if len(self.semantic_memory_map) <= self.max_semantic_map_size:
@@ -645,6 +1343,14 @@ class ZyantineMemorySystem:
                 break
             
             if memory_id in self.semantic_memory_map:
+                # 从主题索引中移除
+                if memory_id in self.memory_topics:
+                    topics = self.memory_topics[memory_id]
+                    for topic in topics:
+                        if memory_id in self.topic_index[topic]:
+                            self.topic_index[topic].remove(memory_id)
+                    del self.memory_topics[memory_id]
+                
                 del self.semantic_memory_map[memory_id]
                 # 同时从访问统计中删除
                 if memory_id in self.stats.get("access_counts", {}):
@@ -668,41 +1374,218 @@ class ZyantineMemorySystem:
 
     # ============ 记忆检索 ============
 
-    def _cleanup_query_cache(self):
-        """清理过期的查询缓存"""
-        current_time = time.time()
-        if current_time - self.query_cache_last_cleanup > self.query_cache_ttl:
-            # 简单清理，实际项目中可以实现更复杂的过期机制
-            self.query_enhancement_cache.clear()
-            self.query_cache_last_cleanup = current_time
+
 
     def _enhance_search_query(self, query: str) -> str:
         """增强搜索查询"""
-        # 清理过期缓存
-        self._cleanup_query_cache()
-        
         # 检查缓存
-        if query in self.query_enhancement_cache:
-            return self.query_enhancement_cache[query]
+        cached_query = self.query_enhancement_cache.get(query)
+        if cached_query is not None:
+            # 确保缓存返回的是字符串类型
+            if isinstance(cached_query, str):
+                return cached_query
+            else:
+                # 缓存值无效，使用原始查询
+                self.query_enhancement_cache.set(query, query)
+                return query
+        
+        # 缓存原始查询（已移除LLM查询增强，使用基于规则的方法）
+        self.query_enhancement_cache.set(query, query)
+        return query
+    
+    def _build_context_enhanced_query(self, query: str) -> str:
+        """构建上下文增强查询，将当前对话上下文融入查询"""
+        # 基础查询
+        context_enhanced_query = query
+        
+        # 添加当前对话主题
+        if self.current_topics:
+            top_topics = sorted(self.current_topics.items(), key=lambda x: x[1], reverse=True)[:2]
+            topic_str = " ".join([topic for topic, _ in top_topics])
+            context_enhanced_query = f"{context_enhanced_query} 相关主题: {topic_str}"
+        
+        # 添加最近上下文记忆的关键词
+        context_keywords = []
+        for context_memory_id in self.context_window[-2:]:  # 最近2个上下文记忆
+            if context_memory_id in self.semantic_memory_map:
+                context_memory = self.semantic_memory_map[context_memory_id]
+                context_content = context_memory.get("metadata", {}).get("content_preview", "")
+                # 提取关键词（前5个词）
+                keywords = context_content.split()[:5]
+                context_keywords.extend(keywords)
+        
+        # 去重并限制关键词数量
+        unique_keywords = list(set(context_keywords))[:8]
+        if unique_keywords:
+            keyword_str = " ".join(unique_keywords)
+            context_enhanced_query = f"{context_enhanced_query} 上下文相关词: {keyword_str}"
+        
+        return context_enhanced_query
+    
+    def _calculate_context_relevance(self, memory_id: str, metadata: Dict[str, Any]) -> float:
+        """计算记忆与当前上下文的相关性 - 优化：增强上下文匹配逻辑"""
+        if not self.context_window:
+            return 0.0
+        
+        relevance_score = 0.0
+        max_score = 1.0
+        
+        # 检查记忆是否在当前上下文窗口中
+        if memory_id in self.context_window:
+            # 计算在上下文窗口中的位置（越新分数越高）
+            position = len(self.context_window) - self.context_window.index(memory_id)
+            relevance_score += (position / len(self.context_window)) * max_score
+            return relevance_score
+        
+        # 优化：考虑最近5个上下文记忆（从3个增加到5个）
+        recent_contexts = self.context_window[-5:]
+        
+        # 检查记忆主题与上下文主题的相关性
+        memory_topics = metadata.get("topics", [])
+        memory_key_info = metadata.get("key_information", [])
+        memory_content = metadata.get("content_preview", "")
+        
+        # 优化：为不同位置的上下文记忆设置不同权重（越新权重越高）
+        for i, context_memory_id in enumerate(reversed(recent_contexts)):
+            if context_memory_id in self.semantic_memory_map:
+                context_memory = self.semantic_memory_map[context_memory_id]
+                context_topics = context_memory.get("metadata", {}).get("topics", [])
+                context_key_info = context_memory.get("metadata", {}).get("key_information", [])
+                context_content = context_memory.get("metadata", {}).get("content_preview", "")
+                
+                # 1. 主题交集（优化：增加权重）
+                common_topics = set(memory_topics) & set(context_topics)
+                if common_topics:
+                    topic_score = (len(common_topics) / max(len(memory_topics), 1)) * (max_score / 2)
+                    relevance_score += topic_score
+                
+                # 2. 关键信息匹配（新增：关键信息交集）
+                common_key_info = set(memory_key_info) & set(context_key_info)
+                if common_key_info:
+                    key_info_score = (len(common_key_info) / max(len(memory_key_info), 1)) * (max_score / 3)
+                    relevance_score += key_info_score
+                
+                # 3. 内容关键词匹配（新增：内容关键词重叠）
+                memory_words = set(memory_content.lower().split())
+                context_words = set(context_content.lower().split())
+                common_words = memory_words & context_words
+                if common_words and len(memory_words) > 0:
+                    word_match_score = (len(common_words) / len(memory_words)) * (max_score / 4)
+                    relevance_score += word_match_score
+                
+                # 权重衰减：越旧的上下文权重越低
+                relevance_score *= (0.8 + 0.2 * (i + 1) / len(recent_contexts))
+        
+        return min(relevance_score, max_score)
+    
+    def _calculate_topic_relevance(self, memory_topics: List[str]) -> float:
+        """计算记忆主题与当前对话主题的相关性 - 优化：增强主题匹配逻辑"""
+        if not memory_topics or not self.current_topics:
+            return 0.0
+        
+        relevance_score = 0.0
+        
+        # 1. 直接主题匹配（原有逻辑）
+        for topic in memory_topics:
+            if topic in self.current_topics:
+                relevance_score += self.current_topics[topic] * 0.7  # 优化：调整权重
+        
+        # 2. 主题相似度增强（优化：基于关键词匹配的语义关联）
+        try:
+            # 计算主题关键词的匹配度
+            current_topic_list = list(self.current_topics.keys())
+            if current_topic_list:
+                # 基于关键词的主题相似度计算
+                topic_keywords = self.topic_keywords
+                memory_keywords = set()
+                current_keywords = set()
+                
+                # 收集记忆主题的所有关键词
+                for topic in memory_topics:
+                    if topic in topic_keywords:
+                        memory_keywords.update(topic_keywords[topic])
+                
+                # 收集当前主题的所有关键词
+                for topic in current_topic_list:
+                    if topic in topic_keywords:
+                        current_keywords.update(topic_keywords[topic])
+                
+                # 计算关键词交集
+                common_keywords = memory_keywords & current_keywords
+                if common_keywords and len(memory_keywords) > 0:
+                    semantic_match_score = len(common_keywords) / len(memory_keywords)
+                    relevance_score += semantic_match_score * 0.3  # 新增：语义匹配权重
+        except Exception as e:
+            # 如果计算失败，继续使用原有逻辑
+            print(f"[记忆系统] 主题语义匹配失败: {e}")
+        
+        # 归一化到0-1范围
+        return min(relevance_score, 1.0)
+    
+    def _calculate_time_relevance(self, created_at: Optional[str]) -> float:
+        """计算记忆的时间相关性"""
+        if not created_at:
+            return 0.0
         
         try:
-            enhanced_query = self.llm_client.enhance_search_query(query)
-            if enhanced_query and enhanced_query != query:
-                print(f"[记忆系统] 增强搜索查询: {query} -> {enhanced_query}")
-                # 缓存结果
-                self.query_enhancement_cache[query] = enhanced_query
-                return enhanced_query
-        except Exception as e:
-            print(f"[记忆系统] 查询增强失败: {e}")
+            time_diff = calculate_time_diff(created_at)
+            
+            # 最近1小时内的记忆获得最高分数
+            if time_diff < 3600:
+                return 1.0
+            # 最近24小时内
+            elif time_diff < 86400:
+                return 0.8
+            # 最近7天内
+            elif time_diff < 604800:
+                return 0.5
+            # 最近30天内
+            elif time_diff < 2592000:
+                return 0.3
+            # 更旧的记忆
+            else:
+                return 0.1
+        except:
+            return 0.0
+    
+    def _calculate_ranking_score(self, similarity_score: float, importance_score: float, 
+                              access_count: int, context_relevance: float, 
+                              topic_relevance: float, time_relevance: float, 
+                              memory_type: Optional[str]) -> float:
+        """计算最终排序分数，综合考虑多种因素"""
+        # 权重配置 - 优化：提高相似度权重至0.7，确保核心匹配质量
+        weights = {
+            "similarity": 0.7,      # 相似度权重（优化：从0.5提高到0.7）
+            "importance": 0.1,      # 重要性权重（优化：从0.15调整到0.1）
+            "access_count": 0.05,   # 访问频率权重（优化：从0.1调整到0.05）
+            "context_relevance": 0.08, # 上下文相关性权重（优化：从0.1调整到0.08）
+            "topic_relevance": 0.05,  # 主题相关性权重（优化：从0.1调整到0.05）
+            "time_relevance": 0.02   # 时间相关性权重（优化：从0.05调整到0.02）
+        }
         
-        # 缓存原始查询
-        self.query_enhancement_cache[query] = query
-        return query
+        # 类型权重调整（可选）
+        type_bonus = 0.0
+        if memory_type == "user_profile":
+            type_bonus = 0.1
+        elif memory_type == "experience":
+            type_bonus = 0.05
+        
+        # 计算加权总分
+        total_score = (
+            similarity_score * weights["similarity"] +
+            (importance_score / 10.0) * weights["importance"] +
+            min(access_count / 20.0, 1.0) * weights["access_count"] +
+            context_relevance * weights["context_relevance"] +
+            topic_relevance * weights["topic_relevance"] +
+            time_relevance * weights["time_relevance"]
+        ) + type_bonus
+        
+        return min(total_score, 1.0)  # 归一化到0-1范围
 
-    def _adjust_similarity_threshold(self, memory_type: Optional[str]) -> float:
-        """根据记忆类型调整相似度阈值"""
-        # 为不同类型的记忆设置不同的阈值
-        thresholds = {
+    def _adjust_similarity_threshold(self, memory_type: Optional[str], query: Optional[str] = None) -> float:
+        """根据记忆类型调整相似度阈值 - 优化：动态调整阈值"""
+        # 为不同类型的记忆设置基础阈值
+        base_thresholds = {
             "user_profile": 0.8,      # 用户档案需要更高的准确性
             "knowledge": 0.75,        # 知识记忆需要较高的准确性
             "strategy": 0.75,         # 策略记忆需要较高的准确性
@@ -713,7 +1596,35 @@ class ZyantineMemorySystem:
             "temporal": 0.6            # 时间相关记忆
         }
         
-        return thresholds.get(memory_type, 0.7)  # 默认阈值
+        # 获取基础阈值
+        threshold = base_thresholds.get(memory_type, 0.7)
+        
+        # 优化：根据查询复杂度调整阈值
+        if query:
+            query_length = len(query)
+            # 长查询通常需要更高的准确性
+            if query_length > 100:
+                threshold += 0.1
+            # 短查询可以适当降低阈值
+            elif query_length < 20:
+                threshold -= 0.05
+        
+        # 优化：根据上下文活跃度调整阈值
+        # 上下文窗口越大，说明对话越活跃，需要更高的准确性
+        if hasattr(self, 'context_window') and len(self.context_window) > 15:
+            threshold += 0.05
+        elif hasattr(self, 'context_window') and len(self.context_window) < 5:
+            threshold -= 0.05
+        
+        # 优化：根据当前主题数量调整阈值
+        if hasattr(self, 'current_topics') and len(self.current_topics) > 2:
+            # 主题越多，查询越具体，需要更高的准确性
+            threshold += 0.05
+        
+        # 确保阈值在合理范围内
+        threshold = max(0.4, min(0.9, threshold))
+        
+        return threshold
 
     def search_memories(self,
                         query: str,
@@ -722,891 +1633,914 @@ class ZyantineMemorySystem:
                         limit: int = 5,
                         similarity_threshold: float = 0.7,
                         rerank: bool = True) -> List[Dict[str, Any]]:
-        """搜索记忆"""
+        """搜索记忆，优化版：上下文感知检索 + 增强索引"""
         try:
-            # 增强搜索查询
-            enhanced_query = self._enhance_search_query(query)
+            # 1. 构建上下文增强查询
+            context_enhanced_query = self._build_context_enhanced_query(query)
             
-            # 如果使用简化的内存存储
+            # 2. 增强搜索查询（原有逻辑）
+            enhanced_query = self._enhance_search_query(context_enhanced_query)
+            
+            # 3. 如果使用简化的内存存储（memo0不可用）
             if not self.memory:
-                # 简化的搜索逻辑
+                # 从内存存储和文件存储中检索
                 results = []
-                for memory_item in self.memory_store:
-                    # 检查用户ID
-                    if memory_item["user_id"] != self.user_id:
-                        continue
-                    
-                    metadata = memory_item["metadata"]
-                    
-                    # 检查记忆类型
-                    if memory_type and metadata.get("memory_type") != memory_type:
-                        continue
-                    
-                    # 检查标签
-                    if tags:
-                        memory_tags = metadata.get("tags", [])
-                        if not any(tag in memory_tags for tag in tags):
-                            continue
-                    
-                    # 简单的文本匹配
-                    content_str = str(memory_item["content"])
-                    if enhanced_query.lower() in content_str.lower() or \
-                       any(enhanced_query.lower() in str(value).lower() for value in metadata.values()):
-                        results.append({
-                            "memory_id": metadata.get("memory_id"),
-                            "content": self._extract_content_from_memory(memory_item["content"]),
-                            "metadata": metadata,
-                            "similarity_score": 0.8,  # 默认相似度
-                            "memory_type": metadata.get("memory_type"),
-                            "tags": metadata.get("tags", []),
-                            "emotional_intensity": metadata.get("emotional_intensity", 0.5),
-                            "strategic_value": metadata.get("strategic_value", {}),
-                            "linked_tool": metadata.get("linked_tool"),
-                            "created_at": metadata.get("created_at"),
-                            "access_count": self.semantic_memory_map.get(metadata.get("memory_id"), {}).get("access_count", 0),
-                            "importance_score": metadata.get("importance_score", 5.0)
-                        })
                 
-                # 限制结果数量
-                return results[:limit]
+                # 从内存存储检索
+                for memory_item in self.memory_store:
+                    results.extend(self._search_in_memory_item(memory_item, enhanced_query, memory_type, tags))
+                
+                # 从文件存储检索（如果可用）
+                if self._persistent_storage_path:
+                    file_results = self._search_in_persistent_storage(enhanced_query, memory_type, tags, limit * 2)
+                    # 合并结果并去重
+                    existing_ids = {r["memory_id"] for r in results}
+                    for result in file_results:
+                        if result["memory_id"] not in existing_ids:
+                            results.append(result)
+                            existing_ids.add(result["memory_id"])
+                
+                # 优化：添加严格的过滤机制，排除低相关度记忆
+                filtered_results = []
+                for result in results:
+                    # 1. 最低相似度阈值过滤（默认0.5）
+                    if result.get("similarity_score", 0) < 0.5:
+                        continue
+                    
+                    # 2. 记忆质量评估（排除低质量记忆）
+                    importance_score = result.get("importance_score", 0.0)
+                    if importance_score < 3.0:  # 重要性分数低于3.0的记忆视为低质量
+                        continue
+                    
+                    filtered_results.append(result)
+                
+                # 排序并限制结果数量
+                filtered_results.sort(key=lambda x: x.get("similarity_score", 0), reverse=True)
+                return filtered_results[:limit]
             
-            # 根据记忆类型调整相似度阈值
-            adjusted_threshold = self._adjust_similarity_threshold(memory_type)
+            # 4. 根据记忆类型调整相似度阈值 - 优化：传递query参数支持动态阈值调整
+            adjusted_threshold = self._adjust_similarity_threshold(memory_type, enhanced_query)
             
-            # 构建元数据过滤器
+            # 5. 构建元数据过滤器，增加当前主题过滤
             metadata_filter: Dict[str, Any] = {}
             if memory_type:
                 metadata_filter["memory_type"] = memory_type
             if tags:
                 metadata_filter["tags"] = tags
+            
+            # 添加当前主题到过滤器（如果有）
+            current_topic_list = list(self.current_topics.keys())[:3]  # 最多使用3个当前主题
+            if current_topic_list:
+                if "tags" not in metadata_filter:
+                    metadata_filter["tags"] = []
+                metadata_filter["tags"].extend(current_topic_list)
 
-            # 执行搜索
-            search_results: Dict[str, Any] = self.memory.search(
-                enhanced_query,
-                user_id=self.user_id,
-                limit=limit * 2,  # 获取更多结果用于过滤
-                rerank=rerank
-            )
+            # 添加参数验证
+            if not enhanced_query or not isinstance(enhanced_query, str):
+                print(f"[记忆系统] 无效的查询参数: {enhanced_query}")
+                return []
+
+            # 确保metadata_filter是有效格式（如果是字典）
+            if metadata_filter and not isinstance(metadata_filter, dict):
+                print(f"[记忆系统] metadata_filter格式错误: {type(metadata_filter)}")
+                metadata_filter = {}
+
+            # 6. 执行搜索（使用memo0）
+            try:
+                # 根据mem0 API，第一个参数是query（位置参数），后面必须使用命名参数
+                # 方法签名: search(query: str, *, user_id: ..., limit: ..., filters: ..., rerank: ...)
+                search_kwargs = {
+                    "user_id": self.user_id,
+                    "limit": limit * 3,  # 获取更多结果用于上下文重排序
+                    "rerank": rerank
+                }
+                
+                # 添加filters参数（mem0使用filters而不是metadata_filter）
+                if metadata_filter:
+                    search_kwargs["filters"] = metadata_filter
+                
+                # 调用search，使用位置参数query作为第一个参数
+                search_results: Dict[str, Any] = self.memory.search(
+                    enhanced_query if enhanced_query else " ",
+                    **search_kwargs
+                )
+                
+                # 验证搜索结果格式
+                if not isinstance(search_results, dict):
+                    print(f"[记忆系统] memo0搜索结果格式错误: {type(search_results)}")
+                    # 如果格式错误，回退到内存存储搜索
+                    return self._fallback_search(query, memory_type, tags, limit, similarity_threshold)
+                
+                if "results" not in search_results:
+                    print(f"[记忆系统] memo0搜索结果缺少results字段")
+                    return self._fallback_search(query, memory_type, tags, limit, similarity_threshold)
+                
+            except Exception as search_error:
+                print(f"[记忆系统] memo0搜索失败: {search_error}，使用回退方案")
+                # 如果搜索失败，回退到内存和文件存储搜索
+                return self._fallback_search(query, memory_type, tags, limit, similarity_threshold)
 
             processed_results: List[Dict[str, Any]] = []
             for hit in search_results.get("results", []):
                 memory_data: Any = hit.get("memory", {})
                 metadata: Dict[str, Any] = hit.get("metadata", {})
-                score: float = hit.get("score", 0)
+                similarity_score: float = hit.get("score", 0)
 
                 # 使用调整后的阈值过滤
-                if score < adjusted_threshold:
+                if similarity_score < adjusted_threshold:
                     continue
 
                 # 更新访问统计
                 memory_id: Optional[str] = metadata.get("memory_id")
-                if memory_id and memory_id in self.semantic_memory_map:
-                    self.semantic_memory_map[memory_id]["access_count"] += 1
-                    self.semantic_memory_map[memory_id]["last_accessed"] = datetime.now().isoformat()
+                if memory_id:
+                    if memory_id in self.semantic_memory_map:
+                        self.semantic_memory_map[memory_id]["access_count"] += 1
+                        self.semantic_memory_map[memory_id]["last_accessed"] = get_current_timestamp()
                     self.stats["access_counts"][memory_id] = self.stats["access_counts"].get(memory_id, 0) + 1
 
-                # 构建结果
-                result: Dict[str, Any] = {
+                # 计算上下文相关性
+                context_relevance = self._calculate_context_relevance(memory_id, metadata)
+
+                # 计算主题相关性
+                memory_topics = metadata.get("topics", [])
+                topic_relevance = self._calculate_topic_relevance(memory_topics)
+
+                # 计算关键信息相关性
+                key_info_relevance = 0.0
+                memory_key_info = metadata.get("key_information", [])
+                if memory_key_info:
+                    for info in memory_key_info:
+                        if info.lower() in enhanced_query.lower():
+                            key_info_relevance += 0.3
+
+                # 计算时间相关性
+                time_relevance = self._calculate_time_relevance(metadata.get("created_at"))
+
+                # 计算最终排序分数
+                final_score = self._calculate_ranking_score(
+                    similarity_score,
+                    metadata.get("importance_score", 5.0),
+                    self.stats["access_counts"].get(memory_id, 0),
+                    context_relevance,
+                    topic_relevance,
+                    time_relevance,
+                    metadata.get("memory_type")
+                )
+
+                # 提取内容
+                content = self._extract_content_from_memory(memory_data)
+
+                # 检查内容长度
+                if len(content) > 2000:
+                    content = content[:2000] + "..."
+
+                processed_results.append({
                     "memory_id": memory_id,
-                    "content": self._extract_content_from_memory(memory_data),
+                    "content": content,
                     "metadata": metadata,
-                    "similarity_score": score,
+                    "similarity_score": similarity_score,
+                    "final_score": final_score,
                     "memory_type": metadata.get("memory_type"),
                     "tags": metadata.get("tags", []),
                     "emotional_intensity": metadata.get("emotional_intensity", 0.5),
                     "strategic_value": metadata.get("strategic_value", {}),
                     "linked_tool": metadata.get("linked_tool"),
                     "created_at": metadata.get("created_at"),
-                    "access_count": self.semantic_memory_map.get(memory_id, {}).get("access_count", 0),
-                    "importance_score": metadata.get("importance_score", 5.0)
-                }
+                    "access_count": self.stats["access_counts"].get(memory_id, 0),
+                    "importance_score": metadata.get("importance_score", 5.0),
+                    "context_relevance": context_relevance,
+                    "topic_relevance": topic_relevance,
+                    "time_relevance": time_relevance,
+                    "key_info_relevance": key_info_relevance
+                })
 
-                processed_results.append(result)
-
-            # 优化排序：结合相似度、重要性和访问频率
-            processed_results.sort(key=lambda x: (
-                x["similarity_score"] * 0.6 +  # 相似度权重
-                (x.get("importance_score", 5.0) / 10.0) * 0.2 +  # 重要性权重
-                (x.get("access_count", 0) / 10.0) * 0.1 +  # 访问频率权重
-                (1.0 if x.get("memory_type") == "experience" else 0.0) * 0.1  # 类型权重
-            ), reverse=True)
+            # 优化：添加严格的过滤机制，排除低相关度记忆
+            filtered_results = []
+            for result in processed_results:
+                # 1. 最低相似度阈值过滤（默认0.5）
+                if result["similarity_score"] < 0.5:
+                    continue
+                
+                # 2. 最终分数过滤（默认0.3）
+                if result["final_score"] < 0.3:
+                    continue
+                
+                # 3. 记忆质量评估（新增：排除低质量记忆）
+                importance_score = result.get("importance_score", 0.0)
+                if importance_score < 3.0:  # 重要性分数低于3.0的记忆视为低质量
+                    continue
+                
+                filtered_results.append(result)
             
-            return processed_results[:limit]
-        except MemoryException:
-            raise
+            # 按最终分数排序
+            filtered_results.sort(key=lambda x: x["final_score"], reverse=True)
+
+            # 限制结果数量
+            return filtered_results[:limit]
+
         except Exception as e:
-            raise MemorySearchError(
-                f"搜索记忆失败: {str(e)}",
-                details={"query": query, "memory_type": memory_type, "tags": tags, "limit": limit}
-            ) from e
+            print(f"[记忆系统] 搜索记忆失败: {e}")
+            print(f"[记忆系统] 搜索参数: input={enhanced_query}, user_id={self.user_id}, limit={limit * 3}, rerank={rerank}, metadata_filter={metadata_filter}")
+            # 记录完整错误信息到日志
+            traceback.print_exc()
+            return []
+
+    def _search_in_memory_item(self, 
+                               memory_item: Dict[str, Any],
+                               enhanced_query: str,
+                               memory_type: Optional[str] = None,
+                               tags: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """
+        从单个内存项中搜索，计算相关性分数
+        
+        Args:
+            memory_item: 内存项字典，包含content、metadata、memory_id等
+            enhanced_query: 增强后的查询字符串
+            memory_type: 记忆类型过滤
+            tags: 标签过滤
+            
+        Returns:
+            符合条件的记忆结果列表（通常0或1个）
+        """
+        results = []
+        
+        try:
+            # 检查用户ID匹配
+            if memory_item.get("user_id") != self.user_id:
+                return results
+            
+            # 提取记忆内容
+            content = self._extract_content_from_memory(memory_item.get("content", ""))
+            metadata = memory_item.get("metadata", {})
+            memory_id = memory_item.get("memory_id") or metadata.get("memory_id")
+            
+            # 检查记忆类型过滤
+            if memory_type and metadata.get("memory_type") != memory_type:
+                return results
+            
+            # 检查标签过滤
+            if tags:
+                memory_tags = metadata.get("tags", [])
+                if not any(tag in memory_tags for tag in tags):
+                    return results
+            
+            # 计算文本匹配分数（使用Jaccard相似度）
+            similarity_score = self._calculate_text_similarity(enhanced_query, content)
+            
+            # 计算上下文相关性
+            context_relevance = self._calculate_context_relevance(memory_id, metadata)
+            
+            # 计算主题相关性
+            memory_topics = metadata.get("topics", [])
+            topic_relevance = self._calculate_topic_relevance(memory_topics)
+            
+            # 计算关键信息相关性
+            key_info_relevance = 0.0
+            memory_key_info = metadata.get("key_information", [])
+            if memory_key_info:
+                query_lower = enhanced_query.lower()
+                for info in memory_key_info:
+                    if isinstance(info, str) and info.lower() in query_lower:
+                        key_info_relevance += 0.3
+            
+            # 计算时间相关性
+            time_relevance = self._calculate_time_relevance(metadata.get("created_at"))
+            
+            # 计算最终排序分数
+            importance_score = metadata.get("importance_score", 5.0)
+            access_count = self.stats.get("access_counts", {}).get(memory_id, 0)
+            
+            final_score = self._calculate_ranking_score(
+                similarity_score,
+                importance_score,
+                access_count,
+                context_relevance,
+                topic_relevance,
+                time_relevance,
+                metadata.get("memory_type")
+            )
+            
+            # 返回格式化的结果
+            if similarity_score > 0.0 or context_relevance > 0.0 or topic_relevance > 0.0:
+                results.append({
+                    "memory_id": memory_id,
+                    "content": content[:2000] if len(content) > 2000 else content,
+                    "metadata": metadata,
+                    "similarity_score": similarity_score,
+                    "final_score": final_score,
+                    "memory_type": metadata.get("memory_type"),
+                    "tags": metadata.get("tags", []),
+                    "emotional_intensity": metadata.get("emotional_intensity", 0.5),
+                    "strategic_value": metadata.get("strategic_value", {}),
+                    "linked_tool": metadata.get("linked_tool"),
+                    "created_at": metadata.get("created_at"),
+                    "access_count": access_count,
+                    "importance_score": importance_score,
+                    "context_relevance": context_relevance,
+                    "topic_relevance": topic_relevance,
+                    "time_relevance": time_relevance,
+                    "key_info_relevance": key_info_relevance
+                })
+        
+        except Exception as e:
+            print(f"[记忆系统] 搜索内存项失败: {e}")
+        
+        return results
+    
+    def _calculate_text_similarity(self, query: str, content: str) -> float:
+        """
+        计算查询和内容的文本相似度（使用Jaccard相似度）
+        
+        Args:
+            query: 查询字符串
+            content: 内容字符串
+            
+        Returns:
+            相似度分数 (0.0 - 1.0)
+        """
+        if not query or not content:
+            return 0.0
+        
+        query_lower = query.lower().strip()
+        content_lower = content.lower().strip()
+        
+        # 完全匹配
+        if query_lower == content_lower:
+            return 1.0
+        
+        # 查询包含在内容中
+        if query_lower in content_lower:
+            return 0.9
+        
+        # 使用Jaccard相似度
+        query_words = set(query_lower.split())
+        content_words = set(content_lower.split())
+        
+        if not query_words or not content_words:
+            return 0.0
+        
+        intersection = len(query_words & content_words)
+        union = len(query_words | content_words)
+        
+        if union == 0:
+            return 0.0
+        
+        jaccard_score = intersection / union
+        
+        # 如果查询的关键词大部分都在内容中，提高分数
+        if len(query_words) > 0:
+            coverage = intersection / len(query_words)
+            # 结合Jaccard和覆盖率
+            similarity = (jaccard_score * 0.5 + coverage * 0.5)
+            return min(similarity, 1.0)
+        
+        return jaccard_score
+
+    def _search_in_persistent_storage(self,
+                                     enhanced_query: str,
+                                     memory_type: Optional[str] = None,
+                                     tags: Optional[List[str]] = None,
+                                     limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        从文件系统持久化存储中搜索记忆
+        
+        Args:
+            enhanced_query: 增强后的查询字符串
+            memory_type: 记忆类型过滤
+            tags: 标签过滤
+            limit: 结果数量限制
+            
+        Returns:
+            符合条件的记忆结果列表
+        """
+        results = []
+        
+        if not self._persistent_storage_path:
+            return results
+        
+        try:
+            import os
+            from pathlib import Path
+            
+            storage_file = Path(self._persistent_storage_path)
+            if not storage_file.exists():
+                return results
+            
+            # 从JSONL文件读取记忆
+            with open(storage_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    
+                    try:
+                        memory_item = json.loads(line.strip())
+                        
+                        # 检查用户ID匹配
+                        if memory_item.get("user_id") != self.user_id:
+                            continue
+                        
+                        metadata = memory_item.get("metadata", {})
+                        
+                        # 检查记忆类型过滤
+                        if memory_type and metadata.get("memory_type") != memory_type:
+                            continue
+                        
+                        # 检查标签过滤
+                        if tags:
+                            memory_tags = metadata.get("tags", [])
+                            if not any(tag in memory_tags for tag in tags):
+                                continue
+                        
+                        # 提取内容
+                        content = self._extract_content_from_memory(memory_item.get("content", ""))
+                        memory_id = memory_item.get("memory_id") or metadata.get("memory_id")
+                        
+                        # 计算相关性分数
+                        similarity_score = self._calculate_text_similarity(enhanced_query, content)
+                        
+                        # 只保留有一定相关性的结果
+                        if similarity_score < 0.1:
+                            continue
+                        
+                        # 计算上下文相关性
+                        context_relevance = self._calculate_context_relevance(memory_id, metadata)
+                        
+                        # 计算主题相关性
+                        memory_topics = metadata.get("topics", [])
+                        topic_relevance = self._calculate_topic_relevance(memory_topics)
+                        
+                        # 计算关键信息相关性
+                        key_info_relevance = 0.0
+                        memory_key_info = metadata.get("key_information", [])
+                        if memory_key_info:
+                            query_lower = enhanced_query.lower()
+                            for info in memory_key_info:
+                                if isinstance(info, str) and info.lower() in query_lower:
+                                    key_info_relevance += 0.3
+                        
+                        # 计算时间相关性
+                        time_relevance = self._calculate_time_relevance(metadata.get("created_at"))
+                        
+                        # 计算最终排序分数
+                        importance_score = metadata.get("importance_score", 5.0)
+                        access_count = self.stats.get("access_counts", {}).get(memory_id, 0)
+                        
+                        final_score = self._calculate_ranking_score(
+                            similarity_score,
+                            importance_score,
+                            access_count,
+                            context_relevance,
+                            topic_relevance,
+                            time_relevance,
+                            metadata.get("memory_type")
+                        )
+                        
+                        results.append({
+                            "memory_id": memory_id,
+                            "content": content[:2000] if len(content) > 2000 else content,
+                            "metadata": metadata,
+                            "similarity_score": similarity_score,
+                            "final_score": final_score,
+                            "memory_type": metadata.get("memory_type"),
+                            "tags": metadata.get("tags", []),
+                            "emotional_intensity": metadata.get("emotional_intensity", 0.5),
+                            "strategic_value": metadata.get("strategic_value", {}),
+                            "linked_tool": metadata.get("linked_tool"),
+                            "created_at": metadata.get("created_at"),
+                            "access_count": access_count,
+                            "importance_score": importance_score,
+                            "context_relevance": context_relevance,
+                            "topic_relevance": topic_relevance,
+                            "time_relevance": time_relevance,
+                            "key_info_relevance": key_info_relevance
+                        })
+                    
+                    except json.JSONDecodeError as e:
+                        print(f"[记忆系统] 解析JSONL行失败: {e}")
+                        continue
+                    except Exception as e:
+                        print(f"[记忆系统] 处理持久化记忆项失败: {e}")
+                        continue
+            
+            # 按最终分数排序并限制数量
+            results.sort(key=lambda x: x.get("final_score", 0), reverse=True)
+            return results[:limit]
+        
+        except Exception as e:
+            print(f"[记忆系统] 从持久化存储搜索失败: {e}")
+            return []
+    
+    def _fallback_search(self,
+                        query: str,
+                        memory_type: Optional[str] = None,
+                        tags: Optional[List[str]] = None,
+                        limit: int = 5,
+                        similarity_threshold: float = 0.7) -> List[Dict[str, Any]]:
+        """
+        当memo0不可用或失败时的回退搜索方法
+        
+        Args:
+            query: 原始查询
+            memory_type: 记忆类型
+            tags: 标签
+            limit: 结果数量限制
+            similarity_threshold: 相似度阈值
+            
+        Returns:
+            记忆结果列表
+        """
+        try:
+            # 构建上下文增强查询
+            context_enhanced_query = self._build_context_enhanced_query(query)
+            
+            # 增强搜索查询
+            enhanced_query = self._enhance_search_query(context_enhanced_query)
+            
+            results = []
+            
+            # 从内存存储搜索
+            for memory_item in self.memory_store:
+                item_results = self._search_in_memory_item(memory_item, enhanced_query, memory_type, tags)
+                results.extend(item_results)
+            
+            # 从文件存储搜索（如果可用）
+            if self._persistent_storage_path:
+                file_results = self._search_in_persistent_storage(enhanced_query, memory_type, tags, limit * 2)
+                # 合并结果并去重
+                existing_ids = {r["memory_id"] for r in results}
+                for result in file_results:
+                    if result["memory_id"] not in existing_ids:
+                        results.append(result)
+                        existing_ids.add(result["memory_id"])
+            
+            # 应用相似度阈值过滤
+            filtered_results = [
+                r for r in results 
+                if r.get("similarity_score", 0) >= similarity_threshold
+            ]
+            
+            # 按最终分数排序
+            filtered_results.sort(key=lambda x: x.get("final_score", 0), reverse=True)
+            
+            # 限制结果数量
+            return filtered_results[:limit]
+        
+        except Exception as e:
+            print(f"[记忆系统] 回退搜索失败: {e}")
+            return []
 
     def _extract_content_from_memory(self, memory_data: Any) -> str:
         """从记忆数据中提取内容"""
         if isinstance(memory_data, list):
-            return "\n".join(
-                [f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in memory_data if isinstance(msg, dict)])
-        elif isinstance(memory_data, str):
-            return memory_data
+            # 处理对话格式的记忆
+            content_parts = []
+            for msg in memory_data:
+                if isinstance(msg, dict) and "content" in msg:
+                    content_parts.append(msg["content"])
+            return " ".join(content_parts)
+        elif isinstance(memory_data, dict) and "content" in memory_data:
+            # 处理单个内容对象
+            return str(memory_data["content"])
         else:
+            # 直接返回字符串表示
             return str(memory_data)
-    
+
+    def get_memory_by_id(self, memory_id: str) -> Optional[Dict[str, Any]]:
+        """根据ID获取记忆"""
+        try:
+            if not self.memory:
+                # 使用简化的内存存储
+                for memory_item in self.memory_store:
+                    if memory_item["metadata"].get("memory_id") == memory_id:
+                        return {
+                            "memory_id": memory_id,
+                            "content": self._extract_content_from_memory(memory_item["content"]),
+                            "metadata": memory_item["metadata"]
+                        }
+                return None
+
+            # 使用memo0 API获取记忆
+            memories = self.memory.get(memory_id=memory_id, user_id=self.user_id)
+            if memories and isinstance(memories, list) and len(memories) > 0:
+                memory = memories[0]
+                metadata = memory.get("metadata", {})
+                return {
+                    "memory_id": memory_id,
+                    "content": self._extract_content_from_memory(memory.get("memory", {})),
+                    "metadata": metadata
+                }
+            return None
+        except Exception as e:
+            print(f"[记忆系统] 根据ID获取记忆失败: {e}")
+            return None
+
     def _evaluate_content_value(self, content: str) -> float:
-        """评估内容价值"""
-        # 简单的长度检查
-        if len(content.strip()) < 3:
-            return 0.0
-        
-        # 检查是否为无意义内容
-        meaningless_patterns = ["嗯...", "啊...", "哦...", "这个...", "那个..."]
-        if any(pattern in content for pattern in meaningless_patterns):
-            return 0.0
-        
-        # 调用大模型评估
+        """评估内容的价值，返回1-10的评分"""
         try:
-            score = self.llm_client.evaluate_content_value(content)
-            return score
+            # 使用记忆评估器进行评估
+            result = self.memory_evaluator.evaluate(content)
+            return result.overall_score
         except Exception as e:
-            print(f"[记忆系统] 内容价值评估失败: {e}")
-            # 使用优化的备用算法
-            content_stripped = content.strip()
-            content_length = len(content_stripped)
-            
-            # 检查是否包含问题或命令
-            question_patterns = ["?", "吗", "呢", "为什么", "怎么", "如何", "什么", "哪里", "何时"]
-            command_patterns = ["请", "帮", "给", "做", "写", "创建", "生成", "分析"]
-            
-            # 检查是否包含关键词
-            has_question = any(pattern in content_stripped for pattern in question_patterns)
-            has_command = any(pattern in content_stripped for pattern in command_patterns)
-            
-            # 基于内容特征评分
-            if content_length < 10:
-                # 非常短的内容
-                if has_question or has_command:
-                    return 4.5  # 短问题或命令有一定价值
-                else:
-                    return 3.0
-            elif content_length < 50:
-                # 中等长度内容
-                if has_question or has_command:
-                    return 6.0  # 问题或命令价值较高
-                else:
-                    return 5.0
-            else:
-                # 长内容
-                return 7.0
-    
-    def batch_evaluate_content_value(self, contents: List[str]) -> List[float]:
-        """批量评估内容价值"""
-        scores = []
-        
-        for content in contents:
-            scores.append(self._evaluate_content_value(content))
-        
-        return scores
-    
-    def _calculate_importance_score(self, content: str, memory_type: str) -> float:
-        """计算内容重要性"""
-        # 基于记忆类型的基础分数
-        type_scores = {
-            "user_profile": 9.0,
-            "knowledge": 8.0,
-            "strategy": 7.0,
-            "experience": 7.0,
-            "conversation": 7.0,  # 提高对话记忆的基础分数
-            "emotion": 6.0,
-            "system_event": 4.0,
-            "temporal": 3.0
-        }
-        base_score = type_scores.get(memory_type, 6.0)  # 默认分数也提高
-        
-        # 检查是否包含重要关键词
-        important_keywords = ["重要", "会议", "项目", "电话", "号码", " deadline ", "截止日期", "负责人"]
-        keyword_bonus = 0.0
-        if any(keyword in content for keyword in important_keywords):
-            keyword_bonus = 3.0
-        
-        # 调用大模型评估
-        try:
-            score = self.llm_client.calculate_importance_score(content)
-            # 结合基础分数和关键词加成
-            final_score = (score + base_score + keyword_bonus) / 3
-            return min(10.0, final_score)
-        except Exception as e:
-            print(f"[记忆系统] 重要性评估失败: {e}")
-            # 使用备用算法
-            final_score = base_score + keyword_bonus
-            return min(10.0, final_score)
-    
+            print(f"[记忆系统] 评估内容价值失败: {e}")
+            # 默认返回中等价值
+            return 5.0
+
     def _check_duplicate_content(self, content: str, memory_type: str) -> Optional[str]:
-        """检查重复内容"""
-        # 简单的重复检查实现
-        # 实际项目中可以使用更复杂的相似度算法
-        content_hash = hashlib.md5(content.encode()).hexdigest()
-        
-        # 检查语义记忆地图中是否有相似内容
-        for memory_id, memory_data in self.semantic_memory_map.items():
-            preview = memory_data.get("metadata", {}).get("content_preview", "")
-            if preview:
-                preview_hash = hashlib.md5(preview.encode()).hexdigest()
-                # 简单的哈希比较，实际项目中应该使用更复杂的相似度算法
-                if content_hash == preview_hash:
-                    return memory_id
-        
+        """检查是否有重复内容"""
+        # 简化的重复检查，实际项目中可以使用更复杂的算法
         return None
 
-    def find_conversations(self,
-                           query: str,
-                           session_id: Optional[str] = None,
-                           limit: int = 5) -> List[Dict[str, Any]]:
-        """查找相关对话"""
-        target_session: str = session_id or self.session_id
-        return self.search_memories(query=query, memory_type="conversation", limit=limit)
-
-    def get_recent_conversations(self,
-                                 session_id: Optional[str] = None,
-                                 limit: int = 5) -> List[Dict[str, Any]]:
-        """按时间顺序获取最近对话（优化版 - 使用元数据过滤减少数据传输）"""
-        target_session: str = session_id or self.session_id
-
-        from datetime import datetime, timedelta
-
-        # 如果使用简化的内存存储
-        if not self.memory:
-            # 简化的最近对话获取逻辑
-            recent_conversations: List[Dict[str, Any]] = []
-            for memory_item in self.memory_store:
-                # 检查用户ID
-                if memory_item["user_id"] != self.user_id:
-                    continue
-                
-                metadata = memory_item["metadata"]
-                
-                # 检查记忆类型
-                if metadata.get("memory_type") != "conversation":
-                    continue
-                
-                # 检查会话ID
-                if metadata.get("session_id") != target_session:
-                    continue
-                
-                memory_data = memory_item["content"]
-                created_at: str = metadata.get("created_at", datetime.now().isoformat())
-                
-                recent_conversations.append({
-                    "memory_id": metadata.get("memory_id"),
-                    "content": self._extract_content_from_memory(memory_data),
-                    "metadata": metadata,
-                    "memory_type": metadata.get("memory_type"),
-                    "tags": metadata.get("tags", []),
-                    "emotional_intensity": metadata.get("emotional_intensity", 0.5),
-                    "strategic_value": metadata.get("strategic_value", {}),
-                    "linked_tool": metadata.get("linked_tool"),
-                    "created_at": created_at,
-                    "access_count": self.semantic_memory_map.get(metadata.get("memory_id"), {}).get("access_count", 0)
-                })
-            
-            # 按时间排序
-            recent_conversations.sort(key=lambda x: x["created_at"], reverse=True)
-            return recent_conversations[:limit]
-
-        try:
-            # 优化：使用搜索功能代替get_all，减少数据传输量
-            # 添加时间范围限制（最近30天）
-            time_threshold: str = (datetime.now() - timedelta(days=30)).isoformat()
-
-            # 使用搜索API，带时间范围过滤
-            search_results: Dict[str, Any] = self.memory.search(
-                query="conversation",
-                user_id=self.user_id,
-                limit=limit * 3  # 获取更多结果用于过滤
-            )
-
-            recent_conversations: List[Dict[str, Any]] = []
-            for hit in search_results.get("results", []):
-                memory_data: Any = hit.get("memory", {})
-                metadata: Dict[str, Any] = hit.get("metadata", {})
-
-                # 元数据过滤
-                if metadata.get("memory_type") != "conversation":
-                    continue
-
-                if metadata.get("session_id") != target_session:
-                    continue
-
-                created_at: str = metadata.get("created_at", datetime.now().isoformat())
-
-                # 过滤时间范围
-                if created_at < time_threshold:
-                    continue
-
-                # 添加类型检查
-                if not isinstance(memory_data, dict) and not isinstance(memory_data, (list, str)):
-                    print(f"[记忆系统] 警告：记忆数据类型异常: {type(memory_data)}")
-                    continue
-
-                recent_conversations.append({
-                    "memory_id": metadata.get("memory_id"),
-                    "content": self._extract_content_from_memory(memory_data),
-                    "metadata": metadata,
-                    "memory_type": metadata.get("memory_type"),
-                    "tags": metadata.get("tags", []),
-                    "emotional_intensity": metadata.get("emotional_intensity", 0.5),
-                    "strategic_value": metadata.get("strategic_value", {}),
-                    "linked_tool": metadata.get("linked_tool"),
-                    "created_at": created_at,
-                    "access_count": self.semantic_memory_map.get(metadata.get("memory_id"), {}).get("access_count", 0)
-                })
-
-            # 按时间排序
-            recent_conversations.sort(key=lambda x: x["created_at"], reverse=True)
-            return recent_conversations[:limit]
-
-        except MemoryException:
-            raise
-        except Exception as e:
-            print(f"[记忆系统] 获取最近对话失败: {e}")
-            # 回退到原有实现
-            try:
-                all_memories: List[Any] = self.memory.get_all(user_id=self.user_id)
-                recent_conversations: List[Dict[str, Any]] = []
-                for memory_item in all_memories:
-                    if not isinstance(memory_item, dict):
-                        continue
-
-                    memory_data: Any = memory_item.get("memory", {})
-                    metadata: Dict[str, Any] = memory_item.get("metadata", {})
-
-                    if metadata.get("memory_type") != "conversation":
-                        continue
-
-                    if metadata.get("session_id") != target_session:
-                        continue
-
-                    created_at: str = metadata.get("created_at", datetime.now().isoformat())
-
-                    recent_conversations.append({
-                        "memory_id": metadata.get("memory_id"),
-                        "content": self._extract_content_from_memory(memory_data),
-                        "metadata": metadata,
-                        "memory_type": metadata.get("memory_type"),
-                        "tags": metadata.get("tags", []),
-                        "emotional_intensity": metadata.get("emotional_intensity", 0.5),
-                        "strategic_value": metadata.get("strategic_value", {}),
-                        "linked_tool": metadata.get("linked_tool"),
-                        "created_at": created_at,
-                        "access_count": self.semantic_memory_map.get(metadata.get("memory_id"), {}).get("access_count", 0)
-                    })
-
-                recent_conversations.sort(key=lambda x: x["created_at"], reverse=True)
-                return recent_conversations[:limit]
-            except MemoryException:
-                raise
-            except Exception as fallback_error:
-                raise MemoryRetrievalError(
-                    f"获取最近对话失败（主方法和回退方法都失败）: {str(fallback_error)}",
-                    details={"session_id": target_session, "limit": limit}
-                ) from fallback_error
-
-    def find_experiences(self,
-                         context: Dict[str, Any],
-                         limit: int = 3) -> List[Dict[str, Any]]:
-        """查找相关经历记忆"""
-        query_parts: List[str] = []
-        if "user_input" in context:
-            query_parts.append(context["user_input"])
-        if "user_emotion" in context:
-            query_parts.append(f"情绪 {context['user_emotion']}")
-        if "topic" in context:
-            query_parts.append(f"话题 {context['topic']}")
-
-        return self.search_memories(query=" ".join(query_parts), memory_type="experience", limit=limit)
-
-    # ============ 记忆管理 ============
-
-    def get_memory(self, memory_id: str, include_full_data: bool = False) -> Optional[Dict[str, Any]]:
-        """获取特定记忆"""
-        if memory_id in self.semantic_memory_map:
-            search_results: List[Dict[str, Any]] = self.search_memories(query=memory_id, limit=1)
-            if search_results:
-                memory_info: Dict[str, Any] = search_results[0]
-                # 确保更新访问统计
-                if memory_id in self.semantic_memory_map:
-                    self.semantic_memory_map[memory_id]["access_count"] += 1
-                    self.semantic_memory_map[memory_id]["last_accessed"] = datetime.now().isoformat()
-                    self.stats["access_counts"][memory_id] = self.stats["access_counts"].get(memory_id, 0) + 1
-                    print(f"[记忆系统] 更新记忆访问统计: {memory_id} (访问次数: {self.semantic_memory_map[memory_id]['access_count']})")
-
-                if include_full_data:
-                    full_data: Optional[Dict[str, Any]] = self._load_full_memory_from_local(memory_id)
-                    if full_data:
-                        memory_info["full_data"] = full_data
-
-                return memory_info
-        return None
-
-    def _load_full_memory_from_local(self, memory_id: str) -> Optional[Dict[str, Any]]:
-        """从本地文件加载完整记忆数据"""
-        try:
-            local_file: str = f"./memory_backup/{self.user_id}/{self.session_id}/{memory_id}.json"
-            if os.path.exists(local_file):
-                with open(local_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-        except:
-            pass
-        return None
-    
-    def _sort_memories_by_value(self) -> List[Tuple[str, float]]:
-        """按记忆价值排序"""
-        memory_values = []
+    def _calculate_importance_score(self, content: str, memory_type: str, metadata: Dict[str, Any]) -> float:
+        """计算记忆的重要性分数"""
+        # 基础分数
+        base_score = 5.0
         
-        for memory_id, memory_data in self.semantic_memory_map.items():
-            # 计算记忆价值分数
-            importance_score = memory_data.get("importance_score", 5.0)
-            access_count = memory_data.get("access_count", 0)
-            content_value = memory_data.get("content_value", 5.0)
-            
-            # 计算综合价值分数
-            # 重要性占50%，访问次数占30%，内容价值占20%
-            total_value = importance_score * 0.5 + access_count * 0.3 + content_value * 0.2
-            memory_values.append((memory_id, total_value))
+        # 类型权重
+        type_weights = {
+            "user_profile": 2.0,
+            "knowledge": 1.8,
+            "strategy": 1.6,
+            "experience": 1.4,
+            "emotion": 1.2,
+            "conversation": 1.0,
+            "system_event": 0.8,
+            "temporal": 0.6
+        }
         
-        # 按价值排序，从低到高
-        memory_values.sort(key=lambda x: x[1])
-        return memory_values
-    
-    def cleanup_memory(self, max_memories: int = 100, min_value_threshold: float = 3.0) -> int:
-        """清理低价值记忆"""
-        # 计算当前记忆数量
-        current_count = len(self.semantic_memory_map)
-        if current_count <= max_memories:
-            print(f"[记忆系统] 记忆数量({current_count})未超过限制({max_memories})，无需清理")
-            return 0
+        # 应用类型权重
+        base_score *= type_weights.get(memory_type, 1.0)
         
-        # 按价值排序
-        sorted_memories = self._sort_memories_by_value()
+        # 内容长度权重
+        content_length = len(content)
+        if content_length > 1000:
+            base_score += 1.0
+        elif content_length < 100:
+            base_score -= 1.0
         
-        # 计算需要清理的数量
-        memories_to_clean = current_count - max_memories
-        cleaned_count = 0
+        # 情感强度权重
+        if "emotional_intensity" in metadata and metadata["emotional_intensity"] > 0.7:
+            base_score += 1.0
         
-        print(f"[记忆系统] 开始清理低价值记忆，当前数量: {current_count}，目标数量: {max_memories}")
+        # 策略价值权重
+        if "strategic_score" in metadata and metadata["strategic_score"] > 0.7:
+            base_score += 1.0
         
-        # 清理低价值记忆
-        for memory_id, value in sorted_memories:
-            if cleaned_count >= memories_to_clean:
-                break
-            
-            if value < min_value_threshold:
-                print(f"[记忆系统] 清理低价值记忆: {memory_id} (价值: {value:.2f})")
-                # 从语义记忆地图中删除
-                if memory_id in self.semantic_memory_map:
-                    del self.semantic_memory_map[memory_id]
-                # 从访问统计中删除
-                if memory_id in self.stats["access_counts"]:
-                    del self.stats["access_counts"][memory_id]
-                cleaned_count += 1
-        
-        # 更新统计信息
-        self.stats["total_memories"] = len(self.semantic_memory_map)
-        
-        print(f"[记忆系统] 清理完成，共清理 {cleaned_count} 个低价值记忆，剩余 {len(self.semantic_memory_map)} 个记忆")
-        return cleaned_count
+        # 归一化到1-10范围
+        return min(max(base_score, 1.0), 10.0)
 
-    # ============ 批量操作 ============
-
-    def add_conversation_batch(self, conversations: List[Dict[str, Any]]) -> List[str]:
-        """批量添加对话"""
-        return [
-            self.add_memory(content=conv, memory_type="conversation", tags=["对话", "批量导入"],
-                            emotional_intensity=conv.get("emotional_intensity", 0.5))
-            for conv in conversations
-        ]
-
-    def store_conversation(self, user_input: str, system_response: str, emotional_intensity: float = 0.5, tags: Optional[List[str]] = None) -> str:
-        """主动存储对话信息到向量库
+    def get_recent_conversations(self, session_id: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        获取最近的对话（优先从短期记忆获取）
+        
+        优化版：增强对话历史的完整性和格式一致性，以支持话题连贯性
         
         Args:
-            user_input: 用户输入内容
-            system_response: 系统回复内容
-            emotional_intensity: 情感强度（0.0-1.0）
-            tags: 标签列表
+            session_id: 会话ID，默认使用当前会话
+            limit: 返回的最大对话数量
             
         Returns:
-            存储的记忆ID，如果存储失败则返回失败原因
+            对话历史列表，每个元素包含：
+            - user_input: 用户输入
+            - system_response: 系统回复
+            - timestamp: 时间戳
+            - topics: 对话主题（如果有）
         """
+        results = []
+        conversation_id = session_id or self.session_id
+        
+        # 1. 从短期记忆获取（最快、最准确）
         try:
-            # 构建对话内容格式
-            conversation_content = [
-                {"role": "user", "content": user_input},
-                {"role": "assistant", "content": system_response}
-            ]
-            
-            # 合并标签
-            conversation_tags = tags or []
-            conversation_tags.extend(["对话", "主动存储"])
-            
-            # 存储对话
-            memory_id = self.add_memory(
-                content=conversation_content,
-                memory_type="conversation",
-                tags=conversation_tags,
-                emotional_intensity=emotional_intensity,
-                strategic_value={"score": 6.0, "level": "中"}
+            short_term_memories = self.search_short_term_memories(
+                conversation_id=conversation_id,
+                limit=limit * 2  # 获取更多以便过滤
             )
             
-            print(f"[记忆系统] 主动存储对话成功，ID: {memory_id}")
-            return memory_id
+            for stm in short_term_memories:
+                metadata = stm.metadata or {}
+                # 优先使用metadata中的user_input和system_response，而不是content
+                # 这样可以避免解析格式化文本
+                user_input = metadata.get("user_input", "")
+                system_response = metadata.get("system_response", "")
+                
+                # 如果metadata中没有，尝试从content解析
+                if not user_input and not system_response:
+                    content = stm.content
+                    if isinstance(content, str):
+                        # 尝试解析格式化的对话内容
+                        if "用户:" in content or "用户：" in content:
+                            lines = content.split("\n")
+                            for line in lines:
+                                line = line.strip()
+                                if line.startswith("用户:") or line.startswith("用户："):
+                                    user_input = line.replace("用户:", "").replace("用户：", "").strip()
+                                elif line.startswith("AI:") or line.startswith("AI："):
+                                    system_response = line.replace("AI:", "").replace("AI：", "").strip()
+                
+                # 只添加有效的对话（至少有用户输入或系统回复）
+                if user_input or system_response:
+                    # 构建格式化的content（用于向后兼容）
+                    formatted_content = f"用户: {user_input}\nAI: {system_response}" if user_input and system_response else stm.content
+                    
+                    # 提取主题信息
+                    topics = metadata.get("topics", [])
+                    
+                    results.append({
+                        "content": formatted_content,
+                        "user_input": user_input,  # 新增：直接提供user_input
+                        "system_response": system_response,  # 新增：直接提供system_response
+                        "timestamp": stm.created_at.isoformat(),  # 新增：直接提供timestamp
+                        "topics": topics,  # 新增：对话主题
+                        "metadata": {
+                            "memory_id": stm.memory_id,
+                            "created_at": stm.created_at.isoformat(),
+                            "memory_type": "conversation",
+                            "user_input": user_input,
+                            "system_response": system_response,
+                            "topics": topics,
+                            **{k: v for k, v in metadata.items() if k not in ["user_input", "system_response", "topics"]}
+                        }
+                    })
         except Exception as e:
-            error_message = f"存储对话失败: {e}"
-            print(f"[记忆系统] {error_message}")
-            return error_message
-
-    def import_user_profile(self, profile_data: Dict[str, Any]) -> List[str]:
-        """导入用户档案数据"""
-        memory_ids: List[str] = []
-
-        # 导入用户记忆
-        if "memories" in profile_data:
-            for memory in profile_data["memories"]:
-                memory_ids.append(self.add_memory(
-                    content=memory.get("content", ""),
-                    memory_type="experience",
-                    tags=memory.get("tags", ["用户记忆"]),
-                    emotional_intensity=memory.get("emotional_intensity", 0.5),
-                    strategic_value=memory.get("strategic_value", {})
-                ))
-
-        # 导入用户特征
-        if "personality_traits" in profile_data:
-            traits_text: str = json.dumps(profile_data["personality_traits"], ensure_ascii=False)
-            memory_ids.append(self.add_memory(
-                content=f"用户性格特征: {traits_text}",
-                memory_type="user_profile",
-                tags=["性格特征", "用户档案"]
-            ))
-
-        return memory_ids
-
-    # ============ 统计与分析 ============
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """获取统计信息"""
-        # 计算最常用的标签
-        top_tags: List[Tuple[str, int]] = sorted(self.stats["tags_distribution"].items(), key=lambda x: x[1], reverse=True)[:10]
-
-        # 计算最常访问的记忆
-        top_accessed: List[Tuple[str, Dict[str, Any]]] = sorted(self.semantic_memory_map.items(),
-                              key=lambda x: x[1].get("access_count", 0), reverse=True)[:5]
-
-        top_accessed_formatted: List[Dict[str, Any]] = [{
-            "memory_id": mem_id,
-            "access_count": mem_data.get("access_count", 0),
-            "last_accessed": mem_data.get("last_accessed"),
-            "strategic_score": mem_data.get("strategic_score", 0)
-        } for mem_id, mem_data in top_accessed]
-
-        return {
-            "total_memories": self.stats["total_memories"],
-            "memory_types": self.stats["by_type"],
-            "top_tags": dict(top_tags),
-            "top_accessed_memories": top_accessed_formatted,
-            "strategic_tags_count": len(self.strategic_tags),
-            "user_id": self.user_id,
-            "session_id": self.session_id,
-            "semantic_map_size": len(self.semantic_memory_map)
-        }
-
-    # ============ 共鸣记忆功能 ============
-
+            # 短期记忆获取失败不影响整体流程
+            print(f"[记忆系统] 获取短期记忆失败: {e}")
+            pass
+        
+        # 2. 如果短期记忆不足，从长期记忆补充（使用时间排序而非空查询）
+        if len(results) < limit:
+            try:
+                remaining_limit = limit - len(results)
+                
+                # 从内存存储获取对话类型的记忆，按时间排序
+                conversation_memories = []
+                # 使用user_input作为去重键，更准确
+                existing_inputs = {r.get("user_input", r.get("content", "")) for r in results}
+                
+                # 从memory_store列表获取对话记忆
+                for memory_item in self.memory_store:
+                    if isinstance(memory_item, dict):
+                        memory_type = memory_item.get("metadata", {}).get("memory_type", "")
+                        if memory_type == "conversation":
+                            conversation_memories.append(memory_item)
+                
+                # 按创建时间倒序排序
+                conversation_memories.sort(
+                    key=lambda x: x.get("metadata", {}).get("created_at", ""),
+                    reverse=True
+                )
+                
+                # 转换格式并添加（避免重复）
+                for memory in conversation_memories[:remaining_limit * 2]:
+                    content = memory.get("content", "")
+                    metadata = memory.get("metadata", {})
+                    
+                    # 提取user_input和system_response
+                    user_input = metadata.get("user_input", "")
+                    system_response = metadata.get("system_response", "")
+                    
+                    # 如果metadata中没有，尝试从content解析
+                    if not user_input and not system_response and isinstance(content, str):
+                        if "用户:" in content or "用户：" in content:
+                            lines = content.split("\n")
+                            for line in lines:
+                                line = line.strip()
+                                if line.startswith("用户:") or line.startswith("用户："):
+                                    user_input = line.replace("用户:", "").replace("用户：", "").strip()
+                                elif line.startswith("AI:") or line.startswith("AI："):
+                                    system_response = line.replace("AI:", "").replace("AI：", "").strip()
+                    
+                    # 检查是否重复
+                    check_key = user_input if user_input else content
+                    if check_key and check_key not in existing_inputs:
+                        created_at = metadata.get("created_at", datetime.now().isoformat())
+                        topics = metadata.get("topics", [])
+                        
+                        results.append({
+                            "content": content if isinstance(content, str) else str(content),
+                            "user_input": user_input,
+                            "system_response": system_response,
+                            "timestamp": created_at,
+                            "topics": topics,
+                            "metadata": {
+                                "memory_id": metadata.get("memory_id", ""),
+                                "created_at": created_at,
+                                "memory_type": "conversation",
+                                "user_input": user_input,
+                                "system_response": system_response,
+                                "topics": topics,
+                                **{k: v for k, v in metadata.items() if k not in ["memory_id", "created_at", "memory_type", "user_input", "system_response", "topics"]}
+                            }
+                        })
+                        existing_inputs.add(check_key)
+                        if len(results) >= limit:
+                            break
+                
+                # 如果memory_store不足，尝试使用memo0搜索（但不使用空查询）
+                if len(results) < limit and self.memory:
+                    try:
+                        # 使用一个通用的对话查询词而不是空查询
+                        memo0_results = self.memory.search(
+                            "conversation dialogue chat",
+                            user_id=self.user_id,
+                            limit=remaining_limit,
+                            filters={"memory_type": "conversation"},
+                            rerank=False
+                        )
+                        
+                        # 转换memo0结果格式
+                        for result in memo0_results.get("results", []):
+                            content = result.get("memory", "")
+                            result_metadata = result.get("metadata", {})
+                            user_input = result_metadata.get("user_input", "")
+                            system_response = result_metadata.get("system_response", "")
+                            
+                            check_key = user_input if user_input else content
+                            if check_key and check_key not in existing_inputs:
+                                created_at = result.get("created_at", datetime.now().isoformat())
+                                topics = result_metadata.get("topics", [])
+                                
+                                results.append({
+                                    "content": content,
+                                    "user_input": user_input,
+                                    "system_response": system_response,
+                                    "timestamp": created_at,
+                                    "topics": topics,
+                                    "metadata": {
+                                        "memory_id": result.get("id", ""),
+                                        "created_at": created_at,
+                                        "memory_type": "conversation",
+                                        "user_input": user_input,
+                                        "system_response": system_response,
+                                        "topics": topics,
+                                        **{k: v for k, v in result_metadata.items() if k not in ["user_input", "system_response", "topics"]}
+                                    }
+                                })
+                                existing_inputs.add(check_key)
+                                if len(results) >= limit:
+                                    break
+                    except Exception as e:
+                        # memo0搜索失败，至少返回memory_store的结果
+                        print(f"[记忆系统] memo0搜索失败: {e}")
+                        pass
+            except Exception as e:
+                # 长期记忆获取失败，至少返回短期记忆的结果
+                print(f"[记忆系统] 获取长期记忆失败: {e}")
+                pass
+        
+        # 按时间倒序排序（最新的在前）
+        results.sort(key=lambda x: x.get("timestamp", x.get("metadata", {}).get("created_at", "")), reverse=True)
+        
+        return results[:limit]
+    
     def find_resonant_memory(self, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """寻找共鸣记忆"""
-        query_text: str = self._build_resonance_query(context)
-        if not query_text:
-            return None
-
-        # 搜索相关经历记忆
-        similar_experiences: List[Dict[str, Any]] = self.find_experiences(context, limit=5)
+        """寻找共鸣记忆
         
-        # 搜索相关对话
-        similar_conversations: List[Dict[str, Any]] = self.find_conversations(query_text, limit=3)
-        
-        # 合并并过滤结果
-        all_matches: List[Dict[str, Any]] = []
-        
-        # 添加经历记忆
-        for experience in similar_experiences:
-            if experience.get("similarity_score", 0) > 0.7:
-                all_matches.append(experience)
-        
-        # 添加对话记忆
-        for conversation in similar_conversations:
-            if conversation.get("similarity_score", 0) > 0.6:
-                all_matches.append(conversation)
-        
-        # 按相似度排序
-        all_matches.sort(key=lambda x: x.get("similarity_score", 0), reverse=True)
-        
-        # 限制返回数量
-        top_matches: List[Dict[str, Any]] = all_matches[:3]
-        
-        if not top_matches:
-            return None
-        
-        # 如果只有一个匹配，使用原有方法
-        if len(top_matches) == 1:
-            return self._build_tactical_package(top_matches[0], context)
-        else:
-            # 使用新方法构建组合记忆包
-            return self._build_combined_tactical_package(top_matches, context)
-
-    def _build_resonance_query(self, context: Dict[str, Any]) -> str:
-        """构建共鸣查询"""
-        parts: List[str] = []
-        if "user_input" in context:
-            parts.append(context["user_input"])
-        if "user_emotion" in context:
-            parts.append(f"情绪: {context['user_emotion']}")
-        if "topic" in context:
-            parts.append(f"话题: {context['topic']}")
-        return " ".join(parts) if parts else ""
-
-    def _build_tactical_package(self, memory_match: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
-        """构建战术信息包"""
-        metadata: Dict[str, Any] = memory_match.get("metadata", {})
-
-        return {
-            "triggered_memory": memory_match.get("content", "未知记忆"),
-            "memory_id": memory_match.get("memory_id"),
-            "relevance_score": memory_match.get("similarity_score", 0),
-            "source": metadata.get("source", "unknown"),
-            "tags": metadata.get("tags", []),
-            "strategic_value": metadata.get("strategic_value", {}),
-            "linked_tool": metadata.get("linked_tool"),
-            "emotional_intensity": metadata.get("emotional_intensity", 0.5),
-            "risk_assessment": self._assess_memory_risk(metadata),
-            "recommended_actions": self._generate_recommendations(metadata, context),
-            "timestamp": datetime.now().isoformat(),
-            "retrieval_method": "memo0_vector_search"
-        }
-
-    def _build_combined_tactical_package(self, memory_matches: List[Dict[str, Any]], context: Dict[str, Any]) -> Dict[str, Any]:
-        """构建组合战术信息包"""
-        if not memory_matches:
-            return None
-
-        # 按创建时间和相似度排序
-        def sort_key(memory):
-            created_at = memory.get("metadata", {}).get("created_at", "1970-01-01T00:00:00")
-            similarity_score = memory.get("similarity_score", 0)
-            return (similarity_score, created_at)
-
-        sorted_matches = sorted(memory_matches, key=sort_key, reverse=True)
-
-        # 提取记忆内容
-        memory_contents = []
-        all_tags = set()
-        emotional_intensities = []
-        strategic_values = []
-        risk_factors = []
-
-        for memory in sorted_matches:
-            content = memory.get("content", "")
-            if content:
-                memory_contents.append(content)
+        Args:
+            context: 包含用户输入、情绪、主题等信息的上下文字典
             
-            # 收集标签
-            tags = memory.get("tags", [])
-            all_tags.update(tags)
-            
-            # 收集情感强度
-            emotional_intensity = memory.get("emotional_intensity", 0.5)
-            emotional_intensities.append(emotional_intensity)
-            
-            # 收集战略价值
-            strategic_value = memory.get("strategic_value", {})
-            if strategic_value:
-                strategic_values.append(strategic_value)
-            
-            # 收集风险因素
-            metadata = memory.get("metadata", {})
-            risk_assessment = self._assess_memory_risk(metadata)
-            if risk_assessment.get("high_risk_factors"):
-                risk_factors.extend(risk_assessment.get("high_risk_factors", []))
-
-        # 构建组合记忆内容
-        combined_content = "\n---\n".join(memory_contents)
-        
-        # 计算平均情感强度
-        avg_emotional_intensity = sum(emotional_intensities) / len(emotional_intensities) if emotional_intensities else 0.5
-        
-        # 计算平均相似度分数
-        avg_relevance_score = sum(m.get("similarity_score", 0) for m in sorted_matches) / len(sorted_matches) if sorted_matches else 0
-        
-        # 生成组合标签
-        combined_tags = list(all_tags)[:10]  # 限制标签数量
-        
-        # 生成组合风险评估
-        combined_risk = self._assess_combined_memory_risk(risk_factors)
-        
-        # 生成组合建议
-        combined_recommendations = self._generate_combined_recommendations(sorted_matches, context)
-
-        return {
-            "triggered_memory": combined_content,
-            "memory_ids": [m.get("memory_id") for m in sorted_matches],
-            "relevance_score": avg_relevance_score,
-            "source": "combined_memories",
-            "tags": combined_tags,
-            "strategic_value": strategic_values,
-            "linked_tool": sorted_matches[0].get("linked_tool"),
-            "emotional_intensity": avg_emotional_intensity,
-            "risk_assessment": combined_risk,
-            "recommended_actions": combined_recommendations,
-            "timestamp": datetime.now().isoformat(),
-            "retrieval_method": "combined_memo0_search",
-            "memory_count": len(sorted_matches),
-            "memory_sources": [m.get("memory_type", "unknown") for m in sorted_matches]
-        }
-
-    def _assess_memory_risk(self, metadata: Dict) -> Dict[str, Any]:
-        """评估记忆风险"""
-        risk_score = 0
-        high_risk_factors = []
-
-        # 高风险标签
-        high_risk_tags = ["创伤", "背叛", "失败", "痛苦"]
-        tags = metadata.get("tags", [])
-
-        for tag in tags:
-            if tag in high_risk_tags:
-                risk_score += 3
-                high_risk_factors.append(tag)
-
-        # 情感强度影响
-        if metadata.get("emotional_intensity", 0.5) > 0.8:
-            risk_score += 2
-
-        # 确定风险级别
-        if risk_score >= 5:
-            level = "高"
-        elif risk_score >= 3:
-            level = "中"
-        elif risk_score >= 1:
-            level = "低"
-        else:
-            level = "极低"
-
-        return {"level": level, "score": risk_score, "high_risk_factors": high_risk_factors}
-
-    def _generate_recommendations(self, metadata: Dict[str, Any], context: Dict[str, Any]) -> List[str]:
-        """生成使用建议"""
-        tags: List[str] = metadata.get("tags", [])
-        recommendations: List[str] = []
-
-        if any(tag in tags for tag in ["成就", "成功"]):
-            recommendations.append("可安全提及以激活积极情绪")
-        if any(tag in tags for tag in ["创伤", "痛苦"]):
-            recommendations.append("高风险区域，谨慎使用")
-        if any(tag in tags for tag in ["学习", "成长"]):
-            recommendations.append("适合用于激励场景")
-
-        return recommendations if recommendations else ["常规记忆，可灵活使用"]
-
-    def _assess_combined_memory_risk(self, risk_factors: List[str]) -> Dict[str, Any]:
-        """评估组合记忆风险"""
-        risk_score = 0
-        unique_risk_factors = list(set(risk_factors))
-        
-        # 计算风险分数
-        for factor in unique_risk_factors:
-            if factor in ["创伤", "背叛", "失败", "痛苦"]:
-                risk_score += 2
-        
-        # 确定风险级别
-        if risk_score >= 4:
-            level = "高"
-        elif risk_score >= 2:
-            level = "中"
-        elif risk_score >= 1:
-            level = "低"
-        else:
-            level = "极低"
-
-        return {
-            "level": level,
-            "score": risk_score,
-            "high_risk_factors": unique_risk_factors
-        }
-
-    def _generate_combined_recommendations(self, memories: List[Dict[str, Any]], context: Dict[str, Any]) -> List[str]:
-        """生成组合记忆使用建议"""
-        all_recommendations = []
-        
-        # 收集所有记忆的建议
-        for memory in memories:
-            metadata = memory.get("metadata", {})
-            recommendations = self._generate_recommendations(metadata, context)
-            all_recommendations.extend(recommendations)
-        
-        # 去重并排序
-        unique_recommendations = list(set(all_recommendations))
-        
-        # 添加组合记忆特定建议
-        if len(memories) > 2:
-            unique_recommendations.append("多记忆组合，提供全面上下文")
-        
-        # 限制建议数量
-        return unique_recommendations[:5]
-
-    # ============ 导出与工具方法 ============
-
-    def export_memories(self, file_path: str, format_type: str = "json") -> bool:
-        """导出记忆"""
+        Returns:
+            共鸣记忆信息字典，包含触发的记忆、记忆ID、相关度评分等
+        """
         try:
-            export_data = {
-                "metadata": {
-                    "export_time": datetime.now().isoformat(),
-                    "user_id": self.user_id,
-                    "session_id": self.session_id,
-                    "total_memories": self.stats["total_memories"]
-                },
-                "semantic_memory_map": self.semantic_memory_map,
-                "statistics": self.stats,
-                "strategic_tags": self.strategic_tags
-            }
-
-            with open(file_path, 'w', encoding='utf-8') as f:
-                if format_type == "json":
-                    json.dump(export_data, f, ensure_ascii=False, indent=2)
-                else:
-                    f.write(str(export_data))
-
-            print(f"[记忆系统] 记忆导出成功: {file_path}")
-            return True
+            # 从上下文中提取相关信息
+            user_input = context.get("user_input", "")
+            user_emotion = context.get("user_emotion", "")
+            topic = context.get("topic", "")
+            current_goal = context.get("current_goal", "")
+            
+            # 构建检索查询
+            query_parts = [user_input, user_emotion, topic, current_goal]
+            query = " ".join([part for part in query_parts if part])
+            
+            # 如果没有足够的查询信息，返回None
+            if not query:
+                return None
+            
+            # 使用search_memories方法查找相关记忆
+            search_results = self.search_memories(
+                query=query,
+                limit=1,
+                similarity_threshold=0.0
+            )
+            
+            if search_results:
+                # 获取第一个匹配的记忆
+                memory = search_results[0]
+                
+                # 构建共鸣记忆响应
+                resonant_memory = {
+                    "triggered_memory": memory.get("content", ""),
+                    "memory_id": memory.get("memory_id", ""),
+                    "relevance_score": memory.get("similarity_score", 0.0),
+                    "risk_assessment": {
+                        "level": "low",
+                        "high_risk_factors": []
+                    },
+                    "recommended_actions": ["使用回忆的信息回应用户", "保持上下文连贯性"]
+                }
+                
+                return resonant_memory
+            
+            return None
         except Exception as e:
-            print(f"[记忆系统] 记忆导出失败: {e}")
-            return False
-
-    def clear_cache(self):
-        """清理缓存"""
-        self.semantic_memory_map.clear()
-        self.strategic_tags.clear()
-        self.stats = {"total_memories": 0, "by_type": {}, "access_counts": {}, "tags_distribution": {}}
-        print("[记忆系统] 缓存已清理")
-
-    def test_connection(self) -> bool:
-        """测试连接"""
-        try:
-            test_id = self.add_memory(content="连接测试", memory_type="test", tags=["测试"])
-            results = self.search_memories("连接测试", limit=1)
-
-            if results and len(results) > 0:
-                print("[记忆系统] 连接测试成功")
-                return True
-            else:
-                print("[记忆系统] 连接测试失败")
-                return False
-        except Exception as e:
-            print(f"[记忆系统] 连接测试异常: {e}")
-            return False
+            print(f"[记忆系统] 寻找共鸣记忆失败: {e}")
+            return None

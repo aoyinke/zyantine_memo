@@ -21,6 +21,7 @@ class PromptSection(Enum):
     CURRENT_STRATEGY = "current_strategy"
     INNER_STATE = "inner_state"
     CONTEXT_ANALYSIS = "context_analysis"
+    CONVERSATION_CONTEXT = "conversation_context"  # 新增：对话上下文部分，确保话题连贯性
     MEMORY_INFORMATION = "memory_information"
     DIALECTICAL_GROWTH = "dialectical_growth"
     REPLY_REQUIREMENTS = "reply_requirements"
@@ -204,7 +205,7 @@ class PromptEngine:
         templates["standard"] = PromptTemplate(
             name="standard",
             description="标准提示词模板",
-            variables=["mask", "strategy", "vectors", "memory", "growth"],
+            variables=["mask", "strategy", "vectors", "memory", "growth", "conversation_history"],
             sections={
                 PromptSection.ROLE_SETTING: self._build_role_setting_section,
                 PromptSection.PERSONALITY: self._build_personality_section,
@@ -212,6 +213,7 @@ class PromptEngine:
                 PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
                 PromptSection.INNER_STATE: self._build_inner_state_section,
                 PromptSection.CONTEXT_ANALYSIS: self._build_context_analysis_section,
+                PromptSection.CONVERSATION_CONTEXT: self._build_conversation_context_section,  # 新增：对话上下文
                 PromptSection.MEMORY_INFORMATION: self._build_memory_information_section,
                 PromptSection.DIALECTICAL_GROWTH: self._build_dialectical_growth_section,
                 PromptSection.REPLY_REQUIREMENTS: self._build_reply_requirements_section,
@@ -223,11 +225,12 @@ class PromptEngine:
         templates["concise"] = PromptTemplate(
             name="concise",
             description="简洁提示词模板",
-            variables=["mask", "strategy", "vectors"],
+            variables=["mask", "strategy", "vectors", "conversation_history"],
             sections={
                 PromptSection.ROLE_SETTING: self._build_role_setting_section,
                 PromptSection.INTERACTION_MODE: self._build_interaction_mode_section,
                 PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
+                PromptSection.CONVERSATION_CONTEXT: self._build_conversation_context_section,  # 新增：对话上下文
                 PromptSection.REPLY_REQUIREMENTS: self._build_concise_reply_requirements_section,
                 PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
             }
@@ -237,12 +240,13 @@ class PromptEngine:
         templates["memory_enhanced"] = PromptTemplate(
             name="memory_enhanced",
             description="记忆增强提示词模板",
-            variables=["mask", "strategy", "vectors", "memory"],
+            variables=["mask", "strategy", "vectors", "memory", "conversation_history"],
             sections={
                 PromptSection.ROLE_SETTING: self._build_role_setting_section,
                 PromptSection.INTERACTION_MODE: self._build_interaction_mode_section,
                 PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
                 PromptSection.INNER_STATE: self._build_inner_state_section,
+                PromptSection.CONVERSATION_CONTEXT: self._build_conversation_context_section,  # 新增：对话上下文
                 PromptSection.MEMORY_INFORMATION: self._build_detailed_memory_section,
                 PromptSection.REPLY_REQUIREMENTS: self._build_memory_enhanced_reply_requirements_section,
                 PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
@@ -253,12 +257,13 @@ class PromptEngine:
         templates["professional"] = PromptTemplate(
             name="professional",
             description="专业提示词模板",
-            variables=["mask", "strategy", "vectors", "memory"],
+            variables=["mask", "strategy", "vectors", "memory", "conversation_history"],
             sections={
                 PromptSection.ROLE_SETTING: self._build_role_setting_section,
                 PromptSection.INTERACTION_MODE: self._build_interaction_mode_section,
                 PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
                 PromptSection.INNER_STATE: self._build_inner_state_section,
+                PromptSection.CONVERSATION_CONTEXT: self._build_conversation_context_section,  # 新增：对话上下文
                 PromptSection.MEMORY_INFORMATION: self._build_memory_information_section,
                 PromptSection.REPLY_REQUIREMENTS: self._build_professional_reply_requirements_section,
                 PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
@@ -269,11 +274,12 @@ class PromptEngine:
         templates["casual"] = PromptTemplate(
             name="casual",
             description="休闲提示词模板",
-            variables=["mask", "strategy", "vectors"],
+            variables=["mask", "strategy", "vectors", "conversation_history"],
             sections={
                 PromptSection.ROLE_SETTING: self._build_role_setting_section,
                 PromptSection.INTERACTION_MODE: self._build_interaction_mode_section,
                 PromptSection.CURRENT_STRATEGY: self._build_current_strategy_section,
+                PromptSection.CONVERSATION_CONTEXT: self._build_conversation_context_section,  # 新增：对话上下文
                 PromptSection.REPLY_REQUIREMENTS: self._build_casual_reply_requirements_section,
                 PromptSection.ABSOLUTE_PROHIBITIONS: self._build_absolute_prohibitions_section
             }
@@ -292,6 +298,7 @@ class PromptEngine:
             core_identity: 核心身份
             current_vectors: 当前向量
             memory_context: 记忆上下文
+            conversation_history: 对话历史（新增，用于保持话题连贯性）
 
         Returns:
             完整的提示词
@@ -303,6 +310,7 @@ class PromptEngine:
         core_identity = kwargs.get("core_identity")
         current_vectors = kwargs.get("current_vectors", {})
         memory_context = kwargs.get("memory_context")
+        conversation_history = kwargs.get("conversation_history", [])  # 新增：对话历史
 
         # 确定模板
         template_name = self._determine_template(
@@ -320,6 +328,7 @@ class PromptEngine:
             "core_identity": core_identity,
             "current_vectors": current_vectors,
             "memory_context": memory_context,
+            "conversation_history": conversation_history,  # 新增：传递对话历史
             "template_name": template_name
         }
 
@@ -426,6 +435,20 @@ class PromptEngine:
         import json
 
         # 提取关键信息
+        # 注意：对话历史会影响prompt内容，所以需要包含在缓存键中
+        conversation_history = context.get("conversation_history", [])
+        # 使用对话历史的长度和最后一条消息的哈希来区分不同的对话状态
+        history_hash = ""
+        if conversation_history:
+            last_conv = conversation_history[-1] if conversation_history else {}
+            history_hash = hashlib.md5(str(last_conv).encode()).hexdigest()[:8]
+        
+        # 安全获取memory_context，处理None情况
+        memory_context = context.get("memory_context")
+        has_memory = False
+        if memory_context and isinstance(memory_context, dict):
+            has_memory = bool(memory_context.get("resonant_memory"))
+        
         key_data = {
             "mask": context.get("action_plan", {}).get("chosen_mask", ""),
             "strategy": context.get("action_plan", {}).get("primary_strategy", ""),
@@ -433,8 +456,10 @@ class PromptEngine:
             "cs": round(context.get("current_vectors", {}).get("CS", 0), 2),
             "sa": round(context.get("current_vectors", {}).get("SA", 0), 2),
             "template": context.get("template_name", "standard"),
-            "has_memory": bool(context.get("memory_context", {}).get("resonant_memory")),
-            "version": "3.0"  # 版本号，代码更新后修改此值以使缓存失效
+            "has_memory": has_memory,
+            "history_len": len(conversation_history),  # 新增：对话历史长度
+            "history_hash": history_hash,  # 新增：最后一条对话的哈希
+            "version": "4.0"  # 版本号更新，使旧缓存失效
         }
 
         key_str = json.dumps(key_data, sort_keys=True)
@@ -732,19 +757,157 @@ class PromptEngine:
 
         return "\n".join(parts)
 
+    def _build_conversation_context_section(self, context: Dict) -> str:
+        """
+        构建对话上下文部分 - 确保话题连贯性
+        
+        这是解决对话不连贯问题的关键部分，通过在prompt中明确展示：
+        1. 最近的对话历史
+        2. 当前对话主题
+        3. 前文承诺（关键：解决"不知道指的是什么"问题）
+        4. 话题连贯性要求
+        """
+        conversation_history = context.get("conversation_history", [])
+        context_analysis = context.get("context_analysis", {})
+        
+        parts = [
+            "# 当前对话上下文（重要：保持话题连贯性）",
+            ""
+        ]
+        
+        # 首先检查是否有前文承诺（这是最重要的部分）
+        pending_promises = context_analysis.get("pending_promises", [])
+        likely_reference = context_analysis.get("likely_reference")
+        has_unresolved_context = context_analysis.get("has_unresolved_context", False)
+        
+        if pending_promises or likely_reference:
+            parts.append("## ⚠️ 重要：你之前做出的承诺（必须记住并履行）")
+            parts.append("")
+            
+            if likely_reference:
+                parts.append(f"### 用户很可能在指代这个承诺：")
+                parts.append(f"   - 承诺内容: {likely_reference.get('promise', '')}")
+                parts.append(f"   - 原始话题: {likely_reference.get('original_topic', '')}")
+                parts.append(f"   - 距今轮数: {likely_reference.get('turns_ago', 0)} 轮前")
+                parts.append("")
+            
+            if pending_promises:
+                parts.append("### 你之前的所有承诺：")
+                for i, promise in enumerate(pending_promises[:3], 1):  # 最多显示3个
+                    parts.append(f"   {i}. {promise.get('promise', '')}")
+                    if promise.get('original_topic'):
+                        parts.append(f"      (用户当时在说: {promise.get('original_topic', '')[:50]})")
+                parts.append("")
+            
+            parts.append("### 承诺履行要求：")
+            parts.append("   - 当用户说'帮我制定计划'、'开始吧'、'继续'等，你必须回忆上述承诺")
+            parts.append("   - 不要问用户'什么计划'、'关于什么'，你应该已经知道")
+            parts.append("   - 直接基于之前的话题继续执行")
+            parts.append("")
+        
+        # 格式化最近对话历史
+        if conversation_history:
+            parts.append("## 最近对话历史（按时间顺序，你必须理解并延续这些对话）：")
+            parts.append("")
+            
+            # 获取最近的对话，最多显示8轮（增加到8轮以提供更多上下文）
+            recent_conversations = conversation_history[-8:] if len(conversation_history) > 8 else conversation_history
+            
+            for i, conv in enumerate(recent_conversations, 1):
+                user_input = ""
+                system_response = ""
+                
+                # 处理不同格式的对话历史
+                if isinstance(conv, dict):
+                    user_input = conv.get("user_input", "") or conv.get("content", "")
+                    system_response = conv.get("system_response", "") or conv.get("response", "")
+                    
+                    # 如果content是格式化的对话，尝试解析
+                    if not user_input and not system_response:
+                        content = conv.get("content", "")
+                        if isinstance(content, str) and "用户:" in content:
+                            # 解析格式化的对话内容
+                            lines = content.split("\n")
+                            for line in lines:
+                                if line.startswith("用户:") or line.startswith("用户："):
+                                    user_input = line.replace("用户:", "").replace("用户：", "").strip()
+                                elif line.startswith("AI:") or line.startswith("AI："):
+                                    system_response = line.replace("AI:", "").replace("AI：", "").strip()
+                
+                # 只显示有效的对话
+                if user_input or system_response:
+                    # 截断过长的内容
+                    user_display = user_input[:200] + "..." if len(user_input) > 200 else user_input
+                    response_display = system_response[:200] + "..." if len(system_response) > 200 else system_response
+                    
+                    parts.append(f"【第{i}轮】")
+                    if user_display:
+                        parts.append(f"  用户: {user_display}")
+                    if response_display:
+                        parts.append(f"  你的回复: {response_display}")
+                    parts.append("")
+        else:
+            parts.append("## 这是对话的开始，暂无历史记录")
+            parts.append("")
+        
+        # 添加当前主题信息
+        current_topic = context_analysis.get("current_topic", "")
+        topic_confidence = context_analysis.get("topic_confidence", 0.0)
+        active_topics = context_analysis.get("context_links", {}).get("active_topics", []) if isinstance(context_analysis.get("context_links"), dict) else []
+        
+        if current_topic and current_topic != "unknown":
+            parts.append(f"## 当前对话主题: {current_topic}")
+            if topic_confidence > 0.5:
+                parts.append(f"   主题置信度: {topic_confidence:.0%}（高置信度，请紧扣此主题）")
+            if active_topics:
+                parts.append(f"   相关话题: {', '.join(active_topics)}")
+            parts.append("")
+        
+        # 检测是否包含指代性表述
+        referential_analysis = context_analysis.get("referential_analysis", {})
+        contains_referential = referential_analysis.get("contains_referential", False) if isinstance(referential_analysis, dict) else False
+        
+        if contains_referential:
+            referential_keywords = referential_analysis.get("referential_keywords", [])
+            parts.append("## 注意：用户使用了指代性表述")
+            if referential_keywords:
+                parts.append(f"   检测到的指代词: {', '.join(referential_keywords[:3])}")
+            parts.append("   你必须根据上述对话历史和承诺理解用户指的是什么")
+            parts.append("")
+        
+        # 添加话题连贯性要求
+        parts.append("## 话题连贯性要求（必须遵守）：")
+        parts.append("1. 你的回复必须与上述对话历史保持主题一致")
+        parts.append("2. 如果用户继续之前的话题，你必须延续之前的讨论，不能忽略之前说过的内容")
+        parts.append("3. 如果用户使用'这个'、'那个'、'之前说的'、'帮我'等词，你必须正确理解其指代内容")
+        parts.append("4. 如果你之前承诺过要做某事，用户现在让你做，你必须记住是关于什么的")
+        parts.append("5. 避免问用户'关于什么'、'什么计划'这类问题，你应该从上下文中推断")
+        parts.append("6. 如果实在无法确定，可以简要确认，但要给出你的推测")
+        
+        return "\n".join(parts)
+
     def _build_memory_information_section(self, context: Dict) -> str:
         """构建记忆信息部分"""
         memory_context = context.get("memory_context")
         if not memory_context:
             return ""
 
+        retrieved_memories = memory_context.get("retrieved_memories", [])
         similar_conversations = memory_context.get("similar_conversations", [])
         resonant_memory = memory_context.get("resonant_memory")
 
-        if not similar_conversations and not resonant_memory:
+        # 如果没有记忆信息，返回空字符串
+        if not retrieved_memories and not similar_conversations and not resonant_memory:
             return ""
 
         parts = ["# 相关记忆信息"]
+
+        # 格式化并添加检索到的记忆（新增）
+        if retrieved_memories:
+            formatted_memories = self._format_retrieved_memories(retrieved_memories)
+            if formatted_memories:
+                parts.append("## 相关记忆:")
+                parts.append(formatted_memories)
 
         # 相似对话
         if similar_conversations:
@@ -781,6 +944,69 @@ class PromptEngine:
                     parts.append(f"- {rec}")
 
         return "\n".join(parts)
+    
+    def _format_retrieved_memories(self, memories: List[Any], max_memories: int = 5) -> str:
+        """
+        格式化检索到的记忆，使其在prompt中清晰有用
+        
+        Args:
+            memories: 检索到的记忆列表（可能是MemoryRecord对象或字典）
+            max_memories: 最多显示的记忆数量
+            
+        Returns:
+            格式化后的记忆字符串
+        """
+        if not memories:
+            return ""
+        
+        formatted_parts = []
+        displayed_count = 0
+        
+        for memory in memories[:max_memories]:
+            try:
+                # 处理不同的内存格式
+                if hasattr(memory, 'content'):
+                    # MemoryRecord对象
+                    content = memory.content
+                    memory_type = memory.memory_type.value if hasattr(memory.memory_type, 'value') else str(memory.memory_type)
+                    relevance_score = getattr(memory, 'relevance_score', 0.0)
+                    memory_id = memory.memory_id
+                elif isinstance(memory, dict):
+                    # 字典格式
+                    content = memory.get('content', '')
+                    memory_type = memory.get('memory_type', 'unknown')
+                    relevance_score = memory.get('similarity_score', memory.get('relevance_score', 0.0))
+                    memory_id = memory.get('memory_id', 'unknown')
+                else:
+                    continue
+                
+                # 跳过空内容或低相关性记忆
+                if not content or relevance_score < 0.3:
+                    continue
+                
+                # 限制内容长度
+                content_preview = str(content)[:200] + "..." if len(str(content)) > 200 else str(content)
+                
+                # 格式化记忆项
+                memory_item = f"- [{memory_type}] {content_preview}"
+                if relevance_score > 0.7:
+                    memory_item += f" (高相关性: {relevance_score:.2f})"
+                elif relevance_score > 0.5:
+                    memory_item += f" (相关性: {relevance_score:.2f})"
+                
+                formatted_parts.append(memory_item)
+                displayed_count += 1
+                
+                if displayed_count >= max_memories:
+                    break
+            except Exception as e:
+                # 如果格式化单个记忆失败，跳过并继续
+                self.logger.warning(f"格式化记忆失败: {e}")
+                continue
+        
+        if formatted_parts:
+            return "\n".join(formatted_parts)
+        return ""
 
     def _build_detailed_memory_section(self, context: Dict) -> str:
         """构建详细记忆部分（用于记忆增强模板）"""

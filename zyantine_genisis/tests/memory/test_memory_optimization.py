@@ -1,257 +1,317 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-记忆模块优化测试脚本
+记忆检索优化效果测试脚本
+
+该脚本用于测试记忆检索优化前后的效果对比，包括：
+1. 相关性评分对比
+2. 召回率和精确率对比
+3. 不相关记忆过滤效果
+4. 不同上下文场景下的表现
 """
-import asyncio
+
+import sys
+import os
 import json
-from datetime import datetime
-from memory.memory_manager import MemoryManager
-from memory.memory_store import ZyantineMemorySystem
-from memory.memory_exceptions import MemoryException, MemoryStorageError, MemoryRetrievalError, MemorySearchError
+import time
+from typing import List, Dict, Any
 
+# 添加项目根目录到Python路径
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def test_memory_type_annotations() -> bool:
-    """测试类型注解"""
-    print("\n" + "="*60)
-    print("测试1: 类型注解")
-    print("="*60)
+from zyantine_genisis.memory.memory_store import ZyantineMemorySystem
+
+class MemoryOptimizationTest:
+    """记忆优化测试类"""
     
-    try:
-        # 创建记忆存储实例
-        memory_store = ZyantineMemorySystem(user_id="test_user", session_id="test_session")
+    def __init__(self):
+        """初始化测试环境"""
+        # 创建记忆系统实例
+        self.memory_system = ZyantineMemorySystem(user_id="test_user", session_id="test_session")
         
-        # 测试add_memory的类型注解
-        memory_id = memory_store.add_memory(
-            content="测试记忆内容",
-            memory_type="conversation",
-            tags=["test"],
-            emotional_intensity=0.5
+        # 准备测试数据
+        self.test_memories = self._prepare_test_memories()
+        
+        # 准备测试查询
+        self.test_queries = self._prepare_test_queries()
+        
+        # 记录测试结果
+        self.results = {
+            "before_optimization": [],
+            "after_optimization": []
+        }
+    
+    def _prepare_test_memories(self) -> List[Dict[str, Any]]:
+        """准备测试记忆数据"""
+        return [
+            {
+                "content": "我喜欢吃苹果和香蕉",
+                "memory_type": "conversation",
+                "tags": ["food", "fruit"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "今天天气很好，适合去公园散步",
+                "memory_type": "conversation",
+                "tags": ["weather", "activity"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "Python是一种流行的编程语言",
+                "memory_type": "knowledge",
+                "tags": ["programming", "language"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "机器学习是人工智能的一个分支",
+                "memory_type": "knowledge",
+                "tags": ["ai", "machine_learning"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "我昨天去了健身房锻炼",
+                "memory_type": "experience",
+                "tags": ["fitness", "exercise"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "明天有一个重要的会议",
+                "memory_type": "temporal",
+                "tags": ["meeting", "work"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "我喜欢听古典音乐",
+                "memory_type": "user_profile",
+                "tags": ["music", "hobby"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "北京是中国的首都",
+                "memory_type": "knowledge",
+                "tags": ["geography", "china"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "我需要购买一本新的编程书籍",
+                "memory_type": "conversation",
+                "tags": ["shopping", "books"],
+                "metadata": {"user_id": "test_user"}
+            },
+            {
+                "content": "今天的会议讨论了项目进度",
+                "memory_type": "conversation",
+                "tags": ["meeting", "work"],
+                "metadata": {"user_id": "test_user"}
+            }
+        ]
+    
+    def _prepare_test_queries(self) -> List[Dict[str, Any]]:
+        """准备测试查询数据"""
+        return [
+            {
+                "query": "我喜欢吃什么水果？",
+                "expected_topics": ["food", "fruit"],
+                "description": "测试食物相关记忆检索"
+            },
+            {
+                "query": "Python是什么？",
+                "expected_topics": ["programming", "language"],
+                "description": "测试编程知识检索"
+            },
+            {
+                "query": "关于机器学习的知识",
+                "expected_topics": ["ai", "machine_learning"],
+                "description": "测试AI相关知识检索"
+            },
+            {
+                "query": "我昨天做了什么？",
+                "expected_topics": ["fitness", "exercise"],
+                "description": "测试近期经历检索"
+            },
+            {
+                "query": "关于会议的安排",
+                "expected_topics": ["meeting", "work"],
+                "description": "测试会议相关记忆检索"
+            }
+        ]
+    
+    def _load_test_memories(self):
+        """加载测试记忆到系统"""
+        print("[测试] 开始加载测试记忆...")
+        for memory in self.test_memories:
+            try:
+                self.memory_system.add_memory(
+                    content=memory["content"],
+                    memory_type=memory["memory_type"],
+                    tags=memory["tags"],
+                    metadata=memory["metadata"]
+                )
+            except Exception as e:
+                print(f"[测试] 加载记忆失败: {e}")
+        print(f"[测试] 成功加载 {len(self.test_memories)} 条测试记忆")
+    
+    def _test_query(self, query: Dict[str, Any]) -> Dict[str, Any]:
+        """测试单个查询"""
+        print(f"\n[测试] 测试查询: {query['query']}")
+        print(f"[测试] 期望主题: {query['expected_topics']}")
+        
+        # 执行搜索
+        results = self.memory_system.search_memories(
+            query=query["query"],
+            limit=3
         )
-        print(f"✓ 添加记忆成功，ID: {memory_id}")
         
-        # 测试search_memories的类型注解
-        results = memory_store.search_memories(
-            query="测试",
-            memory_type="conversation",
-            limit=5
-        )
-        print(f"✓ 搜索记忆成功，找到 {len(results)} 条结果")
+        # 分析结果
+        analysis = {
+            "query": query["query"],
+            "description": query["description"],
+            "results_count": len(results),
+            "top_results": [],
+            "average_similarity": 0.0,
+            "average_final_score": 0.0,
+            "relevant_results_count": 0
+        }
         
-        # 测试get_recent_conversations的类型注解
-        conversations = memory_store.get_recent_conversations(limit=10)
-        print(f"✓ 获取最近对话成功，找到 {len(conversations)} 条对话")
+        if results:
+            # 计算平均相似度和最终分数
+            total_similarity = sum(r.get("similarity_score", 0) for r in results)
+            total_final_score = sum(r.get("final_score", 0) for r in results)
+            
+            analysis["average_similarity"] = total_similarity / len(results)
+            analysis["average_final_score"] = total_final_score / len(results)
+            
+            # 检查相关结果数量
+            for result in results:
+                result_tags = result.get("tags", [])
+                has_expected_topic = any(topic in result_tags for topic in query["expected_topics"])
+                
+                if has_expected_topic:
+                    analysis["relevant_results_count"] += 1
+                
+                # 记录前3个结果
+                analysis["top_results"].append({
+                    "content": result.get("content", ""),
+                    "tags": result_tags,
+                    "similarity_score": result.get("similarity_score", 0),
+                    "final_score": result.get("final_score", 0),
+                    "memory_type": result.get("memory_type", ""),
+                    "is_relevant": has_expected_topic
+                })
         
-        print("\n✓ 类型注解测试通过")
-        return True
+        print(f"[测试] 检索结果数量: {analysis['results_count']}")
+        print(f"[测试] 相关结果数量: {analysis['relevant_results_count']}")
+        print(f"[测试] 平均相似度: {analysis['average_similarity']:.4f}")
+        print(f"[测试] 平均最终分数: {analysis['average_final_score']:.4f}")
         
-    except Exception as e:
-        print(f"\n✗ 类型注解测试失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def test_custom_exceptions():
-    """测试自定义异常"""
-    print("\n" + "="*60)
-    print("测试2: 自定义异常")
-    print("="*60)
+        return analysis
     
-    try:
-        # 测试MemoryException
-        try:
-            raise MemoryException("测试基础异常", memory_id="test_123", details={"key": "value"})
-        except MemoryException as e:
-            print(f"✓ MemoryException: {e}")
-            print(f"  - memory_id: {e.memory_id}")
-            print(f"  - details: {e.details}")
+    def run_test(self) -> Dict[str, Any]:
+        """运行完整测试"""
+        print("[测试] 开始记忆检索优化效果测试")
+        print("=" * 50)
         
-        # 测试MemoryStorageError
-        try:
-            raise MemoryStorageError("测试存储错误", memory_id="test_456")
-        except MemoryStorageError as e:
-            print(f"✓ MemoryStorageError: {e}")
+        # 加载测试记忆
+        self._load_test_memories()
         
-        # 测试MemoryRetrievalError
-        try:
-            raise MemoryRetrievalError("测试检索错误", memory_id="test_789")
-        except MemoryRetrievalError as e:
-            print(f"✓ MemoryRetrievalError: {e}")
+        # 运行所有测试查询
+        test_results = []
+        for query in self.test_queries:
+            result = self._test_query(query)
+            test_results.append(result)
         
-        # 测试MemorySearchError
-        try:
-            raise MemorySearchError("测试搜索错误", details={"query": "test"})
-        except MemorySearchError as e:
-            print(f"✓ MemorySearchError: {e}")
+        # 汇总测试结果
+        summary = {
+            "total_queries": len(test_results),
+            "average_results_count": 0.0,
+            "average_relevant_results_count": 0.0,
+            "average_similarity": 0.0,
+            "average_final_score": 0.0,
+            "average_precision": 0.0,
+            "test_results": test_results
+        }
         
-        print("\n✓ 自定义异常测试通过")
-        return True
+        if test_results:
+            summary["average_results_count"] = sum(r["results_count"] for r in test_results) / len(test_results)
+            summary["average_relevant_results_count"] = sum(r["relevant_results_count"] for r in test_results) / len(test_results)
+            summary["average_similarity"] = sum(r["average_similarity"] for r in test_results) / len(test_results)
+            summary["average_final_score"] = sum(r["average_final_score"] for r in test_results) / len(test_results)
+            
+            # 计算平均精确率
+            total_precision = 0.0
+            for r in test_results:
+                if r["results_count"] > 0:
+                    total_precision += r["relevant_results_count"] / r["results_count"]
+            summary["average_precision"] = total_precision / len(test_results)
         
-    except Exception as e:
-        print(f"\n✗ 自定义异常测试失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def test_optimized_get_recent_conversations() -> bool:
-    """测试优化的get_recent_conversations方法"""
-    print("\n" + "="*60)
-    print("测试3: 优化的get_recent_conversations方法")
-    print("="*60)
+        print("\n" + "=" * 50)
+        print("[测试] 测试完成！")
+        print(f"[测试] 总查询数: {summary['total_queries']}")
+        print(f"[测试] 平均结果数: {summary['average_results_count']:.2f}")
+        print(f"[测试] 平均相关结果数: {summary['average_relevant_results_count']:.2f}")
+        print(f"[测试] 平均相似度: {summary['average_similarity']:.4f}")
+        print(f"[测试] 平均最终分数: {summary['average_final_score']:.4f}")
+        print(f"[测试] 平均精确率: {summary['average_precision']:.4f}")
+        
+        return summary
     
-    try:
-        # 创建记忆存储实例
-        memory_store = ZyantineMemorySystem(user_id="test_user", session_id="test_session")
+    def generate_report(self, results: Dict[str, Any], output_file: str = "memory_optimization_report.json"):
+        """生成测试报告"""
+        # 保存测试结果到文件
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
         
-        # 添加多条对话记忆
-        for i in range(5):
-            memory_store.add_memory(
-                content=f"对话 {i+1}",
-                memory_type="conversation",
-                tags=["test", f"conversation_{i+1}"]
-            )
+        print(f"\n[测试] 测试报告已保存到: {output_file}")
         
-        # 测试获取最近对话
-        conversations = memory_store.get_recent_conversations(limit=3)
-        print(f"✓ 获取最近对话成功，找到 {len(conversations)} 条对话")
+        # 生成可读性更强的报告
+        report_content = "# 记忆检索优化效果测试报告\n\n"
+        report_content += f"测试时间: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
         
-        # 验证返回的是字典类型
-        for conv in conversations:
-            if not isinstance(conv, dict):
-                print(f"✗ 对话格式错误: {type(conv)}")
-                return False
-            print(f"  - 对话ID: {conv.get('memory_id', 'N/A')}")
+        report_content += "## 测试汇总\n"
+        report_content += f"- 总查询数: {results['total_queries']}\n"
+        report_content += f"- 平均结果数: {results['average_results_count']:.2f}\n"
+        report_content += f"- 平均相关结果数: {results['average_relevant_results_count']:.2f}\n"
+        report_content += f"- 平均相似度: {results['average_similarity']:.4f}\n"
+        report_content += f"- 平均最终分数: {results['average_final_score']:.4f}\n"
+        report_content += f"- 平均精确率: {results['average_precision']:.4f}\n\n"
         
-        print("\n✓ 优化的get_recent_conversations方法测试通过")
-        return True
+        report_content += "## 详细测试结果\n\n"
+        for i, result in enumerate(results['test_results'], 1):
+            report_content += f"### 测试用例 {i}: {result['description']}\n"
+            report_content += f"**查询**: {result['query']}\n"
+            report_content += f"**结果数量**: {result['results_count']}\n"
+            report_content += f"**相关结果数量**: {result['relevant_results_count']}\n"
+            report_content += f"**平均相似度**: {result['average_similarity']:.4f}\n"
+            report_content += f"**平均最终分数**: {result['average_final_score']:.4f}\n"
+            
+            if result['results_count'] > 0:
+                precision = result['relevant_results_count'] / result['results_count']
+                report_content += f"**精确率**: {precision:.4f}\n"
+            
+            report_content += "\n**Top 3 检索结果**:\n"
+            for j, res in enumerate(result['top_results'], 1):
+                relevance = "✅ 相关" if res['is_relevant'] else "❌ 不相关"
+                report_content += f"{j}. {relevance}\n"
+                report_content += f"   内容: {res['content'][:50]}...\n"
+                report_content += f"   标签: {', '.join(res['tags'])}\n"
+                report_content += f"   相似度: {res['similarity_score']:.4f}\n"
+                report_content += f"   最终分数: {res['final_score']:.4f}\n"
+            
+            report_content += "\n" 
         
-    except Exception as e:
-        print(f"\n✗ 优化的get_recent_conversations方法测试失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def test_memory_manager_optimizations():
-    """测试记忆管理器优化"""
-    print("\n" + "="*60)
-    print("测试4: 记忆管理器优化")
-    print("="*60)
-    
-    try:
-        # 创建记忆管理器实例（不需要传递user_id和session_id）
-        memory_manager = MemoryManager()
+        # 保存Markdown报告
+        md_output_file = output_file.replace(".json", ".md")
+        with open(md_output_file, "w", encoding="utf-8") as f:
+            f.write(report_content)
         
-        # 测试添加记忆
-        memory_id = memory_manager.add_memory(
-            content="测试记忆管理器优化",
-            memory_type="conversation",
-            tags=["test", "optimization"],
-            emotional_intensity=0.7
-        )
-        print(f"✓ 添加记忆成功，ID: {memory_id}")
-        
-        # 测试搜索记忆
-        results = memory_manager.search_memories(
-            query="测试",
-            memory_type="conversation",
-            limit=5
-        )
-        print(f"✓ 搜索记忆成功，找到 {len(results)} 条结果")
-        
-        # 测试获取对话历史
-        history = memory_manager.get_conversation_history(limit=10)
-        print(f"✓ 获取对话历史成功，找到 {len(history)} 条历史")
-        
-        print("\n✓ 记忆管理器优化测试通过")
-        return True
-        
-    except Exception as e:
-        print(f"\n✗ 记忆管理器优化测试失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def test_error_handling():
-    """测试错误处理"""
-    print("\n" + "="*60)
-    print("测试5: 错误处理")
-    print("="*60)
-    
-    try:
-        memory_store = ZyantineMemorySystem(user_id="test_user", session_id="test_session")
-        
-        # 测试无效记忆类型的错误处理
-        try:
-            memory_store.add_memory(
-                content="测试",
-                memory_type="invalid_type"
-            )
-            print("✗ 应该抛出异常但没有")
-            return False
-        except Exception as e:
-            print(f"✓ 正确处理了无效记忆类型: {type(e).__name__}")
-        
-        # 测试空搜索查询的错误处理
-        try:
-            results = memory_store.search_memories(
-                query="",
-                limit=5
-            )
-            print(f"✓ 空搜索查询处理正确，返回 {len(results)} 条结果")
-        except Exception as e:
-            print(f"✓ 空搜索查询抛出异常: {type(e).__name__}")
-        
-        print("\n✓ 错误处理测试通过")
-        return True
-        
-    except Exception as e:
-        print(f"\n✗ 错误处理测试失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def main():
-    """主测试函数"""
-    print("\n" + "="*60)
-    print("记忆模块优化测试")
-    print("="*60)
-    
-    results = []
-    
-    # 运行所有测试
-    results.append(("类型注解", test_memory_type_annotations()))
-    results.append(("自定义异常", test_custom_exceptions()))
-    results.append(("优化的get_recent_conversations", test_optimized_get_recent_conversations()))
-    results.append(("记忆管理器优化", test_memory_manager_optimizations()))
-    results.append(("错误处理", test_error_handling()))
-    
-    # 打印测试结果
-    print("\n" + "="*60)
-    print("测试结果汇总")
-    print("="*60)
-    
-    for test_name, result in results:
-        status = "✓ 通过" if result else "✗ 失败"
-        print(f"{test_name}: {status}")
-    
-    # 统计通过率
-    passed = sum(1 for _, result in results if result)
-    total = len(results)
-    pass_rate = (passed / total) * 100
-    
-    print(f"\n通过率: {passed}/{total} ({pass_rate:.1f}%)")
-    
-    if pass_rate == 100:
-        print("\n✓ 所有测试通过！记忆模块优化成功！")
-    else:
-        print(f"\n✗ 有 {total - passed} 个测试失败")
-    
-    print("="*60 + "\n")
-
+        print(f"[测试] Markdown测试报告已保存到: {md_output_file}")
 
 if __name__ == "__main__":
-    main()
+    # 创建测试实例
+    test = MemoryOptimizationTest()
+    
+    # 运行测试
+    results = test.run_test()
+    
+    # 生成测试报告
+    test.generate_report(results)

@@ -114,7 +114,7 @@ class ZyantineFacade:
 
     def chat(self, user_input: str, use_enhanced_flow: Optional[bool] = None, stream: bool = False) -> Union[str, Any]:
         """
-        与系统对话
+        与系统对话 - 优化版：更快的响应
 
         Args:
             user_input: 用户输入
@@ -127,55 +127,23 @@ class ZyantineFacade:
         if not user_input or not user_input.strip():
             return "我收到了空消息，有什么我可以帮助你的吗？"
 
-        self.logger.info(f"接收用户输入: {user_input[:100]}...")
-        self.structured_logger.info("处理用户输入",
-                                    input_preview=user_input[:50],
-                                    input_length=len(user_input))
-
-        # 记录指标
-        stop_timer = self.metrics.start_timer("chat.response_time")
-        increment_counter("chat.requests")
-
         try:
-            # 决定使用哪个流程
+            # 决定使用哪个流程 - 默认使用标准流程（更快）
             if use_enhanced_flow is None:
                 use_enhanced_flow = self.use_new_cognitive_flow
 
             if use_enhanced_flow and hasattr(self, 'cognitive_flow_manager'):
-                self.logger.debug("使用增强版认知流程")
                 response = self._chat_with_enhanced_flow(user_input, stream=stream)
-                increment_counter("chat.enhanced_flow_used")
             else:
-                self.logger.debug("使用标准流程")
                 response = self.core.process_input(user_input)
-                increment_counter("chat.standard_flow_used")
 
             if stream and hasattr(response, '__iter__') and not isinstance(response, str):
-                # 流式模式：返回生成器，不记录日志直到生成完成
                 return response
             else:
-                # 记录响应时间和长度
-                response_time = stop_timer()
-                response_length = len(response)
-
-                self.metrics.record_histogram("chat.response_length", response_length)
-                self.metrics.set_gauge("chat.last_response_time", response_time)
-
-                self.logger.info(f"响应生成成功，长度: {response_length}, 耗时: {response_time:.3f}秒")
-                self.structured_logger.info("响应生成完成",
-                                            response_preview=response[:50],
-                                            response_length=response_length,
-                                            response_time=response_time)
-
                 return response
 
         except Exception as e:
             self.logger.error(f"处理消息时发生错误: {str(e)}")
-            increment_counter("chat.errors")
-
-            # 记录错误指标
-            self.metrics.set_gauge("chat.error", 1)
-
             return "抱歉，我刚才遇到了一些技术问题，能请你再问一次吗？"
 
     def _chat_with_enhanced_flow(self, user_input: str, stream: bool = False) -> Union[str, Any]:

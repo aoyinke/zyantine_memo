@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import random
 import re
+import traceback
 
 from core.processing_pipeline import BaseStageHandler, StageContext, ProcessingStage
 from utils.logger import SystemLogger
@@ -49,12 +50,11 @@ class PreprocessHandler(BaseStageHandler):
                 context.add_error(error_msg)
                 return context
 
-            if self.logger:
-                user_input = getattr(context, 'user_input', '')
-                self.logger.debug(f"预处理开始: {user_input[:50]}...")
-
             # 清理输入
             user_input = getattr(context, 'user_input', '')
+            if self.logger:
+                self.logger.debug(f"预处理开始: {user_input[:50]}...")
+            
             cleaned_input = self._clean_input(user_input)
 
             # 提取上下文信息
@@ -129,7 +129,6 @@ class PreprocessHandler(BaseStageHandler):
         except Exception as e:
             if self.logger:
                 self.logger.warning(f"上下文解析失败，使用默认解析: {e}")
-                import traceback
                 self.logger.error(traceback.format_exc())
             result = {
                 "keywords": [],
@@ -284,6 +283,81 @@ class MemoryRetrievalHandler(BaseStageHandler):
                 context.add_error(error_msg)
                 return context
 
+            # 在检索长期记忆之前，先检索短期记忆并更新对话历史
+            # 这样可以确保对话历史包含最新的短期记忆
+            try:
+                conversation_id = self.memory_manager.session_id
+                memory_system = self.memory_manager.memory_system
+                
+                if self.logger:
+                    self.logger.debug(f"[记忆检索] 开始检索短期记忆，conversation_id: {conversation_id}")
+                
+                # 检索短期记忆
+                short_term_memories = memory_system.search_short_term_memories(
+                    conversation_id=conversation_id,
+                    limit=50  # 获取更多短期记忆用于上下文
+                )
+                
+                if self.logger:
+                    self.logger.debug(f"[记忆检索] 检索到 {len(short_term_memories)} 条短期记忆")
+                
+                # 直接使用get_conversation_history获取完整的对话历史（包括短期和长期记忆）
+                # 这样确保对话历史是最新的和完整的
+                try:
+                    updated_history = self.memory_manager.get_conversation_history(limit=50)
+                    if updated_history:
+                        context.conversation_history = updated_history
+                        if self.logger:
+                            self.logger.info(f"[记忆检索] 更新对话历史，现在有 {len(updated_history)} 条记录")
+                            # 打印前3条用于调试
+                            for idx, item in enumerate(updated_history[:3]):
+                                user_input = item.get("user_input", "")[:30]
+                                system_response = item.get("system_response", "")[:30]
+                                self.logger.debug(f"[记忆检索] 历史 {idx}: user='{user_input}...', response='{system_response}...'")
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(f"[记忆检索] 获取完整对话历史失败: {str(e)}")
+                
+                # 如果短期记忆存在，也单独更新（作为备用）
+                if short_term_memories:
+                    # 获取当前对话历史
+                    conversation_history = list(getattr(context, 'conversation_history', []))
+                    
+                    # 从短期记忆创建对话历史项（如果不存在）
+                    existing_pairs = {(h.get("user_input", ""), h.get("system_response", "")) 
+                                     for h in conversation_history if h.get("user_input") and h.get("system_response")}
+                    
+                    added_count = 0
+                    for stm in short_term_memories:
+                        metadata = stm.metadata or {}
+                        user_input = metadata.get("user_input", "")
+                        system_response = metadata.get("system_response", "")
+                        
+                        # 如果这个对话对不在现有历史中，添加它
+                        if user_input and system_response and (user_input, system_response) not in existing_pairs:
+                            conversation_history.append({
+                                "timestamp": metadata.get("timestamp", stm.created_at.isoformat()),
+                                "user_input": user_input,
+                                "system_response": system_response,
+                                "context": {},
+                                "vector_state": {}
+                            })
+                            existing_pairs.add((user_input, system_response))
+                            added_count += 1
+                    
+                    if added_count > 0:
+                        # 按时间排序（最新的在前）
+                        conversation_history.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+                        # 更新context的对话历史
+                        context.conversation_history = conversation_history
+                        
+                        if self.logger:
+                            self.logger.info(f"[记忆检索] 从短期记忆添加了 {added_count} 条新记录，对话历史现在有 {len(conversation_history)} 条")
+            except Exception as e:
+                # 短期记忆检索失败不应影响整体流程
+                if self.logger:
+                    self.logger.error(f"[记忆检索] 检索短期记忆失败: {str(e)}, traceback: {traceback.format_exc()}")
+
             # 提取查询关键词
             query = self._build_search_query(context)
 
@@ -304,6 +378,33 @@ class MemoryRetrievalHandler(BaseStageHandler):
             # 更新上下文
             context.retrieved_memories = memories
             context.resonant_memory = resonant_memory
+            
+            # 优化：确保context_info包含主题信息，以便后续阶段使用
+            context_info = getattr(context, 'context_info', {})
+            if isinstance(context_info, dict):
+                # 如果检索到了记忆，提取记忆中的主题信息来增强当前主题
+                if memories:
+                    memory_topics = []
+                    for mem in memories[:3]:  # 只看前3条最相关的记忆
+                        if isinstance(mem, dict):
+                            mem_topics = mem.get("metadata", {}).get("topics", [])
+                            if mem_topics:
+                                memory_topics.extend(mem_topics)
+                    
+                    # 如果从记忆中提取到了主题，更新context_info
+                    if memory_topics:
+                        # 统计主题出现频率
+                        from collections import Counter
+                        topic_counts = Counter(memory_topics)
+                        most_common_topic = topic_counts.most_common(1)
+                        if most_common_topic:
+                            # 如果当前没有主题或主题置信度低，使用记忆中的主题
+                            current_topic = context_info.get("current_topic", "unknown")
+                            current_confidence = context_info.get("topic_confidence", 0.0)
+                            if current_topic == "unknown" or current_confidence < 0.5:
+                                context_info["memory_suggested_topic"] = most_common_topic[0][0]
+                        
+                        context.context_info = context_info
 
             if self.logger:
                 self.logger.debug(f"记忆检索完成: 找到 {len(memories)} 条相关记忆")
@@ -318,7 +419,9 @@ class MemoryRetrievalHandler(BaseStageHandler):
         return context
 
     def _build_search_query(self, context: StageContext) -> str:
-        """构建搜索查询"""
+        """
+        构建搜索查询（优化版：利用对话历史中的关键实体和信息）
+        """
         # 检查 context 是否为 None
         if context is None:
             return ""
@@ -331,37 +434,227 @@ class MemoryRetrievalHandler(BaseStageHandler):
             user_input = getattr(context, 'user_input', '')
             return user_input[:200]
         
+        # 提取用户输入的关键词
+        user_input = getattr(context, 'user_input', '')
         keywords = context_info.get("keywords", [])
-
+        
+        # 构建基础查询
         if keywords:
-            query = " ".join(keywords[:5])
+            base_query = " ".join(keywords[:5])
         else:
-            query = getattr(context, 'user_input', '')
-
-        # 添加对话历史上下文
+            base_query = user_input
+        
+        # 提取对话历史中的关键信息
         conversation_history = getattr(context, 'conversation_history', [])
+        enhanced_query_parts = [base_query]
+        
         if conversation_history:
+            # 1. 提取最近对话的主题
             recent_themes = self._extract_recent_themes(conversation_history)
             if recent_themes:
-                query = f"{query} {recent_themes}"
-
-        return query[:200]
+                enhanced_query_parts.append(recent_themes)
+            
+            # 2. 提取对话历史中的关键实体
+            key_entities = self._extract_entities_from_history(conversation_history)
+            if key_entities:
+                enhanced_query_parts.extend(key_entities[:3])  # 最多使用3个实体
+            
+            # 3. 提取对话主题和上下文
+            dialogue_topics = self._extract_dialogue_topics(conversation_history)
+            if dialogue_topics:
+                enhanced_query_parts.append(dialogue_topics)
+            
+            # 4. 提取最近对话中的关键信息片段
+            key_snippets = self._extract_key_snippets(conversation_history)
+            if key_snippets:
+                enhanced_query_parts.extend(key_snippets[:2])  # 最多使用2个关键片段
+        
+        # 合并查询部分，去重并限制长度
+        query = " ".join(set(enhanced_query_parts))
+        return query[:300]  # 增加到300字符以包含更多上下文
 
     def _extract_recent_themes(self, history: List[Dict], limit: int = 3) -> str:
-        """提取最近对话的主题"""
+        """
+        提取最近对话的主题（优化版：更智能的主题提取）
+        """
         if not history:
             return ""
 
         recent_items = history[-limit:]
         themes = []
+        
+        # 主题关键词库
+        topic_keywords = {
+            "fitness": ["体测", "体检", "健身", "运动", "锻炼", "测试", "成绩", "跑步", "跳远", "肺活量"],
+            "work": ["工作", "上班", "任务", "项目", "会议", "报告", "邮件", "客户", "同事"],
+            "study": ["学习", "学校", "考试", "作业", "课程", "复习", "考试", "成绩", "论文"],
+            "life": ["生活", "日常", "周末", "假期", "旅行", "美食", "电影", "音乐"]
+        }
 
         for item in recent_items:
             user_input = item.get("user_input", "")
-            if user_input:
-                words = user_input.split()[:3]
-                themes.extend(words)
+            if not user_input:
+                continue
+            
+            # 1. 提取关键词（过滤停用词）
+            words = self._extract_meaningful_words(user_input)
+            themes.extend(words[:3])
+            
+            # 2. 检测主题类别
+            user_input_lower = user_input.lower()
+            for topic, keywords in topic_keywords.items():
+                if any(kw in user_input_lower for kw in keywords):
+                    themes.append(topic)
+                    break
 
         return " ".join(set(themes))
+    
+    def _extract_meaningful_words(self, text: str, max_words: int = 10) -> List[str]:
+        """
+        提取有意义的关键词（过滤停用词）
+        """
+        import re
+        
+        # 中文停用词
+        stopwords = {'我', '你', '他', '她', '它', '的', '了', '在', '是', '有', '和', '与', 
+                     '就', '都', '而', '及', '或', '这', '那', '哪', '吗', '呢', '啊', '吧',
+                     '了', '的', '着', '过', '地', '得', '也', '还', '又', '只', '很', '更',
+                     '都', '要', '想', '会', '能', '应该', '可以', '可能', '已经', '还是'}
+        
+        # 提取词汇
+        words = re.findall(r'\b\w+\b', text.lower())
+        
+        # 过滤停用词和短词
+        meaningful = [w for w in words if w not in stopwords and len(w) > 1]
+        
+        # 统计频率并返回最常见的词
+        from collections import Counter
+        word_counts = Counter(meaningful)
+        
+        return [word for word, _ in word_counts.most_common(max_words)]
+    
+    def _extract_entities_from_history(self, history: List[Dict], limit: int = 5) -> List[str]:
+        """
+        从对话历史中提取关键实体（人物、地点、事件等）
+        """
+        import re
+        
+        entities = []
+        recent_items = history[-limit:] if len(history) > limit else history
+        
+        for item in recent_items:
+            user_input = item.get("user_input", "")
+            if not user_input:
+                continue
+            
+            # 1. 提取日期和时间
+            date_patterns = [
+                r'\d{4}[-/]\d{1,2}[-/]\d{1,2}',
+                r'\d{1,2}[-/]\d{1,2}[-/]\d{4}',
+                r'\d{1,2}月\d{1,2}日',
+                r'\d{4}年\d{1,2}月\d{1,2}日',
+                r'昨天|今天|明天|上周|本周|下周'
+            ]
+            for pattern in date_patterns:
+                matches = re.findall(pattern, user_input)
+                entities.extend(matches[:2])  # 每条最多2个日期
+            
+            # 2. 提取数字和金额
+            number_patterns = [
+                r'¥\d+\.?\d*',
+                r'\$\d+\.?\d*',
+                r'\d+%',
+                r'第\d+',
+            ]
+            for pattern in number_patterns:
+                matches = re.findall(pattern, user_input)
+                entities.extend(matches[:2])  # 每条最多2个数字
+            
+            # 3. 提取可能的专有名词（首字母大写或中文）
+            # 这里使用简单启发式：长度大于1且不在停用词中的词
+            words = self._extract_meaningful_words(user_input, max_words=5)
+            entities.extend(words)
+        
+        # 去重并返回最常见的实体
+        from collections import Counter
+        entity_counts = Counter(entities)
+        
+        # 返回出现频率较高的实体（至少出现1次）
+        return [entity for entity, count in entity_counts.most_common(10) if count >= 1]
+    
+    def _extract_dialogue_topics(self, history: List[Dict], limit: int = 5) -> str:
+        """
+        提取对话主题（更深入的语义分析）
+        """
+        if not history:
+            return ""
+        
+        recent_items = history[-limit:] if len(history) > limit else history
+        topic_words = []
+        
+        # 主题关键词映射
+        topic_keywords = {
+            "fitness": ["体测", "体检", "健身", "运动", "锻炼", "测试", "成绩"],
+            "work": ["工作", "上班", "任务", "项目", "会议", "报告"],
+            "study": ["学习", "学校", "考试", "作业", "课程"],
+            "life": ["生活", "日常", "周末", "假期", "旅行"]
+        }
+        
+        detected_topics = []
+        for item in recent_items:
+            user_input = item.get("user_input", "")
+            if not user_input:
+                continue
+            
+            user_input_lower = user_input.lower()
+            
+            # 检测主题
+            for topic, keywords in topic_keywords.items():
+                if any(kw in user_input_lower for kw in keywords):
+                    if topic not in detected_topics:
+                        detected_topics.append(topic)
+            
+            # 提取关键词
+            words = self._extract_meaningful_words(user_input, max_words=3)
+            topic_words.extend(words)
+        
+        # 合并主题和关键词
+        all_topics = detected_topics + topic_words
+        return " ".join(set(all_topics))
+    
+    def _extract_key_snippets(self, history: List[Dict], limit: int = 3, snippet_length: int = 20) -> List[str]:
+        """
+        提取最近对话中的关键信息片段
+        """
+        if not history:
+            return []
+        
+        recent_items = history[-limit:] if len(history) > limit else history
+        snippets = []
+        
+        # 关键词指示器
+        key_indicators = ["重要", "关键", "记住", "注意", "需要", "应该", "必须", "务必"]
+        
+        for item in recent_items:
+            user_input = item.get("user_input", "")
+            if not user_input:
+                continue
+            
+            # 检查是否包含关键指示器
+            user_input_lower = user_input.lower()
+            if any(indicator in user_input_lower for indicator in key_indicators):
+                # 提取包含关键指示器的句子片段
+                words = user_input.split()
+                for i, word in enumerate(words):
+                    if any(ind in word.lower() for ind in key_indicators):
+                        # 提取该词周围的上下文
+                        start = max(0, i - snippet_length // 2)
+                        end = min(len(words), i + snippet_length // 2)
+                        snippet = " ".join(words[start:end])
+                        snippets.append(snippet)
+                        break
+        
+        return snippets
 
 
 class DesireUpdateHandler(BaseStageHandler):
@@ -612,63 +905,197 @@ class ReplyGenerationHandler(BaseStageHandler):
         return ProcessingStage.REPLY_GENERATION
 
     def process(self, context: StageContext) -> StageContext:
-        """生成回复"""
+        """生成回复 - 优化版：减少日志和不必要的处理"""
         try:
-            if self.logger:
-                self.logger.debug("开始回复生成")
-
             # 检查 context 是否为 None
             if context is None:
-                error_msg = "回复生成失败: 上下文对象为 None"
-                if self.logger:
-                    self.logger.error(error_msg)
-                # 创建一个新的空上下文对象
                 from core.processing_pipeline import StageContext
                 context = StageContext(
                     user_input="",
                     conversation_history=[],
                     system_components={}
                 )
-                context.add_error(error_msg)
+                context.add_error("回复生成失败: 上下文对象为 None")
                 return context
 
-            # 1. 确定面具并保存到 context (修复 mask_type 丢失问题)
+            # 1. 确定面具并保存到 context
             chosen_mask = self._determine_mask(context)
-            # 假设 StageContext 允许动态属性或已有该字段
             context.mask_type = chosen_mask
 
-            # 构建回复生成参数
-            generation_params = self._build_generation_params(context,chosen_mask)
+            # 构建回复生成参数 - 简化版
+            generation_params = self._build_generation_params_fast(context, chosen_mask)
 
+            # 直接生成回复，跳过复杂的日志记录
             if context.cognitive_result:
                 reply_result = self.reply_generator.generate_from_cognitive_flow(generation_params)
             else:
                 reply_result = self.reply_generator.generate_reply(**generation_params)
             
-            # 处理返回值，如果是元组则只取文本部分
+            # 处理返回值
             if isinstance(reply_result, tuple):
                 reply_text, emotion = reply_result
-                # 将情绪信息存储到上下文
                 context.emotional_context = context.emotional_context or {}
                 context.emotional_context['reply_emotion'] = emotion
             else:
                 reply_text = reply_result
-                emotion = 'neutral'
+            
+            # 检测是否是降级回复
+            context.is_fallback_reply = self._is_fallback_reply(reply_text)
             
             # 更新上下文
             context.final_reply = reply_text
 
-            if self.logger:
-                self.logger.debug(f"回复生成完成: 长度 {len(reply_text)}, 情绪: {emotion}")
-
         except Exception as e:
-            error_msg = f"回复生成失败: {str(e)}"
             if self.logger:
-                self.logger.error(error_msg)
+                self.logger.error(f"回复生成失败: {str(e)}")
             if context:
-                context.add_error(error_msg)
+                context.add_error(f"回复生成失败: {str(e)}")
 
         return context
+    
+    def _build_generation_params_fast(self, context: StageContext, chosen_mask: str) -> Dict:
+        """
+        快速构建回复生成参数 - 优化版：增强对话历史处理以保持话题连贯性
+        
+        关键改进：
+        1. 增加对话历史数量从5条到10条
+        2. 格式化对话历史，确保user_input和system_response清晰分离
+        3. 添加当前话题信息到生成参数
+        """
+        if context is None:
+            return {
+                "action_plan": {"chosen_mask": chosen_mask, "primary_strategy": None},
+                "memory_context": {"retrieved_memories": [], "resonant_memory": None},
+                "user_input": "",
+                "conversation_history": [],
+                "growth_result": None,
+                "context_analysis": {},
+                "current_vectors": {}
+            }
+        
+        # 简化的记忆上下文处理
+        memory_context = {
+            "retrieved_memories": [],
+            "resonant_memory": None
+        }
+        
+        # 只在有记忆时才处理
+        retrieved_memories = getattr(context, 'retrieved_memories', [])
+        if retrieved_memories:
+            memory_context["retrieved_memories"] = [
+                self._convert_memory_to_dict(mem) for mem in retrieved_memories[:5]  # 增加到5条
+            ]
+        
+        resonant_memory = getattr(context, 'resonant_memory', None)
+        if resonant_memory:
+            memory_context["resonant_memory"] = self._convert_memory_to_dict(resonant_memory)
+        
+        # 优化：增加对话历史数量到10条，并格式化
+        raw_history = getattr(context, 'conversation_history', [])
+        formatted_history = self._format_conversation_history(raw_history[-10:])  # 增加到10条
+        
+        # 获取上下文信息，确保是字典类型
+        context_info = getattr(context, 'context_info', {})
+        if not isinstance(context_info, dict):
+            context_info = {}
+        
+        # 提取当前主题信息
+        current_topic = context_info.get("current_topic", "")
+        topic_confidence = context_info.get("topic_confidence", 0.0)
+        referential_analysis = context_info.get("referential_analysis", {})
+        
+        # 提取前文承诺和上下文链接信息（关键：解决"不知道指的是什么"问题）
+        context_links = context_info.get("context_links", {})
+        pending_promises = context_info.get("pending_promises", [])
+        likely_reference = context_info.get("likely_reference")
+        has_unresolved_context = context_info.get("has_unresolved_context", False)
+        
+        # 构建增强的上下文分析
+        enhanced_context_analysis = {
+            **context_info,
+            "current_topic": current_topic,
+            "topic_confidence": topic_confidence,
+            "referential_analysis": referential_analysis,
+            "context_links": context_links,
+            "pending_promises": pending_promises,
+            "likely_reference": likely_reference,
+            "has_unresolved_context": has_unresolved_context,
+            "conversation_turn_count": len(formatted_history)  # 添加对话轮数信息
+        }
+        
+        return {
+            "action_plan": {
+                "chosen_mask": chosen_mask,
+                "primary_strategy": getattr(context, 'strategy', None)
+            },
+            "memory_context": memory_context,
+            "user_input": getattr(context, 'user_input', ''),
+            "conversation_history": formatted_history,
+            "growth_result": getattr(context, 'growth_result', None),
+            "context_analysis": enhanced_context_analysis,
+            "current_vectors": getattr(context, 'desire_vectors', {})
+        }
+    
+    def _format_conversation_history(self, history: List[Dict]) -> List[Dict]:
+        """
+        格式化对话历史，确保格式统一且包含完整信息
+        
+        Args:
+            history: 原始对话历史列表
+            
+        Returns:
+            格式化后的对话历史列表
+        """
+        formatted = []
+        
+        for conv in history:
+            if not isinstance(conv, dict):
+                continue
+            
+            # 提取用户输入和系统回复
+            user_input = conv.get("user_input", "")
+            system_response = conv.get("system_response", "")
+            timestamp = conv.get("timestamp", "")
+            
+            # 如果没有直接的user_input/system_response，尝试从content解析
+            if not user_input and not system_response:
+                content = conv.get("content", "")
+                if isinstance(content, str):
+                    # 尝试解析格式化的对话内容
+                    if "用户:" in content or "用户：" in content:
+                        lines = content.split("\n")
+                        for line in lines:
+                            line = line.strip()
+                            if line.startswith("用户:") or line.startswith("用户："):
+                                user_input = line.replace("用户:", "").replace("用户：", "").strip()
+                            elif line.startswith("AI:") or line.startswith("AI："):
+                                system_response = line.replace("AI:", "").replace("AI：", "").strip()
+                    else:
+                        # 如果是纯文本，假设是用户输入
+                        user_input = content
+            
+            # 只添加有效的对话记录
+            if user_input or system_response:
+                formatted.append({
+                    "user_input": user_input,
+                    "system_response": system_response,
+                    "timestamp": timestamp
+                })
+        
+        return formatted
+    
+    def _convert_memory_to_dict(self, mem) -> Dict:
+        """将记忆对象转换为字典"""
+        if isinstance(mem, dict):
+            return mem
+        
+        return {
+            'memory_id': getattr(mem, 'memory_id', 'unknown'),
+            'content': getattr(mem, 'content', ''),
+            'memory_type': str(getattr(mem, 'memory_type', 'unknown')),
+            'metadata': getattr(mem, 'metadata', {}),
+            'relevance_score': getattr(mem, 'relevance_score', 0.0)
+        }
 
     def _build_generation_params(self, context: StageContext, chosen_mask: str) -> Dict:
         """构建回复生成参数"""
@@ -714,6 +1141,44 @@ class ReplyGenerationHandler(BaseStageHandler):
             "current_vectors": getattr(context, 'desire_vectors', {})
         }
 
+    def _is_fallback_reply(self, reply_text: str) -> bool:
+        """
+        检测是否是降级回复
+        
+        Args:
+            reply_text: 回复文本
+            
+        Returns:
+            是否是降级回复
+        """
+        if not reply_text or not isinstance(reply_text, str):
+            return True
+        
+        # 检查长度（降级回复通常很短）
+        if len(reply_text) < 20:
+            return True
+        
+        # 检查是否是常见的降级回复模式
+        fallback_patterns = [
+            "我收到了你的消息",
+            "我收到了",
+            "收到了",
+            "我思考了一下",
+            "能请你再问一次吗",
+            "我们重新开始吧",
+            "让我重新整理一下",
+            "刚才的思考",
+            "意识流有点波动",
+            "思考过程出现了一些混乱",
+        ]
+        
+        reply_lower = reply_text.lower()
+        for pattern in fallback_patterns:
+            if pattern in reply_lower:
+                return True
+        
+        return False
+    
     def _determine_mask(self, context: StageContext) -> str:
         """确定使用哪个面具（角色）"""
         default_mask = "长期搭档"
@@ -824,61 +1289,153 @@ class ProtocolReviewHandler(BaseStageHandler):
                 return context
 
             review_results = []
-
-            # 使用 ProtocolEngine 的 apply_all_protocols 方法
-            if self.protocol_engine and hasattr(self.protocol_engine, 'apply_all_protocols'):
-                # 构建上下文信息
-                protocol_context = {
-                    "user_input": getattr(context, 'user_input', ''),
-                    "conversation_history": getattr(context, 'conversation_history', []),
-                    "cognitive_snapshot": context.cognitive_snapshot if hasattr(context, 'cognitive_snapshot') else None,
-                    "core_identity": context.core_identity if hasattr(context, 'core_identity') else None
-                }
-
-                # 应用所有协议
-                final_text, protocol_summary = self.protocol_engine.apply_all_protocols(
-                    draft=context.final_reply,
-                    context=protocol_context
-                )
-
-                # 更新最终回复
-                if final_text:
-                    context.final_reply = final_text
-
-                # 提取协议步骤结果
-                protocol_steps = protocol_summary.get("protocol_steps", {})
-                for step_name, step_result in protocol_steps.items():
-                    review_results.append({
-                        "type": step_name,
-                        "result": {
-                            "status": step_result.get("status"),
-                            "feedback": step_result.get("feedback"),
-                            "needs_fix": step_result.get("status") in ["failed", "violations_found"]
-                        }
-                    })
-
-                # 添加冲突信息
-                conflicts = protocol_summary.get("conflicts_detected", [])
-                if conflicts:
-                    review_results.append({
-                        "type": "conflicts",
-                        "result": {
-                            "conflicts": conflicts,
-                            "resolved": protocol_summary.get("conflicts_resolved", []),
-                            "needs_fix": len(conflicts) > 0
-                        }
-                    })
-
-                # 添加摘要信息
+            
+            # 检查是否是降级回复
+            is_fallback = getattr(context, 'is_fallback_reply', False)
+            
+            if is_fallback:
+                # 如果是降级回复，跳过API事实审查，只做文本层面的处理
+                if self.logger:
+                    self.logger.debug("检测到降级回复，跳过API事实审查，只进行文本处理")
+                
+                # 只进行文本层面的协议处理（长度、表达验证）
+                if self.protocol_engine and hasattr(self.protocol_engine, 'apply_text_protocols'):
+                    # 如果协议引擎有文本协议方法，只调用文本协议
+                    protocol_context = {
+                        "user_input": getattr(context, 'user_input', ''),
+                        "conversation_history": getattr(context, 'conversation_history', []),
+                        "cognitive_snapshot": context.cognitive_snapshot if hasattr(context, 'cognitive_snapshot') else None,
+                        "core_identity": context.core_identity if hasattr(context, 'core_identity') else None,
+                        "skip_fact_check": True  # 标记跳过事实检查
+                    }
+                    
+                    try:
+                        final_text, protocol_summary = self.protocol_engine.apply_all_protocols(
+                            draft=context.final_reply,
+                            context=protocol_context
+                        )
+                        
+                        if final_text:
+                            context.final_reply = final_text
+                        
+                        # 提取文本协议结果
+                        if protocol_summary and isinstance(protocol_summary, dict):
+                            protocol_steps = protocol_summary.get("protocol_steps", {})
+                            for step_name, step_result in protocol_steps.items():
+                                # 跳过事实检查结果
+                                if step_name == "fact_check":
+                                    continue
+                                review_results.append({
+                                    "type": step_name,
+                                    "result": {
+                                        "status": step_result.get("status") if isinstance(step_result, dict) else "unknown",
+                                        "feedback": step_result.get("feedback", "") if isinstance(step_result, dict) else "",
+                                        "needs_fix": False
+                                    }
+                                })
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.warning(f"降级回复的文本协议处理失败: {e}")
+                
+                # 添加降级标记到审查结果
                 review_results.append({
-                    "type": "summary",
+                    "type": "fallback_notice",
                     "result": {
-                        "original_length": protocol_summary.get("original_draft_length"),
-                        "final_length": protocol_summary.get("final_text_length"),
-                        "reduction": protocol_summary.get("total_reduction"),
-                        "processing_time": protocol_summary.get("total_processing_time")
+                        "status": "skipped",
+                        "feedback": "降级回复，跳过完整协议审查",
+                        "needs_fix": False
                     }
                 })
+            else:
+                # 正常回复，执行完整协议审查
+                if self.protocol_engine and hasattr(self.protocol_engine, 'apply_all_protocols'):
+                    # 构建上下文信息
+                    protocol_context = {
+                        "user_input": getattr(context, 'user_input', ''),
+                        "conversation_history": getattr(context, 'conversation_history', []),
+                        "cognitive_snapshot": context.cognitive_snapshot if hasattr(context, 'cognitive_snapshot') else None,
+                        "core_identity": context.core_identity if hasattr(context, 'core_identity') else None
+                    }
+
+                    # 应用所有协议
+                    try:
+                        final_text, protocol_summary = self.protocol_engine.apply_all_protocols(
+                            draft=context.final_reply,
+                            context=protocol_context
+                        )
+                        
+                        # 确保 protocol_summary 是有效字典
+                        if not protocol_summary or not isinstance(protocol_summary, dict):
+                            if self.logger:
+                                self.logger.warning("协议摘要为空或无效，使用默认摘要")
+                            protocol_summary = {
+                                "protocol_steps": {},
+                                "conflicts_detected": [],
+                                "conflicts_resolved": [],
+                                "original_draft_length": len(context.final_reply),
+                                "final_text_length": len(final_text) if final_text else len(context.final_reply),
+                                "total_reduction": 0,
+                                "total_processing_time": 0
+                            }
+
+                        # 更新最终回复
+                        if final_text:
+                            context.final_reply = final_text
+
+                        # 提取协议步骤结果
+                        protocol_steps = protocol_summary.get("protocol_steps", {})
+                        if protocol_steps and isinstance(protocol_steps, dict):
+                            for step_name, step_result in protocol_steps.items():
+                                if isinstance(step_result, dict):
+                                    status = step_result.get("status")
+                                    review_results.append({
+                                        "type": step_name,
+                                        "result": {
+                                            "status": status,
+                                            "feedback": step_result.get("feedback", ""),
+                                            "needs_fix": status in ["failed", "violations_found"] if status else False
+                                        }
+                                    })
+
+                        # 添加冲突信息
+                        conflicts = protocol_summary.get("conflicts_detected", [])
+                        if conflicts and isinstance(conflicts, list) and len(conflicts) > 0:
+                            resolved = protocol_summary.get("conflicts_resolved", [])
+                            if not isinstance(resolved, list):
+                                resolved = []
+                            review_results.append({
+                                "type": "conflicts",
+                                "result": {
+                                    "conflicts": conflicts,
+                                    "resolved": resolved,
+                                    "needs_fix": len(conflicts) > 0
+                                }
+                            })
+
+                        # 添加摘要信息
+                        review_results.append({
+                            "type": "summary",
+                            "result": {
+                                "original_length": protocol_summary.get("original_draft_length", len(context.final_reply)),
+                                "final_length": protocol_summary.get("final_text_length", len(final_text) if final_text else len(context.final_reply)),
+                                "reduction": protocol_summary.get("total_reduction", 0),
+                                "processing_time": protocol_summary.get("total_processing_time", 0)
+                            }
+                        })
+                    except Exception as e:
+                        error_msg = f"协议审查执行失败: {str(e)}"
+                        if self.logger:
+                            self.logger.error(error_msg)
+                        context.add_error(error_msg)
+                        # 添加默认审查结果
+                        review_results.append({
+                            "type": "error",
+                            "result": {
+                                "status": "failed",
+                                "feedback": error_msg,
+                                "needs_fix": False
+                            }
+                        })
 
             # 元认知评估
             if self.meta_cognition and hasattr(self.meta_cognition, 'evaluate'):
@@ -959,7 +1516,57 @@ class InteractionRecordingHandler(BaseStageHandler):
             interaction_data["interaction_id"] = interaction_id
 
             self.logger.debug(f"打印交互数据我看一下: {interaction_data}")
-            # 记录到记忆系统
+            
+            # 先添加到短期记忆（无论长期记忆是否成功都要保存）
+            # 这样确保对话历史能够立即被检索到
+            short_term_memory_id = None
+            try:
+                # 使用session_id作为conversation_id
+                conversation_id = self.memory_manager.session_id
+                memory_system = self.memory_manager.memory_system
+                
+                # 确保final_reply不为空
+                system_response = context.final_reply or ""
+                if not system_response:
+                    if self.logger:
+                        self.logger.warning("final_reply为空，无法保存到短期记忆")
+                else:
+                    # 构建短期记忆内容
+                    short_term_content = f"用户: {context.user_input}\nAI: {system_response}"
+                    
+                    # 添加到短期记忆
+                    short_term_memory_id = memory_system.add_short_term_memory(
+                        content=short_term_content,
+                        conversation_id=conversation_id,
+                        metadata={
+                            "user_input": context.user_input,
+                            "system_response": system_response,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    )
+                    
+                    if self.logger:
+                        self.logger.info(
+                            f"[短期记忆] 添加成功，memory_id: {short_term_memory_id}, "
+                            f"conversation_id: {conversation_id}, "
+                            f"user_input: '{context.user_input[:50]}...', "
+                            f"system_response: '{system_response[:50]}...'"
+                        )
+                        # 立即验证短期记忆是否可检索
+                        try:
+                            verify_memories = memory_system.search_short_term_memories(
+                                conversation_id=conversation_id,
+                                limit=5
+                            )
+                            self.logger.debug(f"[短期记忆] 验证：检索到 {len(verify_memories)} 条短期记忆")
+                        except Exception as e:
+                            self.logger.warning(f"[短期记忆] 验证失败: {e}")
+            except Exception as e:
+                # 短期记忆添加失败不应该影响整体流程
+                if self.logger:
+                    self.logger.error(f"[短期记忆] 添加失败: {str(e)}, traceback: {traceback.format_exc()}")
+            
+            # 记录到长期记忆系统
             success = self.memory_manager.record_interaction(interaction_data)
 
             # 更新上下文
