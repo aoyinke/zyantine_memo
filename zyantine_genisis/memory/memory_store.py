@@ -2373,7 +2373,13 @@ class ZyantineMemorySystem:
                 # 从内存存储获取对话类型的记忆，按时间排序
                 conversation_memories = []
                 # 使用user_input作为去重键，更准确
-                existing_inputs = {r.get("user_input", r.get("content", "")) for r in results}
+                # 处理可能的列表类型，确保键是可哈希的字符串
+                def _get_hashable_key(r):
+                    val = r.get("user_input", r.get("content", ""))
+                    if isinstance(val, list):
+                        return " ".join(str(item) for item in val) if val else ""
+                    return val if isinstance(val, str) else str(val) if val else ""
+                existing_inputs = {_get_hashable_key(r) for r in results}
                 
                 # 从memory_store列表获取对话记忆
                 for memory_item in self.memory_store:
@@ -2393,9 +2399,14 @@ class ZyantineMemorySystem:
                     content = memory.get("content", "")
                     metadata = memory.get("metadata", {})
                     
-                    # 提取user_input和system_response
+                    # 提取user_input和system_response，确保是字符串类型
                     user_input = metadata.get("user_input", "")
                     system_response = metadata.get("system_response", "")
+                    # 处理可能的列表类型（防止unhashable type错误）
+                    if isinstance(user_input, list):
+                        user_input = " ".join(str(item) for item in user_input) if user_input else ""
+                    if isinstance(system_response, list):
+                        system_response = " ".join(str(item) for item in system_response) if system_response else ""
                     
                     # 如果metadata中没有，尝试从content解析
                     if not user_input and not system_response and isinstance(content, str):
@@ -2452,6 +2463,13 @@ class ZyantineMemorySystem:
                             result_metadata = result.get("metadata", {})
                             user_input = result_metadata.get("user_input", "")
                             system_response = result_metadata.get("system_response", "")
+                            # 处理可能的列表类型
+                            if isinstance(user_input, list):
+                                user_input = " ".join(str(item) for item in user_input) if user_input else ""
+                            if isinstance(system_response, list):
+                                system_response = " ".join(str(item) for item in system_response) if system_response else ""
+                            if isinstance(content, list):
+                                content = " ".join(str(item) for item in content) if content else ""
                             
                             check_key = user_input if user_input else content
                             if check_key and check_key not in existing_inputs:

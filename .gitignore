@@ -1,8 +1,9 @@
-# 配置文件
+# 配置文件（包含敏感API密钥）
 zyantine_genisis/config/llm_config.json
 
-# 记忆备份文件
-zyantine_genisis/memory_backups
+# 记忆存储和备份文件（包含用户数据）
+zyantine_genisis/memory_storage/
+zyantine_genisis/memory_backups/
 
 # 日志文件
 *.log

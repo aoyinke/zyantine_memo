@@ -1,0 +1,145 @@
+{
+  "session_id": "default",
+  "user_id": "default_user",
+  "system_name": "ZyantineAI",
+  "version": "1.0.0",
+
+  "api": {
+    "enabled": true,
+    "provider": "deepseek",
+    "providers": {
+      "openai": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.openai.com/v1",
+        "chat_model": "gpt-4o-mini",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "deepseek": {
+        "enabled": true,
+        "api_key": "",
+        "base_url": "https://api.deepseek.com",
+        "chat_model": "deepseek-chat",
+        "timeout": 30,
+        "max_retries": 3,
+        "use_max_completion_tokens": true
+      },
+      "anthropic": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.anthropic.com",
+        "chat_model": "claude-3-5-sonnet-20241022",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "zhipu": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "",
+        "chat_model": "glm-4",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "moonshot": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://api.moonshot.cn/v1",
+        "chat_model": "moonshot-v1-8k",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "alibaba": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "chat_model": "qwen-turbo",
+        "timeout": 30,
+        "max_retries": 3
+      },
+      "baidu": {
+        "enabled": false,
+        "api_key": "",
+        "base_url": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat",
+        "chat_model": "ernie-bot-4",
+        "timeout": 30,
+        "max_retries": 3
+      }
+    }
+  },
+
+  "memory": {
+    "system_type": "memo0",
+    "max_memories": 10000,
+    "retrieval_limit": 5,
+    "similarity_threshold": 0.7,
+    "enable_semantic_cache": true,
+    "cache_ttl": 300,
+    "backup_interval": 3600,
+    "backup_path": "./memory_backups",
+    "memo0_config": {
+      "vector_store": {
+        "provider": "milvus",
+        "config": {
+          "collection_name": "zyantine_memories",
+          "url": "http://localhost:19530",
+          "token": ""
+        }
+      },
+      "llm": {
+        "provider": "openai",
+        "config": {
+          "model": "deepseek-chat",
+          "api_key": "",
+          "openai_base_url": "https://api.deepseek.com/v1"
+        }
+      },
+      "embedder": {
+        "provider": "openai",
+        "config": {
+          "model": "text-embedding-3-large",
+          "api_key": "",
+          "openai_base_url": "https://api.openai.com/v1"
+        }
+      }
+    }
+  },
+
+  "processing": {
+    "mode": "fast",
+    "enable_stage_parallelism": false,
+    "enable_fast_path": true,
+    "enable_streaming": true,
+    "max_conversation_history": 50,
+    "enable_real_time_analysis": false,
+    "batch_size": 10,
+    "fast_response_threshold": 0.3,
+    "stage_configs": {
+      "preprocess": {"enabled": true, "timeout": 2},
+      "memory_retrieval": {"enabled": true, "cache_results": true, "max_results": 5},
+      "desire_update": {"enabled": false, "update_frequency": "on_demand"},
+      "cognitive_flow": {"enabled": false, "max_iterations": 1},
+      "reply_generation": {"enabled": true, "fallback_to_template": true},
+      "protocol_review": {"enabled": false, "strict_mode": false}
+    }
+  },
+
+  "protocols": {
+    "enable_fact_check": true,
+    "enable_length_regulation": true,
+    "enable_expression_protocol": true,
+    "fact_check_strictness": 0.8,
+    "max_response_length": 2000,
+    "min_response_length": 50,
+    "allow_uncertainty_phrases": true,
+    "required_tags": []
+  },
+
+  "enable_monitoring": false,
+  "enable_logging": true,
+  "log_level": "WARNING",
+  "log_file": "./logs/zyantine.log",
+  "enable_encryption": false,
+  "enable_backup": true,
+  "enable_validation": false
+}

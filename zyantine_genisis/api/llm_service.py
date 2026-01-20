@@ -251,6 +251,7 @@ class BaseLLMService(ABC):
                     # 优化流式响应生成器
                     def stream_generator():
                         reply_parts = []
+                        all_content_parts = []  # 用于最终提取情绪
                         start_chunk_time = time.time()
                         chunk_count = 0
                         
@@ -259,11 +260,12 @@ class BaseLLMService(ABC):
                             if content:
                                 chunk_count += 1
                                 reply_parts.append(content)
+                                all_content_parts.append(content)
                                 # 优化：小 chunk 合并，减少网络往返
                                 if chunk_count % 3 == 0 or len("".join(reply_parts)) > 100:
-                                    # 检查并移除情绪标签
+                                    # 清理回复：移除动作描述和情绪标签
                                     chunk_content = "".join(reply_parts)
-                                    clean_chunk = self.remove_emotion_tag(chunk_content)
+                                    clean_chunk = self.clean_reply(chunk_content)
                                     if clean_chunk:
                                         yield clean_chunk
                                     reply_parts = []
@@ -271,9 +273,9 @@ class BaseLLMService(ABC):
                         
                         # 发送剩余部分
                         if reply_parts:
-                            # 检查并移除情绪标签
+                            # 清理回复：移除动作描述和情绪标签
                             final_content = "".join(reply_parts)
-                            clean_final = self.remove_emotion_tag(final_content)
+                            clean_final = self.clean_reply(final_content)
                             if clean_final:
                                 yield clean_final
                         
@@ -281,8 +283,8 @@ class BaseLLMService(ABC):
                         latency = time.time() - start_time
                         chunk_latency = time.time() - start_chunk_time
                         
-                        # 提取情绪信息
-                        full_reply = "".join(reply_parts)
+                        # 提取情绪信息（从完整内容中提取）
+                        full_reply = "".join(all_content_parts)
                         emotion = self.extract_emotion(full_reply)
                         
                         try:
@@ -329,10 +331,10 @@ class BaseLLMService(ABC):
                         latency=latency
                     )
 
-                    # 提取情绪信息
+                    # 提取情绪信息（在清理之前）
                     emotion = self.extract_emotion(reply)
-                    # 移除情绪标签
-                    clean_reply = self.remove_emotion_tag(reply)
+                    # 清理回复：移除动作描述和情绪标签
+                    clean_reply = self.clean_reply(reply)
                     
                     metadata = {
                         "request_id": request_id,
@@ -734,6 +736,138 @@ class BaseLLMService(ABC):
         """从文本中移除情绪标签"""
         import re
         return re.sub(r'\s*\[EMOTION:\w+\]\s*$', '', text).strip()
+    
+    def extract_action(self, text: str) -> Optional[str]:
+        """
+        从文本中提取括号中的动作描述（包括表情动作）
+        
+        支持中文括号（）和英文括号()
+        如果文本中有多个动作，返回第一个
+        """
+        import re
+        
+        if not text:
+            return None
+        
+        # 匹配中文括号中的内容
+        chinese_match = re.search(r'（([^）]+)）', text)
+        if chinese_match:
+            action = chinese_match.group(1).strip()
+            # 排除系统内部动作（这些不应该作为表情动作）
+            if not re.search(r'(?:正在|开始|尝试|查询|检索|搜索|分析|思考|处理|执行|调用)', action):
+                return action
+        
+        # 匹配英文括号中的内容
+        english_match = re.search(r'\(([^)]+)\)', text)
+        if english_match:
+            action = english_match.group(1).strip()
+            # 排除系统内部动作
+            if not re.search(r'(?:正在|开始|尝试|查询|检索|搜索|分析|思考|处理|执行|调用)', action):
+                return action
+        
+        return None
+    
+    def remove_action_descriptions(self, text: str) -> str:
+        """
+        从文本中移除动作描述
+        
+        动作描述是指AI对自己内部行为的描述，如：
+        - "让我查询一下记忆..."
+        - "我正在思考..."
+        - "根据我的分析..."
+        - "*思考中*"
+        - "[正在检索相关信息]"
+        
+        这些内容不应该出现在给用户的回复中。
+        """
+        import re
+        
+        if not text:
+            return text
+        
+        original_text = text
+        
+        # 1. 移除方括号包裹的动作描述 [xxx]
+        # 但保留情绪标签 [EMOTION:xxx]，因为会在其他地方处理
+        text = re.sub(r'\[(?!EMOTION:)[^\]]*(?:正在|开始|尝试|查询|检索|搜索|分析|思考|处理|执行|调用)[^\]]*\]', '', text)
+        
+        # 2. 移除星号包裹的动作描述 *xxx*
+        text = re.sub(r'\*[^*]*(?:思考|分析|查询|检索|搜索|处理|执行|调用|回忆|记忆)[^*]*\*', '', text)
+        
+        # 3. 移除括号包裹的动作描述 (xxx) 或 （xxx）
+        # 先移除系统内部动作
+        text = re.sub(r'[（(][^）)]*(?:正在|开始|尝试|查询|检索|搜索|分析|思考|处理|执行|调用)[^）)]*[）)]', '', text)
+        # 再移除所有剩余的括号内容（包括表情动作）
+        text = re.sub(r'（[^）]+）', '', text)
+        text = re.sub(r'\([^)]+\)', '', text)
+        
+        # 4. 移除常见的动作描述开头句式
+        action_patterns = [
+            # 查询/检索相关
+            r'^让我(?:先)?(?:查询|检索|搜索|查找|查看|翻阅)一下[^。，,\.]*[。，,\.]?\s*',
+            r'^我(?:先)?(?:查询|检索|搜索|查找|查看|翻阅)一下[^。，,\.]*[。，,\.]?\s*',
+            r'^(?:正在)?(?:查询|检索|搜索|查找)(?:相关)?(?:记忆|信息|内容|资料)[^。，,\.]*[。，,\.]?\s*',
+            
+            # 思考/分析相关
+            r'^让我(?:先)?(?:思考|想想|分析|考虑)一下[^。，,\.]*[。，,\.]?\s*',
+            r'^我(?:先)?(?:思考|想想|分析|考虑)一下[^。，,\.]*[。，,\.]?\s*',
+            r'^(?:正在)?(?:思考|分析|处理)[^。，,\.]*[。，,\.]?\s*',
+            
+            # 记忆相关
+            r'^让我(?:先)?(?:回忆|回想|想起)[^。，,\.]*[。，,\.]?\s*',
+            r'^我(?:先)?(?:回忆|回想|想起)[^。，,\.]*[。，,\.]?\s*',
+            r'^(?:正在)?(?:调用|访问|读取)(?:记忆|数据)[^。，,\.]*[。，,\.]?\s*',
+            
+            # 系统动作相关
+            r'^(?:正在)?(?:执行|运行|启动|调用)[^。，,\.]*(?:流程|程序|模块|功能)[^。，,\.]*[。，,\.]?\s*',
+            r'^(?:正在)?(?:使用|应用|采用)[^。，,\.]*(?:策略|方法|模式)[^。，,\.]*[。，,\.]?\s*',
+            
+            # 根据xxx相关（但保留正常的"根据你说的"等）
+            r'^根据(?:我的|系统的|内部的)(?:分析|判断|评估|记忆)[^。，,\.]*[。，,\.]?\s*',
+            r'^基于(?:我的|系统的|内部的)(?:分析|判断|评估|记忆)[^。，,\.]*[。，,\.]?\s*',
+        ]
+        
+        for pattern in action_patterns:
+            text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+        
+        # 5. 移除文本中间的动作描述（更保守，只移除明显的）
+        mid_action_patterns = [
+            r'[。，,\.]\s*(?:让我|我(?:先)?)?(?:查询|检索|搜索)一下[^。，,\.]*[。，,\.]',
+            r'[。，,\.]\s*(?:正在)?(?:思考|分析|处理)中[^。，,\.]*[。，,\.]',
+        ]
+        
+        for pattern in mid_action_patterns:
+            text = re.sub(pattern, '。', text, flags=re.IGNORECASE)
+        
+        # 6. 清理多余的空白和标点
+        text = re.sub(r'\s+', ' ', text)  # 合并多个空格
+        text = re.sub(r'^[。，,\.\s]+', '', text)  # 移除开头的标点和空格
+        text = re.sub(r'[。，,\.]{2,}', '。', text)  # 合并多个标点
+        text = text.strip()
+        
+        # 如果处理后文本为空或过短，返回原文本（避免过度过滤）
+        if not text or len(text) < 5:
+            return original_text
+        
+        return text
+    
+    def clean_reply(self, text: str) -> str:
+        """
+        清理回复文本，移除所有不应该出现在用户回复中的内容
+        
+        包括：
+        1. 情绪标签
+        2. 动作描述
+        """
+        if not text:
+            return text
+        
+        # 先移除动作描述
+        text = self.remove_action_descriptions(text)
+        # 再移除情绪标签
+        text = self.remove_emotion_tag(text)
+        
+        return text
 
 
 class OpenAICompatibleService(BaseLLMService):

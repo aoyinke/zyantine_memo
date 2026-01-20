@@ -2954,6 +2954,12 @@ class MemoryManager:
                         user_input = conv_metadata.get("user_input", "")
                         system_response = conv_metadata.get("system_response", "")
                         
+                        # 处理可能的列表类型（防止unhashable type错误）
+                        if isinstance(user_input, list):
+                            user_input = " ".join(str(item) for item in user_input) if user_input else ""
+                        if isinstance(system_response, list):
+                            system_response = " ".join(str(item) for item in system_response) if system_response else ""
+                        
                         # 如果metadata中没有，尝试从content中提取
                         if not user_input or not system_response:
                             user_input = self._extract_user_input(conv.get("content", ""))
